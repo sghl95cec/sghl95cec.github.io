@@ -109,6 +109,7 @@ input.in:focus,select.in:focus,textarea.in:focus{border-color:var(--g6);box-shad
 .mbox p{margin:0 0 6px;color:#38423c;font-size:14.5px}
 .mbtns{display:flex;gap:10px;margin-top:16px}
 .mbtns .btn{flex:1}
+.mbtns.col{flex-direction:column;gap:8px}.mbtns.col .btn{flex:0 0 auto;width:100%;white-space:normal;text-align:center}
 .toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:#1d2721;color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;z-index:40;max-width:90%;text-align:center}
 .srow{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
 .srow h4{margin:0;font-size:16px}
@@ -372,6 +373,28 @@ input.in[readonly]{background:#eef1ef;color:#3d4741}
 .hero.noimg{aspect-ratio:auto;min-height:130px;background:linear-gradient(135deg,var(--g7),var(--g9))}
 .hero.noimg .hero-t{position:static;background:none;padding:26px 16px 18px}
 
+/* patient lists */
+.lbpre{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media(min-width:700px){.lbpre{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.lbp{text-align:left;border:1px solid #cfd8d2;border-radius:8px;background:#fff;padding:9px 10px;font:inherit;color:inherit;cursor:pointer;line-height:1.25}
+.lbp b{display:block;font-size:13.5px}.lbp small{display:block;font-size:11.5px;color:var(--mute);margin-top:2px}
+.lbp.on{border-color:var(--g7);background:var(--g0);box-shadow:inset 0 0 0 1px var(--g7)}
+.lbgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.lbgrid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.lbck{display:flex;gap:7px;align-items:flex-start;border:1px solid #dfe5e1;border-radius:7px;padding:7px 8px;font-size:13.5px;background:#fff;cursor:pointer;line-height:1.25}
+.lbck input{width:18px;height:18px;flex:0 0 auto;margin:0;accent-color:var(--g7)}.lbck.on{border-color:#9cc9ad;background:var(--g0)}
+.lbd{margin-top:12px;border:1px solid #dfe5e1;border-radius:8px;padding:0 10px}
+.lbd summary{cursor:pointer;padding:10px 0;font-weight:600;font-size:14px}.lbd[open] summary{border-bottom:1px solid #e8ece9;margin-bottom:8px}.lbd .lbgrid{padding-bottom:10px}
+.lbd .pill{font-size:11.5px;margin-left:4px}
+.chip.lbs{padding:2px 6px 2px 10px}.chip.lbs .lnk{font-weight:600;color:inherit;text-decoration:none}.chip.lbs.on{background:var(--g7);color:#fff;border-color:var(--g7)}.chip.lbs.on button{color:#fff}
+.lbsum{margin:0 0 8px;font-size:14px}
+.lblist{max-height:60vh;overflow:auto;border:1px solid #e3e8e5;border-radius:8px;margin-top:8px}
+.lbrow{display:flex;gap:9px;align-items:flex-start;padding:8px 10px;border-bottom:1px solid #edf0ee;font-size:13.5px;line-height:1.35;cursor:pointer}
+.lbrow input{width:19px;height:19px;flex:0 0 auto;margin-top:1px;accent-color:var(--g7)}.lbrow.off{opacity:.5}.lbrow.off b{text-decoration:line-through}
+.lblist .gh{position:sticky;top:0;background:#f4f7f5;padding:6px 10px;margin:0;z-index:1}
+section.card > .gh{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:14px 0 6px}
+@media (min-width:900px) and (max-width:1299px){.nav{gap:0;padding:0 4px}.nav .ni>button{padding:13px 9px 11px;font-size:13.5px;gap:6px}.nav .ni>button svg:not(.caret){display:none}}
+@media (min-width:900px) and (max-width:1049px){.nav .ni>button{padding:13px 6px 11px;font-size:12.5px}}
+
 </style>
 </head>
 <body>
@@ -527,11 +550,17 @@ var CEC = (function () {
     { c: 'EXP', l: 'Expired in CEC', s: 'Expired' },
     { c: 'BD', l: 'Brought dead', s: 'BD' }
   ];
+  /* g: chk = checks and tests, er = ER procedures, old = kept only so earlier entries still show */
   var PROCS = [
-    { c: 'BP', l: 'BP checked' }, { c: 'ECG', l: 'ECG' }, { c: 'ETT', l: 'ETT' }, { c: 'ECHO', l: 'Echo' }, { c: 'CAN', l: 'IV cannula' }, { c: 'FOL', l: "Foley's catheter" },
-    { c: 'NEB', l: 'Nebulization' }, { c: 'O2', l: 'Oxygen therapy' }, { c: 'BSR', l: 'RBS (blood sugar)' }, { c: 'LAB', l: 'Blood sampling' },
-    { c: 'MED', l: 'IV/IM medication' }, { c: 'NG', l: 'NG tube' }, { c: 'CPR', l: 'CPR' }, { c: 'DC', l: 'DC shock / cardioversion' }
+    { c: 'BP', l: 'BP checked', g: 'chk' }, { c: 'BSR', l: 'RBS (blood sugar)', g: 'chk' }, { c: 'ECG', l: 'ECG', g: 'chk' }, { c: 'ETT', l: 'ETT', g: 'chk' }, { c: 'ECHO', l: 'Echo', g: 'chk' },
+    { c: 'CAN', l: 'IV cannula', g: 'er' }, { c: 'IMI', l: 'IM injection', g: 'er' }, { c: 'FOL', l: "Foley's catheter", g: 'er' }, { c: 'INT', l: 'Intubation', g: 'er' },
+    { c: 'LP', l: 'Lumbar puncture', g: 'er' }, { c: 'NG', l: 'NG tube', g: 'er' }, { c: 'NEB', l: 'Nebulization', g: 'er' }, { c: 'O2', l: 'Oxygen therapy', g: 'er' },
+    { c: 'LAB', l: 'Blood sampling', g: 'er' }, { c: 'CPR', l: 'CPR', g: 'er' }, { c: 'DC', l: 'Defibrillation / DC shock', g: 'er' },
+    { c: 'MED', l: 'IV/IM medication', g: 'old' }
   ];
+  /* ER medications (the doctor ticks what was given). Medications typed by doctors are added to the list for everyone. */
+  var MEDS = ['Oral Amlodipine', 'Oral Captopril', 'IV Hydralazine', 'Sublingual Angised 0.5 mg', 'Oral Ticagrelor 180 mg', 'Chewable Disprin 300 mg', 'IV Heparin',
+    'IV Omeprazole', 'IV Kinz', 'IV 5% Dextrose Saline', 'IV Normal Saline', 'IV 25% Dextrose Water', 'Nebs with Ventolin', 'Nebs with Ipneb'];
   var SHIFTS = [{ c: 'M', l: 'Morning' }, { c: 'E', l: 'Evening' }, { c: 'N', l: 'Night' }];
   var STAFF_PROCS = ['BP', 'BSR', 'ECG', 'NEB'];
   var DEFAULTS = {
@@ -898,6 +927,19 @@ var CEC = (function () {
     }).filter(function (r) { return r[3] > 0; });
     return { cols: C4('Procedure / intervention'), rows: rows, total: null, empty: 'No procedures recorded' };
   }
+  function medItems(list) {
+    var extra = [];
+    list.forEach(function (e) { (e.meds || []).forEach(function (m) { if (MEDS.indexOf(m) < 0 && extra.indexOf(m) < 0) extra.push(m); }); });
+    return MEDS.concat(extra.sort()).map(function (m) { return { c: m, l: m }; });
+  }
+  function medTable(list) {
+    var rows = medItems(list).map(function (m) {
+      var l = list.filter(function (e) { return (e.meds || []).indexOf(m.c) >= 0; }), c = sexCount(l);
+      return [m.l, c.M, c.F, c.T];
+    }).filter(function (r) { return r[3] > 0; });
+    return { cols: C4('Medication'), rows: rows, total: null, empty: 'No medications recorded' };
+  }
+  function hasMeds(list) { return list.some(function (e) { return e.meds && e.meds.length; }); }
   function byShift(list, items, test, first, keepZero) {
     var rows = items.map(function (it) {
       var r = [it.l], tot = 0;
@@ -962,7 +1004,7 @@ var CEC = (function () {
       body: ['The census of patients attended at the Cardiac Emergency Centre during the ' + name + ' Shift on ' + dmy(shift.censusDate) +
         ' (' + period + ') is submitted as under. A total of ' + c.T + ' patient' + (c.T === 1 ? '' : 's') + ' (Male ' + c.M + ', Female ' + c.F + ') were attended.'],
       sections: letterSections([['Patient census', catTable(entries)], ['Diagnosis-wise distribution', dxTable(entries)],
-        ['Procedures and interventions', procTable(entries)], ['Outcome of patients', outTable(entries)]]),
+        ['Procedures and interventions', procTable(entries)]].concat(hasMeds(entries) ? [['Medications given in the CEC', medTable(entries)]] : [], [['Outcome of patients', outTable(entries)]])),
       notes: (shift.status === 'open' ? ['This shift was still running when this report was generated.'] : []).concat(unsignedNote(entries)),
       closing: 'Submitted for your kind information, please.',
       signs: hodSign(st), copyTo: ['Office copy.'],
@@ -1001,7 +1043,8 @@ var CEC = (function () {
       body: ['The census of patients attended at the Cardiac Emergency Centre for the 24 hours from ' + t0 + ' hrs on ' + dmy(date) + ' to ' + t0 +
         ' hrs on ' + dmy(next) + ' is submitted as under. A total of ' + c.T + ' patient' + (c.T === 1 ? '' : 's') + ' (Male ' + c.M + ', Female ' + c.F + ') were attended.'],
       sections: letterSections([['Shift-wise census', shiftTab], ['Category-wise census', catTab], ['Diagnosis-wise distribution', dxTable(entries)],
-        ['Procedures and interventions', procTab], ['Outcome of patients', outTab]]),
+        ['Procedures and interventions', procTab]].concat(hasMeds(entries) ? [['Medications given in the CEC', byShift(entries, medItems(entries), function (e, k) { return (e.meds || []).indexOf(k) >= 0; }, 'Medication', false)]] : [],
+        [['Outcome of patients', outTab]])),
       notes: notes.concat(unsignedNote(entries)),
       closing: 'Submitted for your kind information, please.',
       signs: hodSign(st), copyTo: ['Office copy.'],
@@ -1034,7 +1077,8 @@ var CEC = (function () {
       body: ['The census of patients attended at the Cardiac Emergency Centre from ' + dmy(from) + ' to ' + dmy(to) +
         ' is submitted as under. A total of ' + c.T + ' patient' + (c.T === 1 ? '' : 's') + ' (Male ' + c.M + ', Female ' + c.F + ') were attended.'],
       sections: letterSections([['Category-wise census', catTable(entries)], ['Diagnosis-wise distribution', dxTable(entries)],
-        ['Procedures and interventions', procTable(entries)], ['Outcome of patients', outTable(entries)], ['Day-wise census', dayTab]]),
+        ['Procedures and interventions', procTable(entries)]].concat(hasMeds(entries) ? [['Medications given in the CEC', medTable(entries)]] : [],
+        [['Outcome of patients', outTable(entries)], ['Day-wise census', dayTab]])),
       notes: [],
       closing: 'Submitted for your kind information, please.',
       signs: hodSign(st), copyTo: ['Office copy.'],
@@ -1046,7 +1090,7 @@ var CEC = (function () {
   var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   /* Annual report. rows: [census date, shift, sex, category, diagnoses, procedures, outcome] from the server. */
   function yearEntries(rows) {
-    return (rows || []).map(function (r) { return { _date: r[0], _shift: r[1], sex: r[2], cat: r[3], dxs: r[4] || [], procs: r[5] || [], out: r[6] || '' }; });
+    return (rows || []).map(function (r) { return { _date: r[0], _shift: r[1], sex: r[2], cat: r[3], dxs: r[4] || [], procs: r[5] || [], out: r[6] || '', meds: r[7] || [] }; });
   }
   function yearModel(year, rows, st, upTo) {
     st = st || DEFAULTS;
@@ -1069,7 +1113,8 @@ var CEC = (function () {
       body: ['The census of patients attended at the Cardiac Emergency Centre from 01-01-' + year + ' to ' + dmy(to) +
         ' is submitted as under. A total of ' + c.T + ' patient' + (c.T === 1 ? '' : 's') + ' (Male ' + c.M + ', Female ' + c.F + ') were attended.'],
       sections: letterSections([['Month-wise census', monTab], ['Shift-wise census', shTab], ['Category-wise census', catTable(entries)],
-        ['Diagnosis-wise distribution', dxTable(entries)], ['Procedures and interventions', procTable(entries)], ['Outcome of patients', outTable(entries)]]),
+        ['Diagnosis-wise distribution', dxTable(entries)], ['Procedures and interventions', procTable(entries)]].concat(hasMeds(entries) ? [['Medications given in the CEC', medTable(entries)]] : [],
+        [['Outcome of patients', outTable(entries)]])),
       notes: [],
       closing: 'Submitted for your kind information, please.',
       signs: hodSign(st), copyTo: ['Office copy.'],
@@ -1084,6 +1129,8 @@ var CEC = (function () {
     m.sections[0].t.rows.forEach(function (r) { lines.push(r[0] + ': ' + r[3]); });
     lines.push('', '*Top diagnoses*');
     dxTable(e).rows.slice(0, 15).forEach(function (r) { lines.push(r[1] + ': ' + r[4]); });
+    var md = medTable(e).rows;
+    if (md.length) { lines.push('', '*Medications*'); md.forEach(function (r) { lines.push(r[0] + ': ' + r[3]); }); }
     lines.push('', '*Outcome*');
     outTable(e).rows.forEach(function (r) { lines.push(r[0] + ': ' + r[3]); });
     return lines.join('\n');
@@ -1381,9 +1428,10 @@ var CEC = (function () {
     var out = col('Outcome', 0.11, 'l', function (e) { return e.out ? short(OUTS, e.out) : 'Awaiting doctor'; });
     var seen = col('Doctor seen', 0.08, 'c', function (e) { return e.signed ? 'Yes' : 'No'; });
     var rem = col('Remarks', 0.13, 'l', function () { return ''; });
+    var meds = col('Medications', 0.0001, 'l', function (e) { return (e.meds || []).join(', '); }); meds.csvOnly = true;
     var k = kindOf(kind), cols, groups = [];
     if (kind === 'inflow') {
-      cols = base.concat([cat, bp, rbs, ecg], clinical ? [dx, out] : [seen, rem]);
+      cols = base.concat([cat, bp, rbs, ecg], clinical ? [dx, out, meds] : [seen, rem]);
       if (all.length) groups.push({ h: 'All patients', list: all });
     } else if (kind === 'proc') {
       var ps = o.procs && o.procs.length ? o.procs : STAFF_PROCS;
@@ -1392,7 +1440,7 @@ var CEC = (function () {
       if (list.length) groups.push({ h: 'Patients with ' + ps.map(function (p) { return p === 'BP' ? 'BP' : p === 'BSR' ? 'RBS' : p === 'NEB' ? 'nebulization' : p; }).join(' / ') + ' done', list: list });
     } else {
       var cats = kind === 'custom' ? (o.cats || []) : k.cats;
-      cols = base.concat([bp, rbs, ecg], clinical ? [dx, out] : [seen, rem]);
+      cols = base.concat([bp, rbs, ecg], clinical ? [dx, out, meds] : [seen, rem]);
       CATS.forEach(function (c) {
         if (cats.indexOf(c.c) < 0) return;
         var l = all.filter(function (e) { return e.cat === c.c; });
@@ -1404,8 +1452,164 @@ var CEC = (function () {
     var n = groups.reduce(function (a, g) { return a + g.list.length; }, 0);
     return { cols: cols, groups: groups, n: n, title: kind === 'custom' && o.cats && o.cats.length === 1 ? label(CATS, o.cats[0]).toUpperCase() + ' LIST' : k.t, day: true };
   }
+
+  /* ---------- List maker: any patients, any columns ----------
+     cfg: cats, shifts, sex, ageMin, ageMax, seen ('' | 'yes' | 'no'), procs (codes or names; '*er' = any ER procedure),
+          outs (codes; '_' = no outcome yet), meds (names; '*' = any medication), dx (text, comma separated),
+          cols, group ('none' | 'cat' | 'shift' | 'date' | 'out'), sort ('time' | 'mr' | 'name'), page ('auto' | 'portrait' | 'landscape'), title, exclude (entry ids) */
+  function erProc(p) { var k = PROCS.filter(function (x) { return x.c === p; })[0]; return !k || k.g === 'er' || k.g === 'old'; }
+  function ageSex(e) { return (e.age !== '' && e.age != null ? e.age : '-') + '/' + (e.sex || '-'); }
+  function outText(e) { return e.out ? short(OUTS, e.out) + (e.out === 'OBS' && e.obsH ? ' (' + e.obsH + ' h)' : '') : 'Awaiting doctor'; }
+  var LIST_COLS = [
+    { k: 'no', m: 18, h: 'No.', w: 3, a: 'c', f: function (e, i) { return i + 1; } },
+    { k: 'date', m: 50, h: 'Date', w: 7, a: 'c', f: function (e) { return dmy(e._date); } },
+    { k: 'day', m: 46, h: 'Day', w: 7, a: 'l', f: function (e) { return weekday(e._date); } },
+    { k: 'shift', m: 40, h: 'Shift', w: 6, a: 'l', f: function (e) { return shiftName(e._shift); } },
+    { k: 'time', m: 30, h: 'Time', w: 4.5, a: 'c', f: function (e) { return hm(e.t); } },
+    { k: 'mr', m: 44, t: function (e) { return 'MR ' + e.mr; }, h: 'MR No.', w: 7, a: 'l', f: function (e) { return e.mr; } },
+    { k: 'name', m: 72, h: 'Patient name', w: 14, a: 'l', f: function (e) { return e.name; } },
+    { k: 'agesex', m: 36, h: 'Age/Sex', w: 5.5, a: 'c', f: ageSex },
+    { k: 'cat', m: 52, h: 'Category', w: 8.5, a: 'l', f: function (e) { return label(CATS, e.cat); } },
+    { k: 'bp', m: 40, t: function (e) { return e.bp ? 'BP ' + e.bp : has(e, 'BP') ? 'BP done' : ''; }, h: 'BP', w: 6, a: 'c', f: function (e) { return e.bp || (has(e, 'BP') ? 'Done' : '-'); } },
+    { k: 'rbs', m: 28, t: function (e) { return e.rbs ? 'RBS ' + e.rbs : has(e, 'BSR') ? 'RBS done' : ''; }, h: 'RBS', w: 4.5, a: 'c', f: function (e) { return e.rbs || (has(e, 'BSR') ? 'Done' : '-'); } },
+    { k: 'ecg', m: 26, t: function (e) { return has(e, 'ECG') ? 'ECG done' : ''; }, h: 'ECG', w: 4, a: 'c', f: function (e) { return has(e, 'ECG') ? 'Yes' : '-'; } },
+    { k: 'neb', m: 28, t: function (e) { return has(e, 'NEB') ? 'Nebs done' : ''; }, h: 'Nebs', w: 4, a: 'c', f: function (e) { return has(e, 'NEB') ? 'Yes' : '-'; } },
+    { k: 'dx', m: 84, t: function (e) { return dxOf(e).join(', '); }, h: 'Diagnosis', w: 16, a: 'l', clin: true, f: function (e) { return dxOf(e).join(', ') || '-'; } },
+    { k: 'procs', m: 62, t: function (e) { var l = (e.procs || []).filter(erProc).map(function (p) { return label(PROCS, p); }); return l.length ? 'Procedures: ' + l.join(', ') : ''; }, h: 'ER procedures', w: 13, a: 'l', clin: true, f: function (e) { return (e.procs || []).filter(erProc).map(function (p) { return label(PROCS, p); }).join(', ') || '-'; } },
+    { k: 'meds', m: 74, t: function (e) { return (e.meds || []).length ? 'Meds: ' + e.meds.join(', ') : ''; }, h: 'Medications', w: 15, a: 'l', clin: true, f: function (e) { return (e.meds || []).join(', ') || '-'; } },
+    { k: 'out', m: 52, h: 'Outcome', w: 9, a: 'l', clin: true, f: outText },
+    { k: 'note', m: 62, h: 'Comments', w: 13, a: 'l', clin: true, f: function (e) { return e.note || ''; } },
+    { k: 'seen', m: 34, t: function (e) { return e.signed ? 'Seen by doctor' : 'Waiting for doctor'; }, h: 'Doctor seen', w: 6, a: 'c', f: function (e) { return e.signed ? 'Yes' : 'No'; } },
+    { k: 'by', m: 56, h: 'Entered by', w: 10, a: 'l', admin: true, f: function (e) { return e.by || ''; } },
+    { k: 'remarks', m: 56, h: 'Remarks', w: 12, a: 'l', f: function () { return ''; } },
+    { k: 'sign', m: 52, h: 'Signature', w: 9, a: 'l', pdfOnly: true, f: function () { return ''; } }
+  ];
+  var LIST_COLSETS = {
+    entry: ['no', 'date', 'time', 'mr', 'name', 'agesex', 'cat'],
+    readings: ['no', 'date', 'time', 'mr', 'name', 'agesex', 'cat', 'bp', 'rbs', 'ecg', 'neb'],
+    clinical: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'bp', 'rbs', 'dx', 'procs', 'meds', 'out']
+  };
+  var LIST_DEF = { cats: [], shifts: ['M', 'E', 'N'], sex: '', ageMin: '', ageMax: '', seen: '', procs: [], outs: [], meds: [], dx: '',
+    cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'bp', 'rbs', 'ecg'], group: 'cat', sort: 'time', page: 'auto', title: '' };
+  var LIST_PRESETS = [
+    { c: 'inflow', l: 'Patient inflow register', d: 'All patients with category and readings', cfg: { group: 'none', cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'bp', 'rbs', 'ecg', 'seen'] } },
+    { c: 'entry', l: 'Patient entry only', d: 'MR, name, age/sex and category (OPD, Resus, BD…). No diagnosis', cfg: { group: 'none', cols: LIST_COLSETS.entry } },
+    { c: 'opd', l: 'OPD list', d: 'OPD patients', days: [1, 4], cfg: { cats: ['OPD'], cols: ['no', 'date', 'time', 'mr', 'name', 'agesex', 'bp', 'rbs', 'ecg', 'remarks'] } },
+    { c: 'ett', l: 'ETT list', d: 'ETT patients', days: [2], cfg: { cats: ['ETT'], cols: ['no', 'date', 'time', 'mr', 'name', 'agesex', 'bp', 'remarks'] } },
+    { c: 'echo', l: 'Echo list', d: 'Echocardiography patients', days: [3], cfg: { cats: ['ECHO'], cols: ['no', 'date', 'time', 'mr', 'name', 'agesex', 'bp', 'remarks'] } },
+    { c: 'ettecho', l: 'ETT and Echo list', d: 'Both, in two groups', days: [2, 3], cfg: { cats: ['ETT', 'ECHO'], cols: ['no', 'date', 'time', 'mr', 'name', 'agesex', 'bp', 'remarks'] } },
+    { c: 'emr', l: 'Emergency / Resus list', d: 'Emergency and resus patients', cfg: { cats: ['EMR'], cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'bp', 'rbs', 'ecg', 'dx', 'out'] } },
+    { c: 'bd', l: 'Brought dead list', d: 'Patients brought dead', cfg: { cats: ['BD'], cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'ecg', 'remarks'] } },
+    { c: 'proc', l: 'BP / RBS / ECG / Nebs list', d: 'Patients who had any of these done', cfg: { procs: ['BP', 'BSR', 'ECG', 'NEB'], group: 'none', cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'bp', 'rbs', 'ecg', 'neb'] } },
+    { c: 'pending', l: 'Waiting for a doctor', d: 'Not yet signed off', cfg: { seen: 'no', group: 'none', cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'bp', 'rbs'] } },
+    { c: 'clinical', l: 'Full clinical list', d: 'Diagnosis, ER procedures, medications and outcome', clin: true, cfg: { cols: LIST_COLSETS.clinical } },
+    { c: 'meds', l: 'Patients given ER medications', d: 'With the medications given', clin: true, cfg: { meds: ['*'], group: 'none', cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'dx', 'meds'] } },
+    { c: 'erproc', l: 'Patients with ER procedures', d: 'Cannula, Foley’s, intubation, CPR…', clin: true, cfg: { procs: ['*er'], group: 'none', cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'dx', 'procs', 'out'] } },
+    { c: 'deaths', l: 'Expired and brought dead', d: 'Deaths in or before arrival at the CEC', clin: true, cfg: { outs: ['EXP', 'BD'], group: 'out', cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'dx', 'out'] } },
+    { c: 'admref', l: 'Admitted and referred', d: 'Sent to the ward or a higher centre', clin: true, cfg: { outs: ['ADM', 'REF'], group: 'out', cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'dx', 'out', 'note'] } },
+    { c: 'lama', l: 'LAMA, DOR and absconded', d: 'Left against advice, on request or absconded', clin: true, cfg: { outs: ['LAMA', 'DOR', 'ABS'], group: 'out', cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'dx', 'out', 'note'] } }
+  ];
+  function listCfg(cfg) {
+    var f = JSON.parse(JSON.stringify(LIST_DEF));
+    Object.keys(cfg || {}).forEach(function (k) { if (cfg[k] !== undefined) f[k] = JSON.parse(JSON.stringify(cfg[k])); });
+    return f;
+  }
+  function presetCfg(c) { var p = LIST_PRESETS.filter(function (x) { return x.c === c; })[0]; return listCfg(p ? p.cfg : {}); }
+  function listColsFor(who) { who = who || {}; return LIST_COLS.filter(function (c) { return (!c.clin || who.clin) && (!c.admin || who.admin); }); }
+  function listMatch(e, f, who) {
+    who = who || {};
+    if (f.cats.length && f.cats.indexOf(e.cat) < 0) return false;
+    if (f.shifts.length && f.shifts.indexOf(e._shift) < 0) return false;
+    if (f.sex && e.sex !== f.sex) return false;
+    var age = e.age === '' || e.age == null ? null : +e.age;
+    if (f.ageMin !== '' && f.ageMin != null && (age == null || age < +f.ageMin)) return false;
+    if (f.ageMax !== '' && f.ageMax != null && (age == null || age > +f.ageMax)) return false;
+    if (f.seen === 'yes' && !e.signed) return false;
+    if (f.seen === 'no' && e.signed) return false;
+    if (f.procs.length && !f.procs.some(function (p) {
+      if (p === '*er') return (e.procs || []).some(erProc);
+      return has(e, p) || (p === 'BP' && e.bp) || (p === 'BSR' && e.rbs);
+    })) return false;
+    if (!who.clin) return true;                                   // clinical filters only for doctors and nursing staff
+    if (f.outs.length && f.outs.indexOf(e.out || '_') < 0) return false;
+    if (f.meds.length && !f.meds.some(function (m) { return m === '*' ? (e.meds || []).length > 0 : (e.meds || []).indexOf(m) >= 0; })) return false;
+    var terms = String(f.dx || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+    if (terms.length) {
+      var dl = dxOf(e), low = dl.join(' | ').toLowerCase();
+      if (!terms.some(function (t) { return canonDx(t).some(function (c) { return dl.indexOf(c) >= 0; }) || low.indexOf(t.toLowerCase()) >= 0; })) return false;
+    }
+    return true;
+  }
+  var CAT_T = { OPD: 'OPD', EMR: 'EMERGENCY / RESUS', ETT: 'ETT', ECHO: 'ECHO', BD: 'BROUGHT DEAD' };
+  function andJoin(a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' AND ' + a[a.length - 1]; }
+  function listTitle(f) {
+    if (f.title) return String(f.title).toUpperCase();
+    if (f.cats.length && f.cats.length < CATS.length) return andJoin(CATS.filter(function (c) { return f.cats.indexOf(c.c) >= 0; }).map(function (c) { return CAT_T[c.c]; })) + ' LIST';
+    if (f.outs.length) return andJoin(f.outs.map(function (o) { return o === '_' ? 'AWAITING DOCTOR' : short(OUTS, o).toUpperCase(); })) + ' LIST';
+    if (f.meds.length) return 'ER MEDICATIONS LIST';
+    if (f.procs.length) return f.procs.indexOf('*er') >= 0 ? 'ER PROCEDURES LIST' : andJoin(f.procs.map(function (p) { return p === 'BSR' ? 'RBS' : p === 'NEB' ? 'NEBS' : label(PROCS, p).toUpperCase(); })) + ' LIST';
+    if (f.seen === 'no') return 'PATIENTS WAITING FOR A DOCTOR';
+    return 'PATIENT LIST';
+  }
+  function listSub(f, from, to, n) {
+    var p = [from === to ? weekday(from) + ', ' + dmy(from) : dmy(from) + ' to ' + dmy(to)];
+    if (f.shifts.length && f.shifts.length < 3) p.push(SHIFTS.filter(function (s) { return f.shifts.indexOf(s.c) >= 0; }).map(function (s) { return s.l; }).join(' and ') + ' shift');
+    if (f.sex) p.push(f.sex === 'M' ? 'Male' : 'Female');
+    if (f.ageMin !== '' || f.ageMax !== '') p.push('Age ' + (f.ageMin !== '' ? f.ageMin : '0') + (f.ageMax !== '' ? '–' + f.ageMax : '+') + ' y');
+    if (f.dx) p.push('Diagnosis: ' + f.dx);
+    p.push(n + ' patient' + (n === 1 ? '' : 's'));
+    return p.join('  |  ');
+  }
+  function buildList(shifts, cfg, who, from, to) {
+    var f = listCfg(cfg), allowed = listColsFor(who), ex = f.exclude || [];
+    var list = allEntries(shifts).filter(function (e) { return ex.indexOf(e.id) < 0 && listMatch(e, f, who); });
+    var key = { mr: function (e) { return String(e.mr || '').toLowerCase(); }, name: function (e) { return String(e.name || '').toLowerCase(); } }[f.sort];
+    list.sort(function (a, b) {
+      if (key) {
+        var x = key(a), y = key(b);
+        if (f.sort === 'mr' && /^\d+$/.test(x) && /^\d+$/.test(y) && +x !== +y) return +x - +y;
+        if (x !== y) return x < y ? -1 : 1;
+      }
+      return (a.t || '') < (b.t || '') ? -1 : (a.t || '') > (b.t || '') ? 1 : 0;
+    });
+    var cols = allowed.filter(function (c) { return f.cols.indexOf(c.k) >= 0; });
+    if (!cols.length) cols = allowed.filter(function (c) { return c.k === 'mr' || c.k === 'name'; });
+    var sum = cols.reduce(function (a, c) { return a + c.w; }, 0);
+    var minSum = cols.reduce(function (a, c) { return a + c.m; }, 0);
+    cols = cols.map(function (c) { return { k: c.k, h: c.h, w: c.w / sum, wt: c.w, m: c.m, a: c.a, f: c.f, t: c.t, pdfOnly: c.pdfOnly }; });
+    var groups = [];
+    if (f.group === 'cat') CATS.forEach(function (c) { var l = list.filter(function (e) { return e.cat === c.c; }); if (l.length) groups.push({ h: c.l, list: l }); });
+    else if (f.group === 'shift') {
+      var seenS = [];
+      list.forEach(function (e) { var k = e._date + ' ' + e._shift; if (seenS.indexOf(k) < 0) seenS.push(k); });
+      seenS.forEach(function (k) { var l = list.filter(function (e) { return e._date + ' ' + e._shift === k; }); groups.push({ h: shiftName(k.slice(11)) + ' shift, ' + weekday(k.slice(0, 10)) + ' ' + dmy(k.slice(0, 10)), list: l }); });
+    } else if (f.group === 'date') {
+      var ds = [];
+      list.forEach(function (e) { if (ds.indexOf(e._date) < 0) ds.push(e._date); });
+      ds.sort().forEach(function (d) { groups.push({ h: weekday(d) + ', ' + dmy(d), list: list.filter(function (e) { return e._date === d; }) }); });
+    } else if (f.group === 'out' && (who || {}).clin) {
+      OUTS.concat([{ c: '', l: 'Awaiting doctor' }]).forEach(function (o) { var l = list.filter(function (e) { return (e.out || '') === o.c; }); if (l.length) groups.push({ h: o.l, list: l }); });
+    } else if (list.length) groups.push({ h: 'Patients', list: list, plain: true });
+    var wide = f.page === 'landscape' || (f.page !== 'portrait' && minSum * 1.12 > 523);
+    var title = listTitle(f);
+    return { cols: cols, groups: groups, n: list.length, list: list, title: title, sub: from ? listSub(f, from, to || from, list.length) : '', portrait: !wide, day: false,
+      file: 'CEC_' + title.replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '') + (from ? '_' + dmy(from) + (to && to !== from ? '_to_' + dmy(to) : '') : '') };
+  }
+  function listText(spec) {
+    var byDate = spec.groups.length > 0 && /^[A-Z][a-z]+day, /.test(spec.groups[0].h), hasDate = spec.cols.some(function (c) { return c.k === 'date'; });
+    var cols = spec.cols.filter(function (c) { return ['no', 'remarks', 'sign', 'by'].indexOf(c.k) < 0 && !(c.k === 'day' && (hasDate || byDate)) && !(c.k === 'date' && byDate); });
+    var lines = ['*' + spec.title + '*', spec.sub];
+    spec.groups.forEach(function (g) {
+      lines.push('');
+      if (!g.plain) lines.push('*' + g.h + ' (' + g.list.length + ')*');
+      g.list.forEach(function (e, i) {
+        lines.push((i + 1) + '. ' + cols.map(function (c) { var v = c.t ? c.t(e, i) : c.f(e, i); return v == null ? '' : String(v); }).filter(function (v) { return v !== '' && v !== '-'; }).join(' \u00b7 '));
+      });
+    });
+    return lines.join('\n');
+  }
   function listPdf(o, logo) {
-    var P = PDFGen, d = new P.Doc(true), L = 36, R = d.W - 36, CW = R - L, TOP = 40, BOTTOM = d.H - 40, y;
+    var P = PDFGen, d = new P.Doc(!o.portrait), L = 36, R = d.W - 36, CW = R - L, TOP = 40, BOTTOM = d.H - 40, y;
     d.title = o.title;
     if (logo) { d.setImage(logo.bytes, logo.w, logo.h); d.image(L, 24, 40, 40 * logo.h / logo.w); }
     d.text(d.W / 2, 40, 'SINDH GOVERNMENT HOSPITAL LIAQUATABAD, KARACHI', 'B', 14, 'center');
@@ -1414,10 +1618,15 @@ var CEC = (function () {
     d.text(d.W / 2, 96, o.title, 'B', 12, 'center');
     d.text(d.W / 2, 110, o.sub, 'R', 10, 'center');
     y = 126;
-    var cols = o.cols, size = 8.5, xs = [], x = L;
-    cols.forEach(function (c) { xs.push(x); x += c.w * CW; });
+    var cols = o.cols.filter(function (c) { return !c.csvOnly; }), size = 8.5, xs = [], x = L, W;
+    if (cols.every(function (c) { return c.m; })) {               // list maker: every column at least its minimum width
+      var ms = cols.reduce(function (a, c) { return a + c.m; }, 0), ws = cols.reduce(function (a, c) { return a + (c.wt || 1); }, 0);
+      if (ms > CW) { size = Math.max(6, 8.5 * CW / ms); W = cols.map(function (c) { return c.m * CW / ms; }); }
+      else W = cols.map(function (c) { return c.m + (CW - ms) * (c.wt || 1) / ws; });
+    } else W = cols.map(function (c) { return c.w * CW; });
+    cols.forEach(function (c, i) { c._w = W[i]; xs.push(x); x += W[i]; });
     function lay(vals, f) {
-      var lines = vals.map(function (v, i) { return P.wrap(v == null ? '' : String(v), f, size, cols[i].w * CW - 6).slice(0, 3); });
+      var lines = vals.map(function (v, i) { return P.wrap(v == null ? '' : String(v), f, size, cols[i]._w - 6).slice(0, 5); });
       var n = Math.max.apply(null, lines.map(function (l) { return l.length; }));
       return { lines: lines, h: n * (size + 2.5) + 7 };
     }
@@ -1425,7 +1634,7 @@ var CEC = (function () {
       d.rect(L, y, CW, l.h, fill, 0, 0.5);
       for (var i = 1; i < xs.length; i++) d.line(xs[i], y, xs[i], y + l.h, 0.5);
       l.lines.forEach(function (ls, i) {
-        var c = cols[i], cw = c.w * CW;
+        var c = cols[i], cw = c._w;
         ls.forEach(function (t, j) {
           var by = y + 4 + size * 0.85 + j * (size + 2.5);
           if (c.a === 'c') d.text(xs[i] + cw / 2, by, t, f, size, 'center'); else d.text(xs[i] + 3, by, t, f, size);
@@ -1437,7 +1646,7 @@ var CEC = (function () {
     if (!o.groups.length) { d.text(d.W / 2, y + 20, o.empty || 'No patients found for the selected dates.', 'I', 11, 'center'); }
     o.groups.forEach(function (g) {
       if (y + 60 > BOTTOM) { d.addPage(); y = TOP; }
-      y += 6; d.text(L, y + 8, g.h + ' (' + g.list.length + ')', 'HB', 10.5); y += 14;
+      if (!g.plain) { y += 6; d.text(L, y + 8, g.h + ' (' + g.list.length + ')', 'HB', 10.5); y += 14; } else y += 4;
       draw(head, 'HB', 0.88);
       g.list.forEach(function (e, i) {
         var l = lay(cols.map(function (c) { return c.f(e, i); }), 'H');
@@ -1455,14 +1664,15 @@ var CEC = (function () {
     return d.output();
   }
   function listCsv(spec) {
-    var cols = spec.cols.filter(function (c) { return c.h !== 'No.'; }), rows = [];
+    var cols = spec.cols.filter(function (c) { return c.h !== 'No.' && !c.pdfOnly; }), rows = [];
     var head = []; cols.forEach(function (c) { head.push(c.h); if (spec.day && c.h === 'Date') head.push('Day'); });
-    if (spec.groups.length > 1) head.unshift('List');
+    var multi = spec.groups.length > 1;
+    if (multi) head.unshift('List');
     rows.push(head);
     spec.groups.forEach(function (g) {
       g.list.forEach(function (e, i) {
         var r = []; cols.forEach(function (c) { r.push(c.f(e, i)); if (spec.day && c.h === 'Date') r.push(weekday(e._date)); });
-        if (spec.groups.length > 1) r.unshift(g.h);
+        if (multi) r.unshift(g.h);
         rows.push(r);
       });
     });
@@ -1564,6 +1774,8 @@ var CEC = (function () {
     dxTable(entries).rows.forEach(function (r) { lines.push(r[1] + ': ' + r[4]); });
     var pr = procTable(entries).rows;
     if (pr.length) { lines.push('', '*Procedures*'); pr.forEach(function (r) { lines.push(r[0] + ': ' + r[3]); }); }
+    var md = medTable(entries).rows;
+    if (md.length) { lines.push('', '*Medications*'); md.forEach(function (r) { lines.push(r[0] + ': ' + r[3]); }); }
     lines.push('', '*Outcome*');
     outTable(entries).rows.forEach(function (r) { lines.push(r[0] + ': ' + r[3]); });
     return lines.join('\n');
@@ -1574,7 +1786,8 @@ var CEC = (function () {
     dmy: dmy, hm: hm, dxOf: dxOf, shiftTimes: shiftTimes, censusDateFor: censusDateFor, suggestShift: suggestShift, sexCount: sexCount, monthName: monthName,
     shiftModel: shiftModel, dayModel: dayModel, monthModel: monthModel, letterHtml: letterHtml, letterPdf: letterPdf, summaryText: summaryText, esc: h,
     EXAMS: EXAMS, deathCertPdf: deathCertPdf, opdSlipPdf: opdSlipPdf, STAFF_PROCS: STAFF_PROCS, listPdf: listPdf, listCsv: listCsv,
-    certHtml: certHtml, weekday: weekday, DX_GROUPS: DX_GROUPS, DX_LIST: DX_LIST, DXKW: DXKW, FREQ_DX: FREQ_DX, canonDx: canonDx, canonList: canonList, dxMatch: dxMatch, dxKey: dxKey, LIST_KINDS: LIST_KINDS, listSpec: listSpec, APPTS: APPTS, APPT_STATUS: APPT_STATUS, apptType: apptType,
+    certHtml: certHtml, weekday: weekday, MEDS: MEDS, DX_GROUPS: DX_GROUPS, DX_LIST: DX_LIST, DXKW: DXKW, FREQ_DX: FREQ_DX, canonDx: canonDx, canonList: canonList, dxMatch: dxMatch, dxKey: dxKey, LIST_KINDS: LIST_KINDS, listSpec: listSpec, LIST_COLS: LIST_COLS, LIST_COLSETS: LIST_COLSETS, LIST_PRESETS: LIST_PRESETS, LIST_DEF: LIST_DEF,
+    listCfg: listCfg, presetCfg: presetCfg, listColsFor: listColsFor, buildList: buildList, listText: listText, listTitle: listTitle, APPTS: APPTS, APPT_STATUS: APPT_STATUS, apptType: apptType,
     apptSpec: apptSpec, apptSlipPdf: apptSlipPdf, apptMessage: apptMessage, parseYmd: parseYmd, yearModel: yearModel, yearSummary: yearSummary, MONTHS: MONTHS, sexCountOf: sexCount
   };
 })();
@@ -1595,6 +1808,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   var DX_GROUPS = CEC.DX_GROUPS, KW = CEC.DXKW;
 
   var S = {
+    custom: { dx: [], proc: [], med: [] }, customInfo: null,
     token: null, me: null, settings: CEC.DEFAULTS, view: 'home', prev: 'home', open: null, handover: null, pendingUsers: 0,
     day: null, dayShifts: [], detail: null, letter: null, form: null, q: '', filter: 'all', month: null, loaded: false,
     pending: 0, synced: null, auth: 'login', users: null, log: null, logQ: '', os: null, certs: null, docs: null, cert: null,
@@ -1616,10 +1830,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
     return String(m).replace(/^(ScriptError|Exception|Error):\s*/i, '').replace(/^AUTH:\s*/, '');
   }
   function isAuthErr(e) { return /AUTH:/.test((e && e.message) || String(e)); }
-  function modal(title, bodyHtml, buttons) {
+  function modal(title, bodyHtml, buttons, stack) {
     return new Promise(function (resolve) {
       var m = $('modal');
-      m.innerHTML = '<div class="mbox" role="dialog" aria-modal="true"><h3>' + h(title) + '</h3>' + bodyHtml + '<div class="mbtns">' +
+      m.innerHTML = '<div class="mbox" role="dialog" aria-modal="true"><h3>' + h(title) + '</h3>' + bodyHtml + '<div class="mbtns' + (stack ? ' col' : '') + '">' +
         buttons.map(function (b, i) { return '<button class="btn ' + (b.cls || '') + '" data-i="' + i + '">' + h(b.label) + '</button>'; }).join('') + '</div></div>';
       m.classList.remove('hidden');
       m.onclick = function (ev) {
@@ -1725,6 +1939,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var oldOpen = S.open ? S.open.id : null;
     S.me = st.me; S.settings = mergeSettings(st.settings); S.open = st.open; S.openEnds = st.openEnds; S.prevShift = st.prev; S.prevUntil = st.prevUntil;
     S.handover = st.handover; S.pendingUsers = st.pendingUsers || 0; S.synced = new Date(); S.mr = st.mr || null; S.pendCerts = st.pendingCerts || 0;
+    var cu = st.custom || {}; S.custom = {}; S.customInfo = isAdmin() ? cu : null; S.lists = st.lists || [];
+    ['dx', 'proc', 'med'].forEach(function (k) { S.custom[k] = (cu[k] || []).map(function (x) { return typeof x === 'string' ? x : x.v; }); });
     if (!S.work || !isAdmin() || S.work.id === oldOpen || S.work.id === S.open.id) S.work = S.open;
     if (oldOpen && S.open && oldOpen !== S.open.id) S.shiftChanged = true;
   }
@@ -1870,6 +2086,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function setView(v) {
     if (v !== 'letter' && v !== 'detail') S.prev = v;
     S.view = v; menu(false); render(); window.scrollTo(0, 0);
+    if (v === 'settings' && isAdmin()) api('apiState').then(function (st) { applyCustom(st.custom); if (S.view === 'settings' && !typing()) render(); }, function () { });   // latest options added by users
   }
   /* ---------- main menu: a drop-down on phones, a bar with a census submenu on computers ---------- */
   var NAV_ICON = {
@@ -1878,6 +2095,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     certs: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 13h7M9 17h5"/>',
     forms: '<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/>',
     census: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    lists: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="3" stroke-linecap="round"/>',
     appt: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M9 15l2 2 4-4"/>',
     settings: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/>'
   };
@@ -1888,6 +2106,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (canAppt()) a.push({ v: 'appt', l: 'Appointments', sub: CEC.APPTS.map(function (t) { return [t.c, t.c === 'ECHO' ? 'Echocardiography' : t.l]; }), subAct: 'ap-type' });
     if (canCert()) a.push({ v: 'certs', l: 'Death certificate', badge: S.pendCerts || 0, blink: true });
     a.push({ v: 'forms', l: 'Download forms' });
+    if (canEnter()) a.push({ v: 'lists', l: 'Patient lists' });
     if (canClin()) a.push({ v: 'census', l: 'Patient census', sub: CEN_MODES });
     a.push({ v: 'settings', l: isAdmin() ? 'Account & admin' : 'Account', badge: isAdmin() && S.pendingUsers ? S.pendingUsers : 0 });
     return a;
@@ -1947,6 +2166,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     else if (S.view === 'letter') { v.innerHTML = letterViewHtml(); fitPaper(); }
     else if (S.view === 'settings') v.innerHTML = settingsHtml();
     else if (S.view === 'forms') v.innerHTML = formsHtml();
+    else if (S.view === 'lists') { v.innerHTML = canEnter() ? listsHtml() : '<section class="card">You do not have the right to make patient lists.</section>'; }
     else if (S.view === 'certs') v.innerHTML = certsHtml();
     else if (S.view === 'roster') v.innerHTML = rosterHtml();
     else if (S.view === 'wedit') v.innerHTML = weditHtml();
@@ -1977,7 +2197,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (!list.length) return '<div class="empty">' + (q ? 'No patient matches.' : filter === 'wait' ? 'No patients are waiting for a doctor.' : filter === 'seen' ? 'No patients have been signed off yet.' : 'No patient matches.') + '</div>';
     return list.reverse().map(function (x) {
       var e = x.e, dx = CEC.dxOf(e).join(', ');
-      var procs = (e.procs || []).map(function (p) { return CEC.label(CEC.PROCS, p); }).join(', ');
+      var procs = (e.procs || []).map(function (p) { return CEC.label(CEC.PROCS, p); }).concat(canClin() ? e.meds || [] : []).join(', ');
       var rd = (e.bp ? 'BP ' + e.bp : '') + (e.bp && e.rbs ? ' \u00b7 ' : '') + (e.rbs ? 'RBS ' + e.rbs : '');
       if (rd) procs = rd + (procs ? ' \u00b7 ' + procs : '');
       var out = e.out ? CEC.short(CEC.OUTS, e.out) + (e.out === 'OBS' && e.obsH ? ' (' + e.obsH + ' h)' : '') : '';
@@ -2207,6 +2427,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         '<button class="btn sm block" data-act="load-log">&#8635; Refresh log</button>';
     }
     html += '</section>';
+    html += customCardHtml();
     html += '<section class="card"><div class="ct">Letter details</div>' +
       '<label class="lb" for="sHod">Head of Department (signs every letter)</label><input class="in" id="sHod" value="' + h(st.hod) + '">' +
       '<label class="lb" for="sTo">Letter addressed to (one line each)</label><textarea class="in" id="sTo" rows="3">' + h(st.addressee.join('\n')) + '</textarea>' +
@@ -2218,6 +2439,22 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<label class="lb" for="sFreq">Frequent diagnoses: tick boxes in the patient form <span class="muted">(one per line)</span></label><textarea class="in" id="sFreq" rows="8">' + h(freqDx().join('\n')) + '</textarea>' +
       '<button class="btn pri block" data-act="save-settings">Save settings</button></section>';
     return html;
+  }
+  function applyCustom(c) {
+    S.customInfo = c || {};
+    ['dx', 'proc', 'med'].forEach(function (k) { S.custom[k] = (S.customInfo[k] || []).map(function (x) { return typeof x === 'string' ? x : x.v; }); });
+  }
+  function customCardHtml() {
+    var c = S.customInfo || {}, names = { dx: 'Diagnoses', proc: 'ER procedures', med: 'ER medications' }, n = 0;
+    var body = ['med', 'proc', 'dx'].map(function (k) {
+      var list = c[k] || []; n += list.length;
+      return '<div class="gh" style="margin-top:10px">' + names[k] + ' (' + list.length + ')</div>' + (list.length ? list.slice().reverse().map(function (x) {
+        return '<div class="urow"><div><b>' + h(x.v) + '</b><div class="muted small">Added by ' + h(x.by || '-') + (x.at ? ' &middot; ' + h(fmtTime(x.at)) : '') + '</div></div>' +
+          '<button class="btn sm dan" data-act="cust-del" data-k="' + k + '" data-v="' + h(x.v) + '">Remove</button></div>';
+      }).join('') : '<p class="muted small" style="margin:2px 0 0">None added yet.</p>');
+    }).join('');
+    return '<section class="card"><div class="ct">Options added by users (' + n + ')</div><p class="muted small" style="margin:0">When a doctor adds a new medication, procedure or diagnosis on the patient form, ' +
+      'it is checked for spelling and then offered to everyone. Remove any wrong or unwanted one here; patients already saved keep what was written.</p>' + body + '</section>';
   }
   function logRows(list) {
     if (!list.length) return '<div class="empty">No activity found.</div>';
@@ -2283,12 +2520,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function targetShift() { var t = S.form && S.form.target; return t === 'detail' ? S.detail : t === 'prev' ? S.prevShift : S.work; }
   function openForm(target, entry, roWhy) {
     var e = entry || {}, doctor = canEdit();
-    S.form = { target: target, editId: e.id || null, sex: e.sex || '', cat: e.cat || '', dxs: CEC.dxOf(e).slice(), procs: (e.procs || []).slice(),
+    S.form = { target: target, editId: e.id || null, sex: e.sex || '', cat: e.cat || '', dxs: CEC.dxOf(e).slice(), procs: (e.procs || []).slice(), meds: (e.meds || []).slice(),
       out: e.out || '', obsH: e.obsH || '', signed: !!e.signed, dupOk: false, dxq: '', v: e.v || '', ro: !!roWhy };
     var sh = targetShift(), no = entry ? sh.entries.map(function (x) { return x.id; }).indexOf(e.id) + 1 : sh.entries.length + 1;
     var el = $('sheet');
     var foot, readings = '<div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><label class="lb" for="fBp">BP (mmHg)</label>' +
-      '<input class="in" id="fBp" inputmode="text" maxlength="7" placeholder="e.g. 130/80" value="' + h(e.bp || '') + '"></div><div><label class="lb" for="fRbs">RBS (mg/dL)</label>' +
+      '<input class="in" id="fBp" data-fmt="bp" inputmode="numeric" maxlength="7" placeholder="e.g. 130/80" value="' + h(e.bp || '') + '"></div><div><label class="lb" for="fRbs">RBS (mg/dL)</label>' +
       '<input class="in" id="fRbs" inputmode="numeric" maxlength="3" placeholder="e.g. 140" value="' + h(e.rbs || '') + '"></div></div>';
     if (roWhy) foot = '<button class="btn" data-act="close-form">Close</button>';
     else if (!doctor) foot = entry ? '<button class="btn pri" data-act="save-pt">Save changes</button>' : '<button class="btn" data-act="save-next">Save &amp; next</button><button class="btn pri" data-act="save-pt">Save</button>';
@@ -2308,11 +2545,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
       [['M', 'Male'], ['F', 'Female']].map(function (g) { return '<button type="button" data-act="f-sex" data-v="' + g[0] + '">' + g[1] + '</button>'; }).join('') + '</div></div></div>' +
       '<label class="lb">Category <span class="req">*</span></label><div class="seg cats" id="fCat">' +
       CEC.CATS.map(function (c) { return '<button type="button" data-act="f-cat" data-v="' + c.c + '">' + h(c.l) + '</button>'; }).join('') + '</div>' +
-      (doctor ? '<div class="fsec">Procedures and notes</div><label class="lb">Procedures and interventions done</label><div class="seg procs" id="fProc">' +
-        CEC.PROCS.map(function (p) { return '<button type="button" data-act="f-proc" data-v="' + p.c + '">' + h(p.l) + '</button>'; }).join('') + '</div>' + readings +
-        '<div class="chips" id="procX" style="margin-top:8px"></div><div class="addrow"><input class="in" id="fProcX" placeholder="Other procedure, e.g. pericardiocentesis">' +
+      (doctor ? '<div class="fsec">Checks and tests</div><div class="seg procs" id="fChk">' + procBtns('chk', e) + '</div>' + readings +
+        '<div class="fsec">ER procedures</div><div class="seg procs" id="fEr">' + procBtns('er', e) + '</div>' +
+        '<div class="chips" id="procX" style="margin-top:8px"></div><div class="addrow"><input class="in" id="fProcX" placeholder="Other procedure, e.g. chest tube">' +
         '<button type="button" class="btn" data-act="proc-add">Add</button></div>' +
-        '<label class="lb" for="fNote">Comments</label><textarea class="in" id="fNote" rows="2" placeholder="e.g. referred to NICVD, BP 190/110 on arrival">' + h(e.note || '') + '</textarea>' +
+        '<div class="fsec">ER medications</div><div class="seg procs meds" id="fMed">' + medBtns() + '</div>' +
+        '<div class="chips" id="medX" style="margin-top:8px"></div><div class="addrow"><input class="in" id="fMedX" placeholder="Other medication, e.g. IV Furosemide">' +
+        '<button type="button" class="btn" data-act="med-add">Add</button></div>' +
+        '<textarea class="in" id="fNote" rows="2" placeholder="e.g. referred to NICVD, BP 190/110 on arrival">' + h(e.note || '') + '</textarea>' +
         '<div class="fsec">Doctor\u2019s assessment</div>' + (e.signed ? '<div class="signed">&#10003; Signed off ' + h(fmtTime(e.signedAt)) + (isAdmin() && e.signedBy ? ' by ' + h(e.signedBy) : '') + '</div>' : '') +
         '<label class="lb" for="fDx">Working diagnosis <span class="muted">(add one or more)</span></label><div id="dxBox"></div>' +
         '<div id="outWrap"><label class="lb">Outcome / disposition</label><div class="seg outs" id="fOut">' +
@@ -2335,10 +2575,11 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (!entry) setTimeout(function () { var m = S.form && S.form.auto ? $('fName') : $('fMr'); if (m) m.focus(); }, 60);
   }
   function assessHtml(e) {
-    var dx = CEC.dxOf(e), procs = (e.procs || []).filter(function (p) { return CEC.STAFF_PROCS.indexOf(p) < 0; }).map(function (p) { return CEC.label(CEC.PROCS, p); });
-    if (!dx.length && !e.out && !e.note && !procs.length) return '';
+    var dx = CEC.dxOf(e), procs = (e.procs || []).filter(function (p) { return CEC.STAFF_PROCS.indexOf(p) < 0; }).map(function (p) { return CEC.label(CEC.PROCS, p); }), meds = e.meds || [];
+    if (!dx.length && !e.out && !e.note && !procs.length && !meds.length) return '';
     return '<div class="fsec">Doctor\u2019s assessment</div><div class="kv" style="line-height:1.6">' +
       (dx.length ? '<div><b>Diagnosis:</b> ' + h(dx.join(', ')) + '</div>' : '') + (procs.length ? '<div><b>Procedures:</b> ' + h(procs.join(', ')) + '</div>' : '') +
+      (meds.length ? '<div><b>Medications:</b> ' + h(meds.join(', ')) + '</div>' : '') +
       (e.out ? '<div><b>Outcome:</b> ' + h(CEC.label(CEC.OUTS, e.out)) + (e.out === 'OBS' && e.obsH ? ' (' + h(e.obsH) + ' h)' : '') + '</div>' : '') +
       (e.note ? '<div><b>Comments:</b> ' + h(e.note) + '</div>' : '') + (e.signed ? '<div class="signed">&#10003; Signed off ' + h(fmtTime(e.signedAt)) + '</div>' : '') + '</div>';
   }
@@ -2350,9 +2591,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function syncForm() {
     var f = S.form;
-    setOn('fSex', f.sex); setOn('fCat', f.cat); setOn('fProc', f.procs); setOn('fOut', f.out);
-    if ($('procX')) $('procX').innerHTML = f.procs.filter(function (p) { return !isStdProc(p); }).map(function (p) {
+    setOn('fSex', f.sex); setOn('fCat', f.cat); setOn('fProc', f.procs); setOn('fChk', f.procs); setOn('fEr', f.procs); setOn('fMed', f.meds); setOn('fOut', f.out);
+    if ($('procX')) $('procX').innerHTML = f.procs.filter(function (p) { return !isStdProc(p) && S.custom.proc.indexOf(p) < 0; }).map(function (p) {
       return '<span class="chip">' + h(p) + '<button type="button" data-act="proc-remove" data-v="' + h(p) + '" aria-label="Remove ' + h(p) + '">&times;</button></span>';
+    }).join('');
+    if ($('medX')) $('medX').innerHTML = f.meds.filter(function (m) { return CEC.MEDS.indexOf(m) < 0 && S.custom.med.indexOf(m) < 0; }).map(function (m) {
+      return '<span class="chip">' + h(m) + '<button type="button" data-act="med-remove" data-v="' + h(m) + '" aria-label="Remove ' + h(m) + '">&times;</button></span>';
     }).join('');
     if ($('certWrap')) $('certWrap').classList.toggle('hidden', !(f.editId && (f.cat === 'BD' || f.out === 'EXP')));
     if ($('outWrap')) $('outWrap').classList.toggle('hidden', f.cat === 'BD');
@@ -2360,9 +2604,75 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if ($('dxBox')) renderDx();
   }
   function isStdProc(p) { return CEC.PROCS.some(function (k) { return k.c === p; }); }
+  /* Buttons for the patient form. Options that any doctor added before are offered to everyone (S.custom, kept on the server). */
+  function procBtns(g, e) {
+    var std = CEC.PROCS.filter(function (p) { return p.g === g || (g === 'er' && p.g === 'old' && (e.procs || []).indexOf(p.c) >= 0); })
+      .map(function (p) { return [p.c, p.l]; });
+    if (g === 'er') std = std.concat(S.custom.proc.map(function (x) { return [x, x]; }));
+    return std.map(function (p) { return '<button type="button" data-act="f-proc" data-v="' + h(p[0]) + '">' + h(p[1]) + '</button>'; }).join('');
+  }
+  function medBtns() {
+    return CEC.MEDS.concat(S.custom.med).map(function (m) { return '<button type="button" data-act="f-med" data-v="' + h(m) + '">' + h(m) + '</button>'; }).join('');
+  }
+  /* ---- checking a new option before it is added: the app's own lists first, then the internet ---- */
+  function knownOpts(kind) {
+    if (kind === 'proc') return CEC.PROCS.filter(function (p) { return p.g !== 'old'; }).map(function (p) { return p.l; }).concat(S.custom.proc);
+    if (kind === 'med') return CEC.MEDS.concat(S.custom.med);
+    var d = allDx(); return d.base.concat(d.extra);
+  }
+  function normOpt(x) { return String(x).toLowerCase().replace(/[^a-z0-9%.]+/g, ' ').trim(); }
+  function sameOpt(kind, text) { var t = normOpt(text); return knownOpts(kind).filter(function (x) { return normOpt(x) === t; })[0] || null; }
+  function localFix(kind, text) {
+    var vocab = {}, near = [];
+    knownOpts(kind).forEach(function (x) { x.split(/[\s\/(),-]+/).forEach(function (w) { if (w.length >= 4) vocab[w.toLowerCase()] = w; }); });
+    var fixed = text.replace(/[A-Za-z]{4,}/g, function (w) {
+      var wl = w.toLowerCase(), best = null, bd = 9;
+      if (vocab[wl]) return w;
+      Object.keys(vocab).forEach(function (k) { var d = lev(wl, k); if (d < bd && d <= (wl.length >= 7 ? 2 : 1)) { bd = d; best = vocab[k]; } });
+      return best || w;
+    });
+    var t = normOpt(text);
+    knownOpts(kind).forEach(function (x) {
+      var xn = normOpt(x), d = lev(t, xn);
+      if (d <= (t.length >= 8 ? 2 : 1)) near.push(x);
+      else if (normOpt(fixed) !== t && xn === normOpt(fixed)) near.push(x);
+    });
+    if (kind === 'dx') searchDx(text).fuzzy.forEach(function (x) { if (near.indexOf(x) < 0) near.push(x); });
+    return { fixed: fixed !== text ? fixed : '', near: near.slice(0, 3) };
+  }
+  function withTimeout(p, ms) { return Promise.race([p, new Promise(function (res, rej) { setTimeout(function () { rej(new Error('timeout')); }, ms); })]); }
+  /* Resolves with the text to use, or null when the user cancels. */
+  function checkNew(kind, raw) {
+    var text = cap(String(raw || '').replace(/;/g, ',')).replace(/\b(iv|im|sc|sl|po|ng|ecg|cpr|dc|o2|iu|prn|ett)\b/gi, function (w) { return w.toUpperCase(); });
+    if (text.length < 2) return Promise.resolve(null);
+    var known = sameOpt(kind, text);
+    if (known) return Promise.resolve(known);
+    var loc = localFix(kind, text), online = !(APP_BUILD && (S.offline || navigator.onLine === false));
+    toast(online ? 'Checking the spelling\u2026' : 'No internet: checking against the app\u2019s own lists only');
+    var net = online ? withTimeout(api('apiSpell', kind, text), 12000).then(function (r) { return r || { ok: false }; }, function () { return { ok: false }; }) : Promise.resolve({ ok: false });
+    return net.then(function (r) {
+      var cands = [];
+      function addC(x) { if (x && normOpt(x) !== normOpt(text) && !cands.some(function (c) { return normOpt(c) === normOpt(x); })) cands.push(x); }
+      addC(loc.fixed); loc.near.forEach(addC); addC(r.suggestion); (r.names || []).slice(0, 3).forEach(addC);
+      var words = (r.words || []).filter(function (w) { return w.s.length || w.unknown; });
+      if (!cands.length && !words.length) { toast(r.ok ? 'Spelling checked \u2713' : 'Added. Spelling could not be checked on the internet now.'); return text; }
+      var body = '<p style="margin:0 0 8px">You typed: <b>' + h(text) + '</b></p>' +
+        words.map(function (w) {
+          return '<p class="small" style="margin:4px 0">' + (w.unknown ? 'Not found in ' : 'Possible spelling mistake in ') + '<b>' + h(w.w) + '</b>' +
+            (w.s.length ? ' &middot; suggestions: ' + h(w.s.join(', ')) : '') + ' <span class="muted">(' + h(w.src) + ')</span></p>';
+        }).join('') +
+        (loc.near.length ? '<p class="small" style="margin:4px 0">Already in the list: ' + h(loc.near.join(', ')) + '</p>' : '') +
+        (r.names && r.names.length ? '<p class="small" style="margin:4px 0">Names in the NLM list of medical conditions: ' + h(r.names.slice(0, 3).join(', ')) + '</p>' : '') +
+        (r.ok ? '<p class="small muted" style="margin:8px 0 0">Internet check by RxNav and the medical conditions list of the U.S. National Library of Medicine, and <a href="https://languagetool.org" target="_blank" rel="noopener">LanguageTool.org</a>. Only the words you typed are sent, never patient details.</p>'
+          : '<p class="small muted" style="margin:8px 0 0">The internet spelling check is not available right now, so only the app\u2019s own lists were checked.</p>');
+      return modal('Check the spelling', body, cands.slice(0, 4).map(function (c) { return { label: 'Use: ' + c, cls: 'pri', value: c }; })
+        .concat([{ label: 'Keep as typed', value: text }, { label: 'Cancel', value: null }]), true);
+    }).then(function (v) { return v ? (sameOpt(kind, v) || v) : null; });
+  }
+  function procCode(label) { var p = CEC.PROCS.filter(function (k) { return normOpt(k.l) === normOpt(label); })[0]; return p ? p.c : label; }
   function freqDx() { return S.settings.freqDx && S.settings.freqDx.length ? S.settings.freqDx : CEC.FREQ_DX; }
   function allDx() {
-    var extra = [];
+    var extra = (S.custom.dx || []).filter(function (d) { return CEC.DX_LIST.indexOf(d) < 0; });
     ((targetShift() || {}).entries || []).forEach(function (e) { CEC.dxOf(e).forEach(function (d) { if (d && CEC.DX_LIST.indexOf(d) < 0 && extra.indexOf(d) < 0) extra.push(d); }); });
     return { base: CEC.DX_LIST, extra: extra };
   }
@@ -2423,7 +2733,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var r = searchDx(q), notSel = function (x) { return f.dxs.indexOf(x) < 0 && x !== 'Brought dead'; };
     var hits = r.hits.filter(notSel).slice(0, 12), html = hits.map(dxBtn).join('');
     if (!hits.length && r.fuzzy.length) html = '<div class="gh">Did you mean</div>' + r.fuzzy.filter(notSel).slice(0, 6).map(dxBtn).join('');
-    if (!r.exact) html += '<button type="button" class="add" data-act="dx-pick" data-v="' + h(cap(q)) + '">+ Add "' + h(cap(q)) + '"</button>';
+    if (!r.exact) html += '<button type="button" class="add" data-act="dx-new" data-v="' + h(cap(q)) + '">+ Add "' + h(cap(q)) + '"</button>';
     else if (!hits.length) html += '<div class="gh">' + h(r.exact) + ' is already added</div>';
     el.innerHTML = html; el.classList.remove('hidden');
   }
@@ -2450,8 +2760,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
       if (!out) err.push('outcome');
       if (out === 'OBS' && !/^\d{1,2}$/.test(obsH)) err.push('hours of observation');
     }
+    var newOpts = canEdit() ? {
+      dx: dxs.filter(function (d) { return d !== 'Brought dead' && CEC.DX_LIST.indexOf(d) < 0 && S.custom.dx.indexOf(d) < 0; }),
+      proc: f.procs.filter(function (p) { return !isStdProc(p) && S.custom.proc.indexOf(p) < 0; }),
+      med: f.meds.filter(function (m) { return CEC.MEDS.indexOf(m) < 0 && S.custom.med.indexOf(m) < 0; }) } : null;
     return { err: err, entry: { id: f.editId, autoMr: !!f.auto, mr: mr, name: name, age: age === '' ? '' : +age, sex: f.sex, cat: f.cat, bp: bp, rbs: rbs,
       procs: canEdit() ? f.procs.slice() : f.procs.filter(function (p) { return CEC.STAFF_PROCS.indexOf(p) >= 0; }), note: canEdit() ? note : '',
+      meds: canEdit() ? f.meds.slice() : [], newOpts: newOpts,
       dxs: canEdit() ? dxs : [], out: canEdit() ? out : '', obsH: out === 'OBS' ? obsH : '', signed: !!(signing || f.signed) } };
   }
   function savePatient(mode) {
@@ -2532,8 +2847,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
         btns: '<button class="btn sm pri" data-act="doc-get" data-id="' + h(d.id) + '">' + dl + ' Open / download</button>' +
           (isAdmin() ? '<button class="btn sm" data-act="doc-edit" data-id="' + h(d.id) + '">Title / who can see</button><button class="btn sm dan" data-act="doc-del" data-id="' + h(d.id) + '">Delete</button>' : '') });
     });
-    if (canEnter()) a.push({ key: 'list', title: 'OPD list / patient list', sub: 'Patients of any day or period (for example the Monday and Thursday OPD days), by category, as PDF or Excel.',
-      btns: '<button class="btn sm pri" data-act="lst-toggle">' + (S.lstOpen ? 'Hide options' : 'Choose dates and download') + '</button>', panel: S.lstOpen ? '<div class="fpanel">' + listPanelHtml() + '</div>' : '' });
+    if (canEnter()) a.push({ key: 'list', title: 'Patient lists (OPD, ETT, Echo, BD, Resus and any list you make)', sub: 'Choose the dates, which patients and which columns; tick or untick patients; download as PDF or Excel, or copy for WhatsApp.',
+      btns: '<button class="btn sm pri" data-act="go" data-v="lists">' + ICON.dl + ' Make a patient list</button>' });
     var ord = S.formOrder || [];
     a.forEach(function (it, i) { var k = ord.indexOf(it.key); it.rank = k >= 0 ? k : ord.length + i; });
     return a.sort(function (x, y) { return x.rank - y.rank; });
@@ -2645,6 +2960,168 @@ if (typeof module !== 'undefined') module.exports = CEC;
       else offerFile(base + '.csv', new TextEncoder().encode(CEC.listCsv(spec)), 'text/csv', false);
     }, function (e) { toast(errText(e)); });
   }
+
+  /* ---------------- Patient lists: choose the patients and the columns, then download ---------------- */
+  function lbWho() { return { clin: canClin(), admin: isAdmin() }; }
+  function lbInit() {
+    if (S.lb) return S.lb;
+    var d = currentCensus();
+    S.lb = { preset: 'inflow', cfg: CEC.presetCfg('inflow'), from: d, to: d, data: null, dataKey: '', excl: {}, q: '', loading: false };
+    return S.lb;
+  }
+  function lbMine() { return store_('cec_lists_' + (S.me ? S.me.id : '')) || []; }
+  function lbAllOf(k) {
+    if (k === 'cats') return CEC.CATS.map(function (c) { return c.c; });
+    if (k === 'shifts') return CEC.SHIFTS.map(function (c) { return c.c; });
+    return null;
+  }
+  function lbOn(k, v) { var a = S.lb.cfg[k] || [], all = lbAllOf(k); return all && !a.length ? true : a.indexOf(v) >= 0; }
+  function lbTick(k, v, l, extra) {
+    return '<label class="lbck' + (lbOn(k, v) ? ' on' : '') + '"><input type="checkbox" data-lbarr="' + k + '" value="' + h(v) + '"' + (lbOn(k, v) ? ' checked' : '') + '><span>' + h(l) + (extra || '') + '</span></label>';
+  }
+  function lbSeg(k, opts) {
+    return '<div class="seg filt">' + opts.map(function (o) { return '<button type="button" data-act="lb-set" data-k="' + k + '" data-v="' + o[0] + '" class="' + (S.lb.cfg[k] === o[0] ? 'on' : '') + '">' + h(o[1]) + '</button>'; }).join('') + '</div>';
+  }
+  function lbDetails(title, n, body) {
+    return '<details class="lbd"' + (n ? ' open' : '') + '><summary>' + h(title) + (n ? ' <span class="pill">' + n + ' ticked</span>' : ' <span class="muted small">(any)</span>') + '</summary><div class="lbgrid">' + body + '</div></details>';
+  }
+  function listsHtml() {
+    var L = lbInit(), f = L.cfg, clin = canClin(), who = lbWho(), DN = CEC.weekday, mine = lbMine(), shared = S.lists || [];
+    var pre = CEC.LIST_PRESETS.filter(function (p) { return !p.clin || clin; }).map(function (p) {
+      return '<button type="button" class="lbp' + (L.preset === p.c ? ' on' : '') + '" data-act="lb-pre" data-v="' + p.c + '"><b>' + h(p.l) + '</b><small>' + h(p.d) + '</small></button>';
+    }).join('');
+    var saved = (shared.length ? '<div class="gh">Lists saved by the admin for everyone</div><div class="chips">' + shared.map(function (x, i) {
+      return '<span class="chip lbs' + (L.preset === 's' + i ? ' on' : '') + '"><button type="button" class="lnk" data-act="lb-shared" data-v="' + i + '">' + h(x.name) + '</button>' +
+        (isAdmin() ? '<button type="button" data-act="lb-shared-del" data-v="' + i + '" aria-label="Delete ' + h(x.name) + '">&times;</button>' : '') + '</span>';
+    }).join('') + '</div>' : '') +
+      (mine.length ? '<div class="gh">My saved lists (on this device)</div><div class="chips">' + mine.map(function (x, i) {
+        return '<span class="chip lbs' + (L.preset === 'm' + i ? ' on' : '') + '"><button type="button" class="lnk" data-act="lb-mine" data-v="' + i + '">' + h(x.name) + '</button>' +
+          '<button type="button" data-act="lb-mine-del" data-v="' + i + '" aria-label="Delete ' + h(x.name) + '">&times;</button></span>';
+      }).join('') + '</div>' : '');
+    var quick = [['today', 'Today'], ['yday', 'Yesterday'], ['opd', 'Last OPD day'], ['ett', 'Last ETT day'], ['echo', 'Last Echo day'], ['week', 'This week'], ['month', 'This month'], ['lmonth', 'Last month']]
+      .map(function (q) { return '<button class="btn sm" data-act="lb-day" data-v="' + q[0] + '">' + q[1] + '</button>'; }).join('');
+    var procOpts = [['BP', 'BP'], ['BSR', 'RBS'], ['ECG', 'ECG'], ['NEB', 'Nebulization']];
+    if (clin) procOpts = procOpts.concat([['ETT', 'ETT'], ['ECHO', 'Echo'], ['*er', 'Any ER procedure']],
+      CEC.PROCS.filter(function (p) { return p.g === 'er' && p.c !== 'NEB'; }).map(function (p) { return [p.c, p.l]; }), (S.custom.proc || []).map(function (x) { return [x, x]; }));
+    var medOpts = [['*', 'Any medication']].concat(CEC.MEDS.concat(S.custom.med || []).map(function (m) { return [m, m]; }));
+    var outOpts = CEC.OUTS.map(function (o) { return [o.c, o.l]; }).concat([['_', 'Awaiting doctor (no outcome yet)']]);
+    var cols = CEC.listColsFor(who);
+    var html = '<div class="narrow lbw">' +
+      '<section class="card"><div class="ct">Patient lists</div><p class="muted small" style="margin:0 0 10px">Start from a ready-made list, change anything below, check the patients, then download. ' +
+      (clin ? '' : 'Diagnoses, outcomes and medications are for doctors and nursing staff only. ') + '</p><div class="lbpre">' + pre + '</div>' + saved + '</section>' +
+      '<section class="card"><div class="ct">1. Dates and shifts</div><div class="sbtns">' + quick + '</div>' +
+      '<div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><label class="lb" for="lbFrom">From <span class="muted">' + DN(L.from) + '</span></label><input class="in" type="date" id="lbFrom" value="' + L.from + '"></div>' +
+      '<div><label class="lb" for="lbTo">To <span class="muted">' + DN(L.to) + '</span></label><input class="in" type="date" id="lbTo" value="' + L.to + '"></div></div>' +
+      '<label class="lb">Shifts</label><div class="lbgrid three">' + CEC.SHIFTS.map(function (x) { return lbTick('shifts', x.c, x.l); }).join('') + '</div></section>' +
+      '<section class="card"><div class="ct">2. Which patients</div>' +
+      '<label class="lb" style="margin-top:0">Category</label><div class="lbgrid">' + CEC.CATS.map(function (c) { return lbTick('cats', c.c, c.l); }).join('') + '</div>' +
+      '<label class="lb">Gender</label>' + lbSeg('sex', [['', 'All'], ['M', 'Male'], ['F', 'Female']]) +
+      '<label class="lb">Age (years)</label><div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><input class="in" id="lbAgeMin" inputmode="numeric" maxlength="3" placeholder="From, e.g. 40" value="' + h(f.ageMin) + '">' +
+      '<input class="in" id="lbAgeMax" inputmode="numeric" maxlength="3" placeholder="To, e.g. 60" value="' + h(f.ageMax) + '"></div>' +
+      '<label class="lb">Seen by a doctor</label>' + lbSeg('seen', [['', 'All'], ['yes', 'Signed off'], ['no', 'Waiting for doctor']]) +
+      lbDetails(clin ? 'Checks and ER procedures done' : 'Checks done', f.procs.length, procOpts.map(function (p) { return lbTick('procs', p[0], p[1]); }).join('')) +
+      (clin ? lbDetails('ER medications given', f.meds.length, medOpts.map(function (m) { return lbTick('meds', m[0], m[1]); }).join('')) +
+        lbDetails('Outcome', f.outs.length, outOpts.map(function (o) { return lbTick('outs', o[0], o[1]); }).join('')) +
+        '<label class="lb" for="lbDx">Diagnosis <span class="muted">(any of these; separate with commas)</span></label><input class="in" id="lbDx" placeholder="e.g. ACS, Hypertension, DKA" value="' + h(f.dx) + '">' : '') +
+      '</section>' +
+      '<section class="card"><div class="ct">3. Columns and layout</div><div class="sbtns">' +
+      [['entry', 'Entry details only'], ['readings', 'With BP / RBS / ECG']].concat(clin ? [['clinical', 'Clinical']] : [], [['all', 'All columns']]).map(function (c) {
+        return '<button class="btn sm" data-act="lb-cols" data-v="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="lbgrid">' + cols.map(function (c) { return lbTick('cols', c.k, c.h, c.k === 'remarks' || c.k === 'sign' ? ' <span class="muted small">(blank)</span>' : ''); }).join('') + '</div>' +
+      '<div class="row2" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div><label class="lb" for="lbGroup">Group by</label><select class="in" id="lbGroup">' +
+      [['none', 'One list'], ['cat', 'Category'], ['shift', 'Shift'], ['date', 'Date']].concat(clin ? [['out', 'Outcome']] : []).map(function (o) { return '<option value="' + o[0] + '"' + (f.group === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>' +
+      '<div><label class="lb" for="lbSort">Order</label><select class="in" id="lbSort">' + [['time', 'Time'], ['mr', 'MR No.'], ['name', 'Name']].map(function (o) { return '<option value="' + o[0] + '"' + (f.sort === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>' +
+      '<div><label class="lb" for="lbPage">Page</label><select class="in" id="lbPage">' + [['auto', 'Automatic'], ['portrait', 'Portrait'], ['landscape', 'Landscape']].map(function (o) { return '<option value="' + o[0] + '"' + (f.page === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div></div>' +
+      '<label class="lb" for="lbTitle">Title on the list</label><input class="in" id="lbTitle" placeholder="' + h(CEC.listTitle(CEC.listCfg(Object.assign({}, f, { title: '' })))) + '" value="' + h(f.title) + '"></section>' +
+      '<section class="card"><div class="ct">4. Check and download</div><div id="lbOut">' + lbOutHtml() + '</div>' +
+      '<div class="sbtns"><button class="btn pri" data-act="lb-pdf">' + ICON.dl + ' PDF</button><button class="btn" data-act="lb-csv">' + ICON.dl + ' Excel (CSV)</button>' +
+      '<button class="btn" data-act="lb-text">Copy for WhatsApp</button><button class="btn" data-act="lb-save">Save this list</button></div></section></div>';
+    return html;
+  }
+  function lbKey() { return S.lb.from + '|' + S.lb.to; }
+  function lbSpec(withExcl) {
+    var L = S.lb, cfg = Object.assign({}, L.cfg, { exclude: withExcl ? Object.keys(L.excl).filter(function (k) { return L.excl[k]; }) : [] });
+    return CEC.buildList(L.data || [], cfg, lbWho(), L.from, L.to);
+  }
+  function lbOutHtml() {
+    var L = S.lb;
+    if (L.loading) return '<p class="center muted"><span class="spin"></span>Loading patients&hellip;</p>';
+    if (!L.data || L.dataKey !== lbKey()) return '<button class="btn block" data-act="lb-show">Show the patients (to check or untick some)</button><p class="muted small" style="margin:6px 0 0">Or download straight away.</p>';
+    var sp = lbSpec(false), off = sp.list.filter(function (e) { return L.excl[e.id]; }).length, q = (L.q || '').toLowerCase(), clin = canClin(), shown = 0;
+    if (!sp.n) return '<div class="empty">No patients match. Change the dates or the choices above.</div>';
+    var rows = sp.groups.map(function (g) {
+      var list = g.list.filter(function (e) { return !q || (e.mr + ' ' + e.name + ' ' + (clin ? CEC.dxOf(e).join(' ') : '')).toLowerCase().indexOf(q) >= 0; });
+      if (!list.length) return '';
+      return (g.plain ? '' : '<div class="gh">' + h(g.h) + ' (' + g.list.length + ')</div>') + list.map(function (e) {
+        if (++shown > 400) return '';
+        var sub = [CEC.weekday(e._date).slice(0, 3) + ' ' + CEC.dmy(e._date).slice(0, 5) + ' ' + CEC.hm(e.t), CEC.shiftName(e._shift)];
+        if (e.bp) sub.push('BP ' + e.bp); if (e.rbs) sub.push('RBS ' + e.rbs);
+        var cl = clin ? [CEC.dxOf(e).join(', '), e.out ? CEC.short(CEC.OUTS, e.out) : ''].filter(Boolean).join(' · ') : '';
+        return '<label class="lbrow' + (L.excl[e.id] ? ' off' : '') + '"><input type="checkbox" data-lbx="' + h(e.id) + '"' + (L.excl[e.id] ? '' : ' checked') + '><span><b>' + h(e.name || '(no name)') + '</b> <span class="muted">MR ' + h(e.mr) + '</span> ' +
+          '<span class="tag ' + h(e.cat) + '">' + h(CEC.short(CEC.CATS, e.cat)) + '</span><br><span class="small muted">' + h((e.age !== '' && e.age != null ? e.age + ' y ' : '') + (e.sex || '') + ' · ' + sub.join(' · ')) +
+          (cl ? '<br>' + h(cl) : '') + '</span></span></label>';
+      }).join('');
+    }).join('');
+    return '<div class="lbsum"><b>' + (sp.n - off) + '</b> of ' + sp.n + ' patient' + (sp.n === 1 ? '' : 's') + ' will be in the list' + (off ? ' (' + off + ' unticked)' : '') + '</div>' +
+      '<div class="addrow"><input class="in" id="lbQ" placeholder="Find MR or name" value="' + h(L.q || '') + '"><button class="btn sm" data-act="lb-all">Tick all</button><button class="btn sm" data-act="lb-none">Untick all</button></div>' +
+      '<div class="lblist">' + rows + (shown > 400 ? '<p class="muted small">Showing the first 400 here; the download has all ' + (sp.n - off) + '.</p>' : '') + '</div>';
+  }
+  function lbRefresh() { var o = $('lbOut'); if (o) o.innerHTML = lbOutHtml(); var t = $('lbTitle'); if (t) t.placeholder = CEC.listTitle(CEC.listCfg(Object.assign({}, S.lb.cfg, { title: '' }))); }
+  function lbFetch() {
+    var L = S.lb, key = lbKey();
+    if (L.data && L.dataKey === key) return Promise.resolve(L.data);
+    if (!L.from || !L.to) { toast('Choose the dates'); return Promise.reject(); }
+    if (L.to < L.from) { toast('"To" date is before the "From" date'); return Promise.reject(); }
+    if ((CEC.parseYmd(L.to) - CEC.parseYmd(L.from)) / 86400000 > 366) { toast('Choose one year at most'); return Promise.reject(); }
+    var parts = [], a = L.from, out = [];
+    while (a <= L.to) { var b = CEC.addDays(a, 59); if (b > L.to) b = L.to; parts.push([a, b]); a = CEC.addDays(b, 1); }
+    L.loading = true; lbRefresh();
+    return parts.reduce(function (p, r) { return p.then(function () { return api('apiPatientList', r[0], r[1]).then(function (l) { out = out.concat(l || []); }); }); }, Promise.resolve())
+      .then(function () { L.loading = false; L.data = out; L.dataKey = key; L.excl = {}; lbRefresh(); return out; },
+        function (e) { L.loading = false; lbRefresh(); toast(errText(e)); throw e; });
+  }
+  function lbReady(cb) {
+    lbFetch().then(function () {
+      var sp = lbSpec(true);
+      if (!sp.n) return toast('No patients in the list. Change the dates or choices, or tick some patients.');
+      cb(sp);
+    }, function () { });
+  }
+  function lbSetDays(v) {
+    var L = S.lb, d = currentCensus(), p = d.split('-');
+    if (v === 'today') { L.from = L.to = d; }
+    else if (v === 'yday') { L.from = L.to = CEC.addDays(d, -1); }
+    else if (v === 'opd') { var m = lastWeekday(1), t = lastWeekday(4); L.from = L.to = m > t ? m : t; }
+    else if (v === 'ett') { L.from = L.to = lastWeekday(2); }
+    else if (v === 'echo') { L.from = L.to = lastWeekday(3); }
+    else if (v === 'week') { var w = CEC.parseYmd(d).getDay(); L.from = CEC.addDays(d, -((w + 6) % 7)); L.to = d; }
+    else if (v === 'month') { L.from = p[0] + '-' + p[1] + '-01'; L.to = d; }
+    else if (v === 'lmonth') { L.from = CEC.ymd(new Date(+p[0], +p[1] - 2, 1)); L.to = CEC.ymd(new Date(+p[0], +p[1] - 1, 0)); }
+  }
+  function lbUseCfg(cfg, preset) {
+    var L = S.lb; L.cfg = CEC.listCfg(cfg); L.preset = preset; L.excl = {}; L.q = '';
+    render();
+    if (L.data && L.dataKey === lbKey()) lbRefresh();
+  }
+  function lbSave() {
+    var L = S.lb, cap1 = function (t) { t = String(t).toLowerCase(); return t.charAt(0).toUpperCase() + t.slice(1); }, nm = cap1(L.cfg.title || CEC.listTitle(L.cfg));
+    var p = modal('Save this list', '<p class="small" style="margin:0 0 6px">The choices of patients, columns and layout are saved (not the dates), so you can make this list again with one tap.</p>' +
+      '<label class="lb" for="lbName">Name</label><input class="in" id="lbName" maxlength="60" value="' + h(nm) + '">',
+      (isAdmin() ? [{ label: 'Save for everyone', value: 'all', cls: 'pri' }] : []).concat([{ label: 'Save on this device', value: 'me', cls: isAdmin() ? '' : 'pri' }, { label: 'Cancel', value: false }]), true);
+    var inp = $('lbName'); if (inp) inp.addEventListener('input', function () { nm = inp.value.trim(); });
+    p.then(function (v) {
+      if (!v) return;
+      nm = nm || 'My list';
+      var cfg = JSON.parse(JSON.stringify(L.cfg)); delete cfg.exclude;
+      if (v === 'me') {
+        var m = lbMine().filter(function (x) { return x.name !== nm; }).concat([{ name: nm, cfg: cfg }]).slice(-30);
+        store_('cec_lists_' + S.me.id, m); L.preset = 'm' + (m.length - 1); toast('Saved on this device'); render();
+      } else {
+        var all = (S.lists || []).filter(function (x) { return x.name !== nm; }).concat([{ name: nm, cfg: cfg }]);
+        api('apiSaveLists', JSON.stringify(all)).then(function (r) { S.lists = r || []; L.preset = 's' + (S.lists.length - 1); toast('Saved for everyone'); render(); }, function (e) { toast(errText(e)); });
+      }
+    });
+  }
   /* ---------- death certificate: view only ---------- */
   function openCertView(c) {
     S.cert = { data: c, view: true };
@@ -2754,6 +3231,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function fmtCnic(v) {
     var d = String(v || '').replace(/\D/g, '').slice(0, 13);
     return d.length > 12 ? d.slice(0, 5) + '-' + d.slice(5, 12) + '-' + d.slice(12) : d.length > 5 ? d.slice(0, 5) + '-' + d.slice(5) : d;
+  }
+  /* BP: the "/" comes by itself after the systolic value (3 digits when it starts with 1 or 2, otherwise 2). A typed "/" is kept. */
+  function fmtBp(v) {
+    var s = String(v || '');
+    if (s.indexOf('/') >= 0) { var q = s.split('/'); return q[0].replace(/\D/g, '').slice(0, 3) + '/' + q.slice(1).join('').replace(/\D/g, '').slice(0, 3); }
+    var d = s.replace(/\D/g, '').slice(0, 6), n = /^[12]/.test(d) ? 3 : 2;
+    return d.length > n ? d.slice(0, n) + '/' + d.slice(n) : d;
   }
   function fmtMob(v) {
     var d = String(v || '').replace(/\D/g, '');
@@ -3444,7 +3928,39 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'f-proc': {
         var i = S.form.procs.indexOf(v);
         if (i >= 0) S.form.procs.splice(i, 1); else S.form.procs.push(v);
-        setOn('fProc', S.form.procs); break;
+        setOn('fProc', S.form.procs); setOn('fChk', S.form.procs); setOn('fEr', S.form.procs); break;
+      }
+      case 'f-med': {
+        var mi = S.form.meds.indexOf(v);
+        if (mi >= 0) S.form.meds.splice(mi, 1); else S.form.meds.push(v);
+        setOn('fMed', S.form.meds); break;
+      }
+      case 'med-add': {
+        var mx = $('fMedX').value.trim();
+        if (!mx) { toast('Type the medicine with its route, e.g. IV Paracetamol 1 g'); break; }
+        checkNew('med', mx).then(function (m) {
+          if (!m || !S.form) return;
+          if (S.form.meds.indexOf(m) < 0) S.form.meds.push(m);
+          if ($('fMedX')) $('fMedX').value = ''; syncForm();
+        });
+        break;
+      }
+      case 'med-remove': S.form.meds = S.form.meds.filter(function (x) { return x !== v; }); syncForm(); break;
+      case 'dx-new': {
+        checkNew('dx', v).then(function (d) {
+          if (!d || !S.form) return;
+          CEC.canonDx(d).forEach(function (x) { if (S.form.dxs.indexOf(x) < 0) S.form.dxs.push(x); });
+          S.form.dxq = ''; renderDx();
+        });
+        break;
+      }
+      case 'cust-del': {
+        var ck = el.getAttribute('data-k');
+        confirmBox('Remove this option?', '<b>' + h(v) + '</b> will no longer be offered on the patient form. Patients already saved keep what was written.', 'Remove', true).then(function (ok) {
+          if (!ok) return;
+          api('apiRemoveCustom', ck, v).then(function (c) { applyCustom(c); toast('Removed'); render(); }, function (e) { toast(errText(e)); });
+        });
+        break;
       }
       case 'f-out': S.form.out = v; syncForm(); break;
       case 'dx-pick': {
@@ -3494,9 +4010,15 @@ if (typeof module !== 'undefined') module.exports = CEC;
       }
       case 'save-settings': saveSettings(); break;
       case 'proc-add': {
-        var px = cap($('fProcX').value.replace(/;/g, ','));
-        if (px && S.form.procs.indexOf(px) < 0) S.form.procs.push(px);
-        $('fProcX').value = ''; syncForm(); break;
+        var px0 = $('fProcX').value.trim();
+        if (!px0) { toast('Type the procedure first'); break; }
+        checkNew('proc', px0).then(function (px) {
+          if (!px || !S.form) return;
+          px = procCode(px);
+          if (S.form.procs.indexOf(px) < 0) S.form.procs.push(px);
+          if ($('fProcX')) $('fProcX').value = ''; syncForm();
+        });
+        break;
       }
       case 'proc-remove': S.form.procs = S.form.procs.filter(function (x) { return x !== v; }); syncForm(); break;
       case 'cert-from-pt': certFromPatient(); break;
@@ -3527,6 +4049,34 @@ if (typeof module !== 'undefined') module.exports = CEC;
         S.lst.from = dd; S.lst.to = dd; render(); break;
       }
       case 'lst-pdf': downloadList('pdf'); break;
+      case 'lb-pre': lbUseCfg(CEC.presetCfg(v), v); break;
+      case 'lb-mine': { var mm = lbMine()[+v]; if (mm) lbUseCfg(mm.cfg, 'm' + v); break; }
+      case 'lb-shared': { var ss = (S.lists || [])[+v]; if (ss) lbUseCfg(ss.cfg, 's' + v); break; }
+      case 'lb-mine-del': { var ml = lbMine(), mx = ml[+v]; if (!mx) break;
+        confirmBox('Delete this saved list?', '<b>' + h(mx.name) + '</b> will be removed from this device.', 'Delete', true).then(function (ok) { if (!ok) return; ml.splice(+v, 1); store_('cec_lists_' + S.me.id, ml); S.lb.preset = ''; render(); }); break; }
+      case 'lb-shared-del': { var sl = (S.lists || []).slice(), sx = sl[+v]; if (!sx) break;
+        confirmBox('Delete this shared list?', '<b>' + h(sx.name) + '</b> will be removed for everyone.', 'Delete', true).then(function (ok) {
+          if (!ok) return; sl.splice(+v, 1);
+          api('apiSaveLists', JSON.stringify(sl)).then(function (r) { S.lists = r || []; S.lb.preset = ''; toast('Deleted'); render(); }, function (e) { toast(errText(e)); });
+        }); break; }
+      case 'lb-day': lbSetDays(v); render(); break;
+      case 'lb-set': S.lb.cfg[el.getAttribute('data-k')] = v; S.lb.preset = '';
+        Array.prototype.forEach.call(el.parentNode.querySelectorAll('button'), function (b) { b.classList.toggle('on', b === el); }); lbRefresh(); break;
+      case 'lb-cols': {
+        var allK = CEC.listColsFor(lbWho()).map(function (c) { return c.k; });
+        S.lb.cfg.cols = v === 'all' ? allK.filter(function (k) { return k !== 'sign' && k !== 'remarks' && k !== 'by'; }) : CEC.LIST_COLSETS[v].slice();
+        S.lb.preset = ''; render(); break;
+      }
+      case 'lb-show': lbFetch().then(null, function () { }); break;
+      case 'lb-all': S.lb.excl = {}; lbRefresh(); break;
+      case 'lb-none': lbSpec(false).list.forEach(function (e) { S.lb.excl[e.id] = true; }); lbRefresh(); break;
+      case 'lb-pdf': lbReady(function (sp) { offerFile(sp.file + '.pdf', CEC.listPdf({ title: sp.title, sub: sp.sub, cols: sp.cols, groups: sp.groups, portrait: sp.portrait, empty: 'No patients.' }, logoBytes()), 'application/pdf', false); }); break;
+      case 'lb-csv': lbReady(function (sp) { offerFile(sp.file + '.csv', new TextEncoder().encode(CEC.listCsv(sp)), 'text/csv', false); }); break;
+      case 'lb-text': lbReady(function (sp) {
+        var txt = CEC.listText(sp), done = function () { toast('List copied. Paste it in WhatsApp.'); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, function () { showText(txt); }); else showText(txt);
+      }); break;
+      case 'lb-save': lbSave(); break;
       case 'lst-csv': downloadList('csv'); break;
       case 'cert-close': closeCert(); break;
       case 'c-sex': S.cert.sex = v; setOn('cSex', v); break;
@@ -3563,10 +4113,20 @@ if (typeof module !== 'undefined') module.exports = CEC;
   document.addEventListener('input', function (ev) {
     var t = ev.target;
     var fm = t.getAttribute && t.getAttribute('data-fmt');
-    if (fm) { var nv = fm === 'cnic' ? fmtCnic(t.value) : fmtMob(t.value); if (nv !== t.value) t.value = nv; return; }
+    if (fm) { var nv = fm === 'cnic' ? fmtCnic(t.value) : fm === 'bp' ? fmtBp(t.value) : fmtMob(t.value); if (nv !== t.value) t.value = nv; return; }
     if (t.getAttribute && t.getAttribute('data-tm')) {
       var dg = t.value.replace(/\D/g, '').slice(0, 4);
       t.value = dg.length > 2 ? dg.slice(0, 2) + ':' + dg.slice(2) : dg;
+      return;
+    }
+    if (S.lb && S.view === 'lists' && /^lb(AgeMin|AgeMax|Dx|Title|Q)$/.test(t.id)) {
+      var lf = { lbAgeMin: 'ageMin', lbAgeMax: 'ageMax', lbDx: 'dx', lbTitle: 'title' }[t.id];
+      if (lf) { S.lb.cfg[lf] = /Age/.test(t.id) ? t.value.replace(/\D/g, '').slice(0, 3) : t.value; if (/Age/.test(t.id)) t.value = S.lb.cfg[lf]; S.lb.preset = ''; }
+      else S.lb.q = t.value;
+      clearTimeout(S.lbT); S.lbT = setTimeout(function () {
+        if (t.id === 'lbQ') { var pos = t.selectionStart; lbRefresh(); var nq = $('lbQ'); if (nq) { nq.focus(); try { nq.setSelectionRange(pos, pos); } catch (e) { } } }
+        else lbRefresh();
+      }, 250);
       return;
     }
     if (t.id === 'fDx') { S.form.dxq = t.value; renderDxList(); }
@@ -3592,6 +4152,18 @@ if (typeof module !== 'undefined') module.exports = CEC;
     else if (t.id === 'docPhoto' && t.files && t.files[0] && S.photoFor) uploadImage(S.photoFor, t.files[0]);
     else if (t.id === 'apDate' && t.value) { S.ap.date = t.value; render(); loadAppts().then(render); }
     else if (t.id === 'aDate' && t.value) { S.af.date = t.value; syncAppt(); }
+    else if (t.getAttribute && t.getAttribute('data-lbarr') && S.lb) {
+      var lk = t.getAttribute('data-lbarr'), allv = lbAllOf(lk), cur = (S.lb.cfg[lk] || []).slice();
+      if (allv && !cur.length) cur = allv.slice();
+      cur = cur.filter(function (x) { return x !== '-' && x !== t.value; }); if (t.checked) cur.push(t.value);
+      if (allv) cur = cur.length === allv.length ? [] : cur.length ? allv.filter(function (x) { return cur.indexOf(x) >= 0; }) : ['-'];
+      S.lb.cfg[lk] = cur; S.lb.preset = ''; t.parentNode.classList.toggle('on', t.checked);
+      var sm = t.closest('details'); if (sm) { var pl = sm.querySelector('summary'); var nn = sm.querySelectorAll('input:checked').length; pl.lastChild.outerHTML = nn ? '<span class="pill">' + nn + ' ticked</span>' : '<span class="muted small">(any)</span>'; }
+      lbRefresh();
+    }
+    else if (t.getAttribute && t.getAttribute('data-lbx') && S.lb) { S.lb.excl[t.getAttribute('data-lbx')] = !t.checked; lbRefresh(); }
+    else if ((t.id === 'lbFrom' || t.id === 'lbTo') && S.lb) { if (t.value) { S.lb[t.id === 'lbFrom' ? 'from' : 'to'] = t.value; if (t.id === 'lbFrom' && S.lb.to < t.value) S.lb.to = t.value; } render(); }
+    else if ((t.id === 'lbGroup' || t.id === 'lbSort' || t.id === 'lbPage') && S.lb) { S.lb.cfg[{ lbGroup: 'group', lbSort: 'sort', lbPage: 'page' }[t.id]] = t.value; S.lb.preset = ''; lbRefresh(); }
     else if (t.id === 'lKind') { readList(); var kk = CEC.LIST_KINDS.filter(function (x) { return x.c === t.value; })[0]; if (kk && kk.cats && t.value !== 'custom') S.lst.cats = kk.cats.slice(); render(); }
     else if (t.id === 'fAuto') {
       if (t.checked) { if (S.mr && S.mr.last) { S.autoMr = true; store_('cec_automr', true); syncMr(); } else { t.checked = false; askMr(); } }
@@ -3611,6 +4183,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (!S.form) return;
     ev.preventDefault();
     if (ev.target.id === 'fProcX') { var pa = document.querySelector('[data-act=proc-add]'); if (pa) pa.click(); return; }
+    if (ev.target.id === 'fMedX') { var ma = document.querySelector('[data-act=med-add]'); if (ma) ma.click(); return; }
     if (ev.target.id === 'fDx') { var first = document.querySelector('#dxList button'); if (first && S.form.dxq) { first.click(); setTimeout(function () { var x = $('fDx'); if (x) x.focus(); }, 20); } }
     else { var order = ['fMr', 'fName', 'fAge']; var i = order.indexOf(ev.target.id); if (i >= 0 && i < 2) $(order[i + 1]).focus(); else ev.target.blur(); }
   });
