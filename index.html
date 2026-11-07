@@ -394,6 +394,36 @@ input.in[readonly]{background:#eef1ef;color:#3d4741}
 section.card > .gh{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:14px 0 6px}
 @media (min-width:900px) and (max-width:1299px){.nav{gap:0;padding:0 4px}.nav .ni>button{padding:13px 9px 11px;font-size:13.5px;gap:6px}.nav .ni>button svg:not(.caret){display:none}}
 @media (min-width:900px) and (max-width:1049px){.nav .ni>button{padding:13px 6px 11px;font-size:12.5px}}
+/* 07-11-2026: home pages, vitals, quick sheets, paper certificates */
+.home1{max-width:860px;margin:0 auto}
+.dashc h2{margin:2px 0 2px}
+.bdsum{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0 10px;font-size:14px}.bdsum b{font-size:17px;color:var(--g9)}.bdsum .wt b,.bdsum .wt{color:var(--amb)}
+.bdgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+@media(max-width:560px){.bdgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.bdt{border:1px solid #d4e3d9;background:var(--g0);border-radius:9px;padding:9px 6px 8px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;font:inherit;color:inherit;min-height:84px}
+.bdt b{font-size:24px;line-height:1.1;color:var(--g9)}.bdt .bdl{font-size:12px;font-weight:600;line-height:1.2}.bdt .bdw{font-size:11.5px;color:var(--mute)}
+.bdt.w{background:var(--amb0);border-color:#e9c77d}.bdt.w .bdw{color:var(--amb);font-weight:700}
+.bdt:hover{box-shadow:inset 0 0 0 2px var(--g7)}
+.bdprev{display:block;width:100%;text-align:left;margin-top:10px;border:1px solid #e9c77d;background:var(--amb0);color:var(--amb);border-radius:8px;padding:9px 11px;font:inherit;font-size:13.5px;cursor:pointer}
+.catchips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.catchips button{border:1px solid var(--line);background:#fff;border-radius:16px;padding:4px 11px;font-size:13px;cursor:pointer}
+.catchips button span{color:var(--mute);margin-left:2px}.catchips button.on{background:var(--g7);border-color:var(--g7);color:#fff}.catchips button.on span{color:#d8eee0}
+.abthero{width:100%;border-radius:8px;display:block;margin-top:6px;aspect-ratio:16/9;object-fit:cover;max-height:340px}
+.abt h4{margin:14px 0 4px}
+.sline{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;font-size:14.5px}
+.stiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.stile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px 10px;min-height:150px;cursor:pointer;font:inherit;color:inherit;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.stile b{font-size:17px}.stile span{font-size:12.5px;color:var(--mute);line-height:1.3}
+.stile .sti{width:58px;height:58px;border-radius:50%;background:var(--g1);color:var(--g7);display:flex;align-items:center;justify-content:center}
+.stile:active,.stile:hover{border-color:var(--g7);box-shadow:inset 0 0 0 2px var(--g7)}
+.vgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px}
+@media(min-width:700px){.vgrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.vgrid .in::placeholder{color:#a3aca6}
+.qplist{max-height:55vh;overflow:auto;margin-top:8px}.qplist .prow{width:100%}.qplist .gh{margin:8px 0 4px}
+.ppprev{margin-top:10px;border:1px dashed #b9c6bd;border-radius:8px;padding:10px;text-align:center}
+.ppprev img{max-width:100%;max-height:320px;border-radius:6px;display:block;margin:0 auto 6px}
+label.btn{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.mbox{max-height:92vh;overflow:auto}
 
 </style>
 </head>
@@ -1470,10 +1500,15 @@ var CEC = (function () {
     { k: 'name', m: 72, h: 'Patient name', w: 14, a: 'l', f: function (e) { return e.name; } },
     { k: 'agesex', m: 36, h: 'Age/Sex', w: 5.5, a: 'c', f: ageSex },
     { k: 'cat', m: 52, h: 'Category', w: 8.5, a: 'l', f: function (e) { return label(CATS, e.cat); } },
-    { k: 'bp', m: 40, t: function (e) { return e.bp ? 'BP ' + e.bp : has(e, 'BP') ? 'BP done' : ''; }, h: 'BP', w: 6, a: 'c', f: function (e) { return e.bp || (has(e, 'BP') ? 'Done' : '-'); } },
-    { k: 'rbs', m: 28, t: function (e) { return e.rbs ? 'RBS ' + e.rbs : has(e, 'BSR') ? 'RBS done' : ''; }, h: 'RBS', w: 4.5, a: 'c', f: function (e) { return e.rbs || (has(e, 'BSR') ? 'Done' : '-'); } },
-    { k: 'ecg', m: 26, t: function (e) { return has(e, 'ECG') ? 'ECG done' : ''; }, h: 'ECG', w: 4, a: 'c', f: function (e) { return has(e, 'ECG') ? 'Yes' : '-'; } },
-    { k: 'neb', m: 28, t: function (e) { return has(e, 'NEB') ? 'Nebs done' : ''; }, h: 'Nebs', w: 4, a: 'c', f: function (e) { return has(e, 'NEB') ? 'Yes' : '-'; } },
+    { k: 'bp', m: 40, t: function (e) { return e.bp ? 'BP ' + e.bp : has(e, 'BP') ? 'BP done' : ''; }, h: 'BP', w: 6, a: 'c', f: function (e) { return e.bp || (has(e, 'BP') ? 'Done' : ''); } },
+    { k: 'pulse', m: 30, t: function (e) { return e.pulse ? 'Pulse ' + e.pulse + '/min' : ''; }, h: 'Pulse', w: 4.5, a: 'c', f: function (e) { return e.pulse || ''; } },
+    { k: 'temp', m: 34, t: function (e) { return e.temp ? 'Temp ' + e.temp + (+e.temp <= 45 ? ' \u00b0C' : ' \u00b0F') : ''; }, h: 'Temp', w: 4.5, a: 'c', f: function (e) { return e.temp ? e.temp + (+e.temp <= 45 ? ' \u00b0C' : ' \u00b0F') : ''; } },
+    { k: 'spo2', m: 30, t: function (e) { return e.spo2 ? 'SpO2 ' + e.spo2 + '%' : ''; }, h: 'SpO2', w: 4.5, a: 'c', f: function (e) { return e.spo2 ? e.spo2 + '%' : ''; } },
+    { k: 'rbs', m: 28, t: function (e) { return e.rbs ? 'RBS ' + e.rbs : has(e, 'BSR') ? 'RBS done' : ''; }, h: 'RBS', w: 4.5, a: 'c', f: function (e) { return e.rbs || (has(e, 'BSR') ? 'Done' : ''); } },
+    { k: 'wt', m: 32, t: function (e) { return e.wt ? 'Wt ' + e.wt + ' kg' : ''; }, h: 'Weight', w: 4.5, a: 'c', f: function (e) { return e.wt ? e.wt + ' kg' : ''; } },
+    { k: 'ht', m: 32, t: function (e) { return e.ht ? 'Ht ' + e.ht + ' cm' : ''; }, h: 'Height', w: 4.5, a: 'c', f: function (e) { return e.ht ? e.ht + ' cm' : ''; } },
+    { k: 'ecg', m: 26, t: function (e) { return has(e, 'ECG') ? 'ECG done' : ''; }, h: 'ECG', w: 4, a: 'c', f: function (e) { return has(e, 'ECG') ? 'Yes' : ''; } },
+    { k: 'neb', m: 28, t: function (e) { return has(e, 'NEB') ? 'Nebs done' : ''; }, h: 'Nebs', w: 4, a: 'c', f: function (e) { return has(e, 'NEB') ? 'Yes' : ''; } },
     { k: 'dx', m: 84, t: function (e) { return dxOf(e).join(', '); }, h: 'Diagnosis', w: 16, a: 'l', clin: true, f: function (e) { return dxOf(e).join(', ') || '-'; } },
     { k: 'procs', m: 62, t: function (e) { var l = (e.procs || []).filter(erProc).map(function (p) { return label(PROCS, p); }); return l.length ? 'Procedures: ' + l.join(', ') : ''; }, h: 'ER procedures', w: 13, a: 'l', clin: true, f: function (e) { return (e.procs || []).filter(erProc).map(function (p) { return label(PROCS, p); }).join(', ') || '-'; } },
     { k: 'meds', m: 74, t: function (e) { return (e.meds || []).length ? 'Meds: ' + e.meds.join(', ') : ''; }, h: 'Medications', w: 15, a: 'l', clin: true, f: function (e) { return (e.meds || []).join(', ') || '-'; } },
@@ -1486,7 +1521,7 @@ var CEC = (function () {
   ];
   var LIST_COLSETS = {
     entry: ['no', 'date', 'time', 'mr', 'name', 'agesex', 'cat'],
-    readings: ['no', 'date', 'time', 'mr', 'name', 'agesex', 'cat', 'bp', 'rbs', 'ecg', 'neb'],
+    readings: ['no', 'date', 'time', 'mr', 'name', 'agesex', 'cat', 'bp', 'pulse', 'temp', 'spo2', 'rbs', 'wt', 'ht', 'ecg'],
     clinical: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'bp', 'rbs', 'dx', 'procs', 'meds', 'out']
   };
   var LIST_DEF = { cats: [], shifts: ['M', 'E', 'N'], sex: '', ageMin: '', ageMax: '', seen: '', procs: [], outs: [], meds: [], dx: '',
@@ -1676,25 +1711,31 @@ var CEC = (function () {
         rows.push(r);
       });
     });
-    return '\ufeff' + rows.map(function (r) { return r.map(function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(','); }).join('\r\n');
+    return '\ufeff' + rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n');
+  }
+  /* Excel would run text starting with = + - @ as a formula: such text gets a leading apostrophe. */
+  function csvCell(v) {
+    v = String(v == null ? '' : v);
+    if (v.length > 1 && /^[=+\-@\t\r]/.test(v) && !/^-?\d+(\.\d+)?$/.test(v)) v = "'" + v;
+    return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
   }
 
   /* ---------- Appointments: ETT, echocardiography, OPD follow-up ---------- */
   var APPTS = [
     { c: 'ETT', l: 'ETT', full: 'ETT (exercise tolerance test)', days: [2],
       instr: 'Wear comfortable shoes and loose clothes. Have a light meal 2 to 3 hours before the test, not a heavy meal. Ask your doctor whether to take your usual heart medicines on the day of the test. Bring your previous ECGs and reports.' },
-    { c: 'ECHO', l: 'Echo', full: 'Echocardiography', days: [3], instr: 'No special preparation is needed. Bring your previous echo, ECGs and reports.' },
-    { c: 'OPD', l: 'OPD follow-up', full: 'Cardiac OPD follow-up', days: [1, 4], instr: 'Bring this slip, your previous prescriptions and reports, and all the medicines you are taking now.' }
+    { c: 'ECHO', l: 'Echo', full: 'Echocardiography', days: [3], instr: 'No special preparation is needed. Bring your previous echo, ECGs and reports.' }
   ];
+  /* Appointments booked before 07-11-2026 may still be OPD follow-ups. */
+  var APPT_OLD = { OPD: { c: 'OPD', l: 'OPD follow-up', full: 'Cardiac OPD follow-up', days: [1, 4], instr: 'Bring this slip, your previous prescriptions and reports, and all the medicines you are taking now.' } };
   var APPT_STATUS = [{ c: 'B', l: 'Booked' }, { c: 'D', l: 'Done' }, { c: 'M', l: 'Did not come' }, { c: 'C', l: 'Cancelled' }];
-  function apptType(c) { for (var i = 0; i < APPTS.length; i++) if (APPTS[i].c === c) return APPTS[i]; return APPTS[0]; }
+  function apptType(c) { for (var i = 0; i < APPTS.length; i++) if (APPTS[i].c === c) return APPTS[i]; return APPT_OLD[c] || APPTS[0]; }
   function apptSpec(list) {
     var cols = [col('No.', 0.045, 'c', function (a) { return a.no; }), col('Time', 0.055, 'c', function (a) { return a.time || '-'; }),
       col('MR No.', 0.085, 'l', function (a) { return a.mr || '-'; }), col('Patient name', 0.17, 'l', function (a) { return a.name; }),
       col('Age/Sex', 0.06, 'c', function (a) { return (a.age !== '' && a.age != null ? a.age : '-') + '/' + (a.sex || '-'); }),
-      col('Contact no.', 0.1, 'l', function (a) { return a.phone; }), col('Indication', 0.19, 'l', function (a) { return a.indication || '-'; }),
-      col('Referred by', 0.11, 'l', function (a) { return a.refBy || '-'; }), col('Status', 0.075, 'l', function (a) { return label(APPT_STATUS, a.status); }),
-      col('Remarks', 0.11, 'l', function () { return ''; })];
+      col('Contact no.', 0.13, 'l', function (a) { return a.phone; }), col('Status', 0.09, 'l', function (a) { return label(APPT_STATUS, a.status); }),
+      col('Remarks', 0.32, 'l', function () { return ''; })];
     return { cols: cols, groups: list.length ? [{ h: 'Appointments', list: list }] : [], n: list.length, empty: 'No appointments on this day.' };
   }
   function apptSlipPdf(a, st, logo) {
@@ -1722,12 +1763,11 @@ var CEC = (function () {
       }
       f(L, 'MR No.:', a.mr, 230); f(half + 6, 'Name:', a.name, R - half - 6); y += 22;
       f(L, 'Age / Gender:', (a.age !== '' && a.age != null ? a.age + ' years' : '-') + ' / ' + (a.sex === 'M' ? 'Male' : a.sex === 'F' ? 'Female' : '-'), 230);
-      f(half + 6, 'Contact no.:', a.phone, R - half - 6); y += 22;
-      f(L, 'Indication:', a.indication, R - L); y += 22;
-      f(L, 'Referred by:', a.refBy, 230); f(half + 6, 'Attendant:', a.attendant, R - half - 6); y += 26;
-      if (a.instr) {
+      f(half + 6, 'Contact no.:', a.phone, R - half - 6); y += 30;
+      var ins = t.instr;
+      if (ins) {
         d.text(L, y, 'Instructions', 'HB', 9.5); y += 13;
-        P.wrap(a.instr, 'H', 9.5, R - L).slice(0, 5).forEach(function (ln) { d.text(L, y, ln, 'H', 9.5); y += 12.5; });
+        P.wrap(ins, 'H', 9.5, R - L).slice(0, 5).forEach(function (ln) { d.text(L, y, ln, 'H', 9.5); y += 12.5; });
       }
       d.text(L, y0 + 396, 'Please arrive 15 minutes before time and bring this slip. If you cannot come, please inform the centre.', 'I', 9.5);
       d.text(R, y0 + 410, 'Issued on ' + dmy(ymd(new Date())), 'H', 8, 'right', 0.35);
@@ -1738,7 +1778,7 @@ var CEC = (function () {
   function apptMessage(a, st) {
     var t = apptType(a.type);
     return 'Assalam-o-Alaikum ' + a.name + '. Your ' + t.full + ' appointment at the Cardiac Emergency Centre, Sindh Government Hospital Liaquatabad is on ' +
-      weekday(a.date) + ', ' + dmy(a.date) + (a.time ? ' at ' + a.time : '') + ' (No. ' + a.no + (a.mr ? ', MR ' + a.mr : '') + '). ' + (a.instr ? a.instr + ' ' : '') +
+      weekday(a.date) + ', ' + dmy(a.date) + (a.time ? ' at ' + a.time : '') + ' (No. ' + a.no + (a.mr ? ', MR ' + a.mr : '') + '). ' + (t.instr ? t.instr + ' ' : '') +
       'For information call ' + ((st && st.phone) || DEFAULTS.phone) + '.';
   }
 
@@ -1847,6 +1887,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       };
     });
   }
+  function closeModal() { var m = $('modal'); m.classList.add('hidden'); m.innerHTML = ''; m.onclick = null; }
   function confirmBox(title, text, okLabel, danger) {
     return modal(title, '<p>' + text + '</p>', [{ label: 'Cancel', value: false }, { label: okLabel, cls: danger ? 'danf' : 'pri', value: true }]);
   }
@@ -1904,15 +1945,26 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (typeof v === 'string' && (v.charAt(0) === '{' || v.charAt(0) === '[')) { try { return JSON.parse(v); } catch (e) { } }
     return v;
   }
+  /* Phone app: one request to the script. Google sometimes needs several seconds to wake the script up, so a failed or garbled answer is tried once more. */
+  function fetchOnce(fn, args, ms) {
+    var ctl = window.AbortController ? new AbortController() : null, timer = ctl ? setTimeout(function () { ctl.abort(); }, ms) : null;
+    return fetch(apiUrl(), { method: 'POST', body: JSON.stringify({ fn: fn, args: args }), signal: ctl ? ctl.signal : undefined, cache: 'no-store' })
+      .then(function (r) { return r.text(); }).then(function (t) {
+        if (timer) clearTimeout(timer);
+        var o;
+        try { o = JSON.parse(t); } catch (e) { var er = new Error('The census link did not answer as expected. Check that it ends in /exec and that the latest Code.gs is deployed as a new version.'); er.retry = true; throw er; }
+        if (!o.ok) { var e2 = new Error(o.error); e2.server = true; throw e2; }
+        return parseResult(o.result);
+      }, function (e) { if (timer) clearTimeout(timer); var x = offlineErr(); x.retry = true; throw x; });
+  }
   function call(fn, args) {
     if (!inGoogle()) {
       if (!apiUrl()) return Promise.reject(new Error('The census link is not set.'));
       if (navigator.onLine === false) return Promise.reject(offlineErr());
-      return fetch(apiUrl(), { method: 'POST', body: JSON.stringify({ fn: fn, args: args }) }).then(function (r) { return r.text(); }, function () { throw offlineErr(); }).then(function (t) {
-        var o;
-        try { o = JSON.parse(t); } catch (e) { throw new Error('The census link did not answer as expected. Check that it ends in /exec and that the latest Code.gs is deployed as a new version.'); }
-        if (!o.ok) throw new Error(o.error);
-        return parseResult(o.result);
+      var ms = fn === 'apiLogin' || fn === 'apiState' ? 45000 : 60000;
+      return fetchOnce(fn, args, ms).then(null, function (e) {
+        if (!e.retry || navigator.onLine === false || /^api(Add|Save|Update|Delete|Set|Skip|Apt|Appt|Upload|Remove|Bin|Sign|Backup)/.test(fn) && fn !== 'apiSaveLists') throw e;
+        return new Promise(function (r) { setTimeout(r, 1200); }).then(function () { return fetchOnce(fn, args, ms); });
       });
     }
     return new Promise(function (res, rej) {
@@ -2007,15 +2059,17 @@ if (typeof module !== 'undefined') module.exports = CEC;
           return '<button type="button" data-act="r-role" data-v="' + x[0] + '" class="' + (r.role === x[0] ? 'on' : '') + '">' + x[1] + '</button>';
         }).join('') + '</div>' +
         '<label class="lb" for="rLogin">Choose a login ID</label><input class="in" id="rLogin" autocapitalize="none" autocomplete="username" placeholder="e.g. sana.ahmed" value="' + h(r.login || '') + '">' +
-        '<label class="lb" for="rPw">Password (at least 6 characters)</label><input class="in" id="rPw" type="password" autocomplete="new-password">' +
+        '<label class="lb" for="rPw">Password <span class="muted">(at least 8 characters, letters and numbers)</span></label><input class="in" id="rPw" type="password" autocomplete="new-password">' +
         '<label class="lb" for="rPw2">Repeat password</label><input class="in" id="rPw2" type="password" autocomplete="new-password">' +
         '<button class="btn pri block" data-act="do-register">Send request</button>' +
         '<button class="btn block" data-act="auth-login">Back to sign in</button></section>';
     }
+    setTimeout(warmUp, 0);
     return '<div class="narrow">' + heroHtml() + '<section class="card"><div class="ct">Sign in</div><p class="muted small" style="margin:0">Use the login ID and password approved by the admin.</p>' +
       '<label class="lb" for="lId">Login ID</label><input class="in" id="lId" autocapitalize="none" autocomplete="username">' +
       '<label class="lb" for="lPw">Password</label><input class="in" id="lPw" type="password" autocomplete="current-password">' +
-      '<button class="btn pri block" data-act="do-login">Sign in</button></section>' +
+      '<button class="btn pri block" data-act="do-login"' + (S.loggingIn ? ' disabled' : '') + '>' + (S.loggingIn ? '<span class="spin"></span>Signing in\u2026' : 'Sign in') + '</button>' +
+      '<div id="loginNote" class="muted small center" style="margin-top:6px" aria-live="polite"></div></section>' +
       '<section class="card"><div class="ct">New staff member?</div><p class="muted small" style="margin:0 0 4px">Doctors, nursing staff and students can request an account here.</p>' +
       '<button class="btn block" data-act="auth-reg">Request an account</button></section></div>';
   }
@@ -2030,15 +2084,36 @@ if (typeof module !== 'undefined') module.exports = CEC;
     store_('cec_api', u); toast('Connecting\u2026');
     call('apiInfo', []).then(function () { toast('Connected. Now sign in.'); render(); }, function (e) { store_('cec_api', ''); toast(e && e.offline ? 'No internet. Connect the first time with internet.' : errText(e)); });
   }
+  function loginBusy(on) {
+    S.loggingIn = on;
+    var b = document.querySelector('[data-act=do-login]');
+    if (b) { b.disabled = on; b.innerHTML = on ? '<span class="spin"></span>Signing in\u2026' : 'Sign in'; }
+    var n = $('loginNote'); if (n) n.textContent = on ? 'Connecting to the census. The first sign-in of the day can take up to 15 seconds; please wait.' : '';
+  }
   function doLogin() {
+    if (S.loggingIn) return;                                // one tap is enough: further taps wait for the first one
     var id = $('lId').value.trim(), pw = $('lPw').value;
     if (!id || !pw) return toast('Enter your login ID and password');
-    toast('Signing in\u2026');
-    call('apiLogin', [id, pw, APP_BUILD]).then(function (r) {
+    loginBusy(true);
+    call('apiLogin', [id, pw, APP_BUILD, true]).then(function (r) {
       S.token = r.token; store_('cec_token', r.token); touch(); S.offline = false;
-      return loadState().then(function () { if (APP_BUILD) return rememberLogin(id, pw, r.token); });
-    }).then(function () { S.view = 'home'; S.prev = 'home'; render(); toast('Welcome, ' + S.me.name); },
-      function (e) { if (e && e.offline && APP_BUILD) offlineLogin(id, pw); else toast(errText(e)); });
+      var st = r.state ? Promise.resolve(r.state) : null;
+      S.defaultPw = !!(r.me && r.me.defaultPw);
+      return (st ? st.then(function (x) { applyState(x); store_('cec_cache', { uid: S.me.id, st: x, at: Date.now() }); }) : loadState())
+        .then(function () { if (APP_BUILD) return rememberLogin(id, pw, r.token); });
+    }).then(function () { loginBusy(false); S.view = 'home'; S.prev = 'home'; render(); toast('Welcome, ' + S.me.name); if (APP_BUILD) flushQueue(); },
+      function (e) { loginBusy(false); if (e && e.offline && APP_BUILD) offlineLogin(id, pw); else toast(errText(e)); });
+  }
+  /* Wake the script while the person types the password (the phone app only; the website is already awake). */
+  function warmUp() {
+    if (!APP_BUILD || !apiUrl() || S.warmAt && Date.now() - S.warmAt < 240000 || navigator.onLine === false) return;
+    S.warmAt = Date.now();
+    call('apiPing', []).then(null, function () { });
+  }
+  function pwProblem(pw) {
+    if (pw.length < 8) return 'Password must be at least 8 characters';
+    if (!/[A-Za-z]/.test(pw) || !/\d/.test(pw)) return 'Password must have both letters and numbers';
+    return '';
   }
   /* Phone app: after a sign-in with internet the phone keeps a coded copy of the password, so the same person can sign in without internet. */
   function pwHash(pw, salt) {
@@ -2074,7 +2149,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (!r.name) return toast('Enter your full name');
     if (!r.role) return toast('Choose your profession');
     if (!/^[A-Za-z0-9._-]{3,40}$/.test(r.login)) return toast('Login ID: 3 to 40 letters or numbers, no spaces');
-    if (pw.length < 6) return toast('Password must be at least 6 characters');
+    if (pwProblem(pw)) return toast(pwProblem(pw));
     if (pw !== pw2) return toast('The two passwords do not match');
     call('apiRegister', [JSON.stringify({ name: r.name, login: r.login, password: pw, role: r.role })]).then(function () {
       S.reg = null; S.auth = 'login'; render();
@@ -2095,6 +2170,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     certs: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 13h7M9 17h5"/>',
     forms: '<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/>',
     census: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    rosters: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M7 13h4M7 17h7"/>',
     lists: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="3" stroke-linecap="round"/>',
     appt: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M9 15l2 2 4-4"/>',
     settings: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/>'
@@ -2104,9 +2180,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function navItems() {
     var a = [{ v: 'home', l: 'Home' }, { v: 'shift', l: 'Patient dashboard' }];
     if (canAppt()) a.push({ v: 'appt', l: 'Appointments', sub: CEC.APPTS.map(function (t) { return [t.c, t.c === 'ECHO' ? 'Echocardiography' : t.l]; }), subAct: 'ap-type' });
+    if (canClin()) a.push({ v: 'rosters', l: 'Shifts & rosters', sub: CEC.SHIFTS.map(function (x) { return [x.c, x.l + ' shift']; }), subAct: 'roster' });
     if (canCert()) a.push({ v: 'certs', l: 'Death certificate', badge: S.pendCerts || 0, blink: true });
-    a.push({ v: 'forms', l: 'Download forms' });
-    if (canEnter()) a.push({ v: 'lists', l: 'Patient lists' });
+    if (canClin()) a.push({ v: 'forms', l: 'Download forms' });              // not for students
+    if (canClin()) a.push({ v: 'lists', l: 'Patient lists' });
     if (canClin()) a.push({ v: 'census', l: 'Patient census', sub: CEN_MODES });
     a.push({ v: 'settings', l: isAdmin() ? 'Account & admin' : 'Account', badge: isAdmin() && S.pendingUsers ? S.pendingUsers : 0 });
     return a;
@@ -2115,14 +2192,15 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var v = S.view;
     if (v === 'detail') return 'census';
     if (v === 'letter') return S.prev === 'detail' ? 'census' : S.prev;
-    if (v === 'roster' || v === 'wedit') return 'home';
+    if (v === 'roster') return 'rosters';
+    if (v === 'wedit') return 'home';
     return v;
   }
   function navHtml() {
     var on = navOn();
     return navItems().map(function (it) {
       var sub = it.sub ? '<div class="sub" role="menu">' + it.sub.map(function (x) {
-        var cur = it.v === 'census' ? S.cen.mode : S.ap.type;
+        var cur = it.v === 'census' ? S.cen.mode : it.v === 'rosters' ? (S.view === 'roster' ? S.rosterShift : '') : S.ap.type;
         return '<button role="menuitem" data-act="' + (it.subAct || 'cen') + '" data-v="' + x[0] + '" class="' + (on === it.v && cur === x[0] ? 'on' : '') + '">' + h(x[1]) + '</button>';
       }).join('') + '</div>' : '';
       return '<div class="ni"><button data-act="go" data-v="' + it.v + '" class="' + (on === it.v ? 'on' : '') + '"' + (on === it.v ? ' aria-current="page"' : '') + '>' + navIcon(it.v) + '<span>' + h(it.l) + '</span>' +
@@ -2165,13 +2243,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
     else if (S.view === 'detail') v.innerHTML = detailHtml();
     else if (S.view === 'letter') { v.innerHTML = letterViewHtml(); fitPaper(); }
     else if (S.view === 'settings') v.innerHTML = settingsHtml();
-    else if (S.view === 'forms') v.innerHTML = formsHtml();
-    else if (S.view === 'lists') { v.innerHTML = canEnter() ? listsHtml() : '<section class="card">You do not have the right to make patient lists.</section>'; }
+    else if (S.view === 'forms') v.innerHTML = canClin() ? formsHtml() : '<section class="card">Download forms are for doctors and nursing staff.</section>';
+    else if (S.view === 'lists') { v.innerHTML = canClin() ? listsHtml() : '<section class="card">Patient lists are for doctors and nursing staff.</section>'; }
+    else if (S.view === 'rosters') v.innerHTML = rostersHtml();
     else if (S.view === 'certs') v.innerHTML = certsHtml();
     else if (S.view === 'roster') v.innerHTML = rosterHtml();
     else if (S.view === 'wedit') v.innerHTML = weditHtml();
     else if (S.view === 'appt') v.innerHTML = canAppt() ? apptHtml() : '<section class="card">You do not have the right to give appointments.</section>';
-    if ((S.view === 'shift' || (S.view === 'home' && (canEdit() || isAdmin()))) && S.work && canEnter()) {
+    if (S.view === 'shift' && S.work && canEnter()) {
       a.innerHTML = '<div class="in2"><button class="btn pri" data-act="new-pt">+ New patient' +
         (S.open && S.work.id !== S.open.id ? ' (' + h(CEC.shiftName(S.work.shift)) + ', ' + CEC.dmy(S.work.censusDate) + ')' : '') + '</button></div>';
       a.classList.remove('hidden');
@@ -2185,8 +2264,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '</b><span>Female</span></div><div class="' + (c.wait ? 'w' : '') + '"><b>' + c.wait + '</b><span>Awaiting doctor</span></div></div>' +
       '<div class="catline">' + CEC.CATS.map(function (k) { return h(k.l) + ' <b>' + (c.byCat[k.c] || 0) + '</b>'; }).join(' &middot; ') + '</div>';
   }
-  function rowsHtml(entries, q, filter, src) {
+  function rowsHtml(entries, q, filter, src, cat) {
     var list = entries.map(function (e, i) { return { e: e, n: i + 1 }; });
+    if (cat) list = list.filter(function (x) { return x.e.cat === cat; });
     if (filter === 'wait') list = list.filter(function (x) { return !x.e.signed; });
     else if (filter === 'seen') list = list.filter(function (x) { return x.e.signed; });
     if (q) {
@@ -2194,11 +2274,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
       list = list.filter(function (x) { return (x.e.mr + ' ' + x.e.name + ' ' + CEC.dxOf(x.e).join(' ')).toLowerCase().indexOf(ql) >= 0; });
     }
     if (!entries.length) return '<div class="empty">No patients recorded yet.' + (canEnter() ? ' Tap <b>+ New patient</b> to add the first one.' : '') + '</div>';
-    if (!list.length) return '<div class="empty">' + (q ? 'No patient matches.' : filter === 'wait' ? 'No patients are waiting for a doctor.' : filter === 'seen' ? 'No patients have been signed off yet.' : 'No patient matches.') + '</div>';
+    if (!list.length) return '<div class="empty">' + (q ? 'No patient matches.' : cat && filter !== 'wait' ? 'No ' + h(CEC.label(CEC.CATS, cat)) + ' patients in this shift.' : filter === 'wait' ? 'No patients are waiting for a doctor.' : filter === 'seen' ? 'No patients have been signed off yet.' : 'No patient matches.') + '</div>';
     return list.reverse().map(function (x) {
       var e = x.e, dx = CEC.dxOf(e).join(', ');
       var procs = (e.procs || []).map(function (p) { return CEC.label(CEC.PROCS, p); }).concat(canClin() ? e.meds || [] : []).join(', ');
-      var rd = (e.bp ? 'BP ' + e.bp : '') + (e.bp && e.rbs ? ' \u00b7 ' : '') + (e.rbs ? 'RBS ' + e.rbs : '');
+      var rd = vitalsText(e);
+      procs = (e.procs || []).filter(function (p) { return !(p === 'BP' && e.bp) && !(p === 'BSR' && e.rbs); }).map(function (p) { return CEC.label(CEC.PROCS, p); }).concat(canClin() ? e.meds || [] : []).join(', ');
       if (rd) procs = rd + (procs ? ' \u00b7 ' + procs : '');
       var out = e.out ? CEC.short(CEC.OUTS, e.out) + (e.out === 'OBS' && e.obsH ? ' (' + e.obsH + ' h)' : '') : '';
       return '<button class="prow" data-act="edit-pt" data-src="' + (src || 'work') + '" data-id="' + h(e.id) + '"><div class="pr-l"><div class="pr-no">' + x.n + '</div><div class="pr-t">' + CEC.hm(e.t) +
@@ -2240,11 +2321,17 @@ if (typeof module !== 'undefined') module.exports = CEC;
         '</section>';
     }
     html += '</div><div class="dr"><div class="listhead"><h3>Patients of this shift (' + s.entries.length + ')</h3><button class="btn sm" data-act="refresh" aria-label="Refresh list">&#8635; ' + (S.synced ? CEC.hm(S.synced.toISOString()) : 'Refresh') + '</button></div>';
+    var dc = S.dashCat || '';
+    if (dc) c = counts(s.entries.filter(function (x) { return x.cat === dc; }));
+    html += '<div class="catchips">' + [['', 'All']].concat(DASH_CATS.map(function (k) { return [k, CEC.short(CEC.CATS, k)]; })).map(function (k) {
+      var n = k[0] ? s.entries.filter(function (x) { return x.cat === k[0]; }).length : s.entries.length;
+      return '<button class="' + (dc === k[0] ? 'on' : '') + '" data-act="dash-cat" data-v="' + k[0] + '">' + h(k[1]) + ' <span>' + n + '</span></button>';
+    }).join('') + '</div>';
     html += '<div class="seg filt"><button data-act="filter" data-v="wait" class="' + (S.filter === 'wait' ? 'on' : '') + '">Pending (' + c.wait + ')</button>' +
       '<button data-act="filter" data-v="seen" class="' + (S.filter === 'seen' ? 'on' : '') + '">Seen (' + (c.T - c.wait) + ')</button>' +
       '<button data-act="filter" data-v="all" class="' + (S.filter === 'all' ? 'on' : '') + '">All (' + c.T + ')</button></div>';
     if (s.entries.length > 6) html += '<input class="in" id="q" placeholder="Search MR, name' + (canClin() ? ' or diagnosis' : '') + '" value="' + h(S.q) + '" style="margin:8px 0">';
-    html += '<div class="plist" id="plist">' + rowsHtml(s.entries, S.q, S.filter, 'work') + '</div></div></div>';
+    html += '<div class="plist" id="plist">' + rowsHtml(s.entries, S.q, S.filter, 'work', dc) + '</div></div></div>';
     return html;
   }
   function shiftWritable(sh) {
@@ -2404,6 +2491,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<div class="sbtns"><button class="btn sm" data-act="change-pw">Change password</button><button class="btn sm dan" data-act="sign-out">Sign out</button></div>' +
       (APP_BUILD ? '<p class="muted small" style="margin:12px 0 0;word-break:break-all">Census link: ' + h(apiUrl()) + ' <button class="lnk" data-act="app-relink">Change</button></p>' : '') + '</section>';
     if (!isAdmin()) return html;
+    if (S.defaultPw) html = '<section class="card pendc"><div class="ct" style="color:var(--red)">Change the Admin password now</div><p class="small" style="margin:0">You signed in with the original Admin password, which other people may know. ' +
+      'Set a new one above (at least 8 characters with letters and numbers).</p></section>' + html;
+    html += securityHtml();
     if (!S.users) { setTimeout(loadUsers, 0); return html + '<section class="card center muted"><span class="spin"></span>Loading users&hellip;</section>'; }
     var pend = S.users.filter(function (u) { return u.status === 'pending'; });
     html += '<section class="card"><div class="ct">Account requests (' + pend.length + ')</div>' +
@@ -2439,6 +2529,49 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<label class="lb" for="sFreq">Frequent diagnoses: tick boxes in the patient form <span class="muted">(one per line)</span></label><textarea class="in" id="sFreq" rows="8">' + h(freqDx().join('\n')) + '</textarea>' +
       '<button class="btn pri block" data-act="save-settings">Save settings</button></section>';
     return html;
+  }
+  /* ---------- admin: protection, backups and the encrypted recycle bin ---------- */
+  function loadBin() {
+    if (S.binLoading) return;
+    S.binLoading = true;
+    api('apiBin').then(function (r) { S.binLoading = false; S.bin = r; if (S.view === 'settings') render(); }, function (e) { S.binLoading = false; S.bin = { err: errText(e) }; if (S.view === 'settings') render(); });
+  }
+  function securityHtml() {
+    var b = S.bin;
+    if (!b) { setTimeout(loadBin, 0); return '<section class="card"><div class="ct">Data protection</div><div class="center muted"><span class="spin"></span>Loading&hellip;</div></section>'; }
+    if (b.err) return '<section class="card"><div class="ct">Data protection</div><p class="small">' + h(b.err) + '</p><button class="btn sm" data-act="sec-load">Try again</button></section>';
+    var warn = [];
+    if (!b.protected) warn.push('Run <b>setup</b> once in Apps Script to protect the tabs and start the nightly backup.');
+    if (!b.nightly) warn.push('The nightly backup is not set. Run <b>setup</b> once in Apps Script.');
+    if (b.backupError) warn.push('The last automatic backup failed: ' + h(b.backupError));
+    if (b.editors && b.editors.length) warn.push('The Google Sheet is shared for editing with: <b>' + h(b.editors.join(', ')) + '</b>. Remove them in the Sheet\u2019s Share button unless they must edit it by hand.');
+    if (b.linkShared) warn.push('The Google Sheet can be opened by anyone with its link. In the Sheet, click Share and set General access to <b>Restricted</b>.');
+    var items = b.items || [];
+    return '<section class="card"><div class="ct">Data protection</div>' +
+      (warn.length ? '<div class="warn" style="margin:0 0 10px">' + warn.join('<br>') + '</div>' : '<p class="small" style="margin:0 0 8px">&#10003; Tabs protected &middot; nightly backup on &middot; sign-in lock after 5 wrong passwords.</p>') +
+      '<div class="kv small" style="margin:0 0 8px">Last backup copy: <b>' + (b.lastBackup ? h(fmtTime(b.lastBackup)) : 'none yet') + '</b> (Drive folder \u201cCEC Census Backups\u201d)</div>' +
+      '<div class="sbtns"><button class="btn sm" data-act="sec-backup">Back up now</button><button class="btn sm dan" data-act="sec-all">Sign out everybody</button><button class="btn sm" data-act="sec-load">&#8635; Refresh</button></div>' +
+      '<div class="gh">Recycle bin (' + items.length + ')</div><p class="muted small" style="margin:0 0 6px">Deleted patients, certificates, photos, appointments and documents are kept encrypted for ' + b.days +
+      ' days and then removed for ever; nobody can remove them sooner. ' + (b.versions ? b.versions + ' earlier version' + (b.versions === 1 ? '' : 's') + ' of changed patient entries are also kept (open a patient and tap Earlier versions).' : '') + '</p>' +
+      (items.length ? '<div class="plist">' + items.slice(0, 200).map(function (x) {
+        return '<div class="urow"><div><b>' + h(x.title) + '</b><div class="muted small">' + h(x.label) + (x.sub ? ' &middot; ' + h(x.sub) : '') + '</div><div class="muted small">Deleted ' + h(fmtTime(x.at)) +
+          (x.by ? ' by ' + h(x.by) : '') + ' &middot; kept until ' + h(CEC.dmy(String(x.until).slice(0, 10))) + '</div></div><button class="btn sm" data-act="bin-restore" data-id="' + h(x.id) + '">Restore</button></div>';
+      }).join('') + '</div>' : '<p class="muted small" style="margin:0">Empty.</p>') + '</section>';
+  }
+  function showVersions(entryId) {
+    toast('Loading earlier versions\u2026');
+    api('apiBinVersions', entryId).then(function (list) {
+      if (!list.length) return modal('Earlier versions', '<p class="small">No earlier versions are kept for this patient. A version is kept whenever something written in the record is changed or removed.</p>', [{ label: 'OK', cls: 'pri', value: true }]);
+      var body = '<p class="muted small" style="margin:0 0 8px">Kept encrypted for 90 days. Restoring puts that version back; the present one is kept too.</p>' + list.map(function (x, i) {
+        var e = x.e, vit = vitalsText(e);
+        return '<div class="urow" style="display:block"><div class="small"><b>' + h(e.name) + '</b> &middot; MR ' + h(e.mr) + ' &middot; ' + h(CEC.label(CEC.CATS, e.cat)) + '</div>' +
+          '<div class="muted small">' + h([CEC.dxOf(e).join(', '), e.out ? CEC.label(CEC.OUTS, e.out) : '', vit, (e.meds || []).join(', ')].filter(Boolean).join(' \u00b7 ')) + '</div>' +
+          '<div class="muted small">Replaced ' + h(fmtTime(x.at)) + (x.by ? ' by ' + h(x.by) : '') + '</div>' +
+          '<button type="button" class="btn sm" data-act="bin-restore" data-id="' + h(x.id) + '" style="margin-top:6px">Restore this version</button></div>';
+      }).join('');
+      S.bin = S.bin || {}; S.bin.items = (S.bin.items || []).concat(list.map(function (x) { return { id: x.id, title: x.e.name, label: 'Earlier version' }; }));
+      modal('Earlier versions (' + list.length + ')', body, [{ label: 'Close', value: true }]);
+    }, function (e) { toast(errText(e)); });
   }
   function applyCustom(c) {
     S.customInfo = c || {};
@@ -2480,12 +2613,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
         '<label><input type="checkbox" id="uAdmin"' + (u.admin ? ' checked' : '') + '> Admin</label></div>' +
         '<label class="lb" for="uStatus">Account</label><select class="in" id="uStatus"><option value="active"' + (u.status === 'active' ? ' selected' : '') + '>Active</option>' +
         '<option value="disabled"' + (u.status !== 'active' ? ' selected' : '') + '>Disabled (cannot sign in)</option></select>') +
-      '<label class="lb" for="uPw">Set a new password (leave blank to keep)</label><input class="in" id="uPw" type="text" autocomplete="off">';
+      '<label class="lb" for="uPw">Set a new password <span class="muted">(leave blank to keep; 8+ characters, letters and numbers)</span></label><input class="in" id="uPw" type="text" autocomplete="off">' +
+      '<p class="muted small" style="margin:8px 0 0">A new password, or disabling the account, signs this person out on all phones and computers.</p>' +
+      '<button type="button" class="btn sm block" data-act="u-signout" data-id="' + h(u.id) + '" style="margin-top:8px">Sign out on all devices now (lost phone)</button>';
     modal('Change user', body, [{ label: 'Cancel', value: null }, { label: 'Save', cls: 'pri', value: 'form' }]).then(function (v) {
       if (!v) return;
       var d = { id: u.id };
       if (!main) { d.role = v.uRole; d.canEnter = v.uEnter; d.canEdit = v.uEdit; d.admin = v.uAdmin; d.status = v.uStatus; }
-      if (v.uPw) d.password = v.uPw;
+      if (v.uPw) { if (pwProblem(v.uPw)) return toast(pwProblem(v.uPw)); d.password = v.uPw; }
       setUser(d, 'User updated');
     });
   }
@@ -2524,17 +2659,19 @@ if (typeof module !== 'undefined') module.exports = CEC;
       out: e.out || '', obsH: e.obsH || '', signed: !!e.signed, dupOk: false, dxq: '', v: e.v || '', ro: !!roWhy };
     var sh = targetShift(), no = entry ? sh.entries.map(function (x) { return x.id; }).indexOf(e.id) + 1 : sh.entries.length + 1;
     var el = $('sheet');
-    var foot, readings = '<div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><label class="lb" for="fBp">BP (mmHg)</label>' +
-      '<input class="in" id="fBp" data-fmt="bp" inputmode="numeric" maxlength="7" placeholder="e.g. 130/80" value="' + h(e.bp || '') + '"></div><div><label class="lb" for="fRbs">RBS (mg/dL)</label>' +
-      '<input class="in" id="fRbs" inputmode="numeric" maxlength="3" placeholder="e.g. 140" value="' + h(e.rbs || '') + '"></div></div>';
+    var regOnly = !entry && !canClin() && !doctor;          // students: registration only; vitals and ECG have their own buttons
+    S.form.regOnly = regOnly;
+    var foot, readings = vitalsHtml(e);
     if (roWhy) foot = '<button class="btn" data-act="close-form">Close</button>';
+    else if (regOnly) foot = '<button class="btn" data-act="save-next">Save &amp; next</button><button class="btn" data-act="save-vit">Save &amp; add vitals</button><button class="btn pri" data-act="save-pt">Save</button>';
     else if (!doctor) foot = entry ? '<button class="btn pri" data-act="save-pt">Save changes</button>' : '<button class="btn" data-act="save-next">Save &amp; next</button><button class="btn pri" data-act="save-pt">Save</button>';
     else if (e.signed) foot = '<button class="btn pri" data-act="save-pt">Save changes</button>';
     else foot = (entry ? '' : '<button class="btn" data-act="save-next">Save &amp; next</button>') + '<button class="btn" data-act="save-pt">Save</button><button class="btn pri" data-act="sign-pt">&#10003; Sign off</button>';
-    el.innerHTML = '<div class="sh-head"><button data-act="close-form">Cancel</button><h3>' + (entry ? 'Patient record' : 'New patient') + '</h3>' +
+    el.innerHTML = '<div class="sh-head"><button data-act="close-form">Cancel</button><h3>' + (entry ? 'Patient record' : regOnly ? 'Patient registration' : 'New patient') + '</h3>' +
       (entry && isAdmin() ? '<button class="del" data-act="del-pt">Delete</button>' : '<span>No. ' + no + '</span>') + '</div>' +
       '<div class="sh-body"><form id="pf" novalidate autocomplete="off">' +
       (roWhy ? '<div class="warn" style="margin-top:12px">View only. ' + h(roWhy) + '</div>' : '') +
+      (entry && isAdmin() ? '<div style="margin-top:10px"><button type="button" class="btn sm" data-act="ver-show" data-id="' + h(e.id) + '">Earlier versions</button></div>' : '') +
       (target === 'prev' && !roWhy ? '<div class="warn" style="margin-top:12px">This patient belongs to the ' + h(CEC.shiftName(sh.shift)) + ' shift, which is now locked for new patients.</div>' : '') +
       '<div class="fsec">Patient registration</div>' +
       '<div class="mrrow"><label class="lb" for="fMr">MR No. <span class="req">*</span></label>' + (entry ? '' : '<label class="tog"><input type="checkbox" id="fAuto"> Automatic MR</label>') + '</div>' +
@@ -2559,6 +2696,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         CEC.OUTS.filter(function (o) { return o.c !== 'BD'; }).map(function (o) { return '<button type="button" data-act="f-out" data-v="' + o.c + '">' + h(o.l) + '</button>'; }).join('') + '</div>' +
         '<div id="obsWrap" class="hidden"><label class="lb" for="fObs">Hours kept under observation</label><input class="in" id="fObs" inputmode="numeric" maxlength="2" value="' + h(e.obsH || '4') + '"></div></div>' +
         ''
+        : regOnly ? '<p class="muted small fnote">After saving, add the vitals and ECG with the <b>Vitals</b> and <b>ECG</b> buttons on the home page (or tap Save &amp; add vitals).</p>'
         : '<div class="fsec">Checks done</div><div class="seg procs" id="fProc">' +
           CEC.PROCS.filter(function (p) { return CEC.STAFF_PROCS.indexOf(p.c) >= 0; }).map(function (p) { return '<button type="button" data-act="f-proc" data-v="' + p.c + '">' + h(p.l) + '</button>'; }).join('') +
           '</div>' + readings + (canClin() && entry ? assessHtml(e) : '') + (roWhy ? '' : '<p class="muted small fnote">A doctor adds the diagnosis and outcome and signs the patient off. You can correct these details until then.</p>')) +
@@ -2583,6 +2721,69 @@ if (typeof module !== 'undefined') module.exports = CEC;
       (e.out ? '<div><b>Outcome:</b> ' + h(CEC.label(CEC.OUTS, e.out)) + (e.out === 'OBS' && e.obsH ? ' (' + h(e.obsH) + ' h)' : '') + '</div>' : '') +
       (e.note ? '<div><b>Comments:</b> ' + h(e.note) + '</div>' : '') + (e.signed ? '<div class="signed">&#10003; Signed off ' + h(fmtTime(e.signedAt)) + '</div>' : '') + '</div>';
   }
+  /* ---------- quick Vitals and ECG (home page buttons): choose a patient of this shift, then fill only that ---------- */
+  function pickPatient(kind) {
+    if (!S.work) return toast('Loading the shift\u2026');
+    if (isOff()) return toast('Vitals and ECG need internet.');
+    S.pickKind = kind;
+    refresh(true);
+    var rows = function (sh, src) {
+      return (sh && sh.entries || []).filter(function (e) { return !/^(q-|tmp)/.test(e.id); }).slice().reverse().map(function (e) {
+        var done = kind === 'ecg' ? (e.procs || []).indexOf('ECG') >= 0 : !!vitalsText(e);
+        return '<button type="button" class="prow qp" data-act="qp-pick" data-src="' + src + '" data-id="' + h(e.id) + '" data-q="' + h((e.mr + ' ' + e.name).toLowerCase()) + '"><div class="pr-m"><div class="pr-name">' + h(e.name || '(no name)') +
+          ' <span class="muted">&middot; MR ' + h(e.mr) + '</span></div><div class="pr-sub">' + h(CEC.label(CEC.CATS, e.cat)) + ' &middot; ' + CEC.hm(e.t) +
+          (done ? ' &middot; <b style="color:var(--g7)">' + (kind === 'ecg' ? 'ECG done' : h(vitalsText(e))) + '</b>' : ' &middot; <span class="muted">' + (kind === 'ecg' ? 'no ECG yet' : 'no vitals yet') + '</span>') + '</div></div></button>';
+      }).join('');
+    };
+    var pv = S.prevShift && S.prevShift.entries && S.prevShift.entries.length ? '<div class="gh">' + h(CEC.shiftName(S.prevShift.shift)) + ' shift (earlier)</div>' + rows(S.prevShift, 'prev') : '';
+    var cur = rows(S.work, 'work');
+    modal(kind === 'ecg' ? 'ECG: choose the patient' : 'Vitals: choose the patient', '<input class="in" id="qpQ" placeholder="Find MR or name" autocomplete="off">' +
+      '<div class="plist qplist" id="qpList">' + (cur || pv ? '<div class="gh">' + h(CEC.shiftName(S.work.shift)) + ' shift</div>' + (cur || '<p class="muted small">No patients yet.</p>') + pv : '<div class="empty">No patients registered in this shift yet. Register the patient first.</div>') + '</div>',
+      [{ label: 'Cancel', value: false }]);
+    setTimeout(function () { var q = $('qpQ'); if (q) q.focus(); }, 60);
+  }
+  function openQuick(e, kind, src) {
+    S.qe = { id: e.id, kind: kind, src: src || 'work', ecg: (e.procs || []).indexOf('ECG') >= 0 };
+    var el = $('sheet');
+    el.innerHTML = '<div class="sh-head"><button data-act="qe-close">Cancel</button><h3>' + (kind === 'ecg' ? 'ECG' : 'Vitals') + '</h3><span></span></div><div class="sh-body"><form id="qf" novalidate autocomplete="off">' +
+      '<div class="kv" style="margin-top:12px"><b>' + h(e.name) + '</b> &middot; MR ' + h(e.mr) + '<div class="muted small">' + h(CEC.label(CEC.CATS, e.cat)) + ' &middot; ' +
+      (e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '') + (e.age !== '' && e.age != null ? ', ' + h(e.age) + ' y' : '') + ' &middot; registered ' + CEC.hm(e.t) + '</div></div>' +
+      (kind === 'ecg' ? '<div class="fsec">ECG</div><div class="seg" id="qEcg"><button type="button" data-act="qe-ecg" data-v="yes">ECG done</button><button type="button" data-act="qe-ecg" data-v="no">Not done</button></div>'
+        : vitalsHtml(e)) + '<div id="qErr"></div></form></div><div class="sh-foot"><button class="btn pri" data-act="qe-save">Save</button></div>';
+    el.classList.remove('hidden'); document.body.style.overflow = 'hidden';
+    if (kind === 'ecg') setOn('qEcg', S.qe.ecg ? 'yes' : 'no');
+    else setTimeout(function () { var b = $('fBp'); if (b && !b.value) b.focus(); }, 60);
+  }
+  function quickShift() { return S.qe && S.qe.src === 'prev' ? S.prevShift : S.work; }
+  function saveQuick(retried) {
+    var Q = S.qe, err = [], vit = Q.kind === 'ecg' ? null : (retried ? Q.vit : readVitals(err));
+    if (err.length) { $('qErr').innerHTML = '<div class="err">Please check: ' + h(err.join(', ')) + '.</div>'; return; }
+    Q.vit = vit;
+    var sh = quickShift(), e = sh && sh.entries.filter(function (x) { return x.id === Q.id; })[0];
+    if (!e) { closeQuick(); return toast('This patient is no longer in the list. Refresh the page.'); }
+    var d = Object.assign({}, e);                         // the latest details of the patient, with only the vitals or the ECG changed
+    if (Q.kind === 'ecg') {
+      d.procs = (e.procs || []).filter(function (p) { return p !== 'ECG'; }); if (Q.ecg) d.procs.push('ECG');
+    } else {
+      VIT.forEach(function (x) { d[x[0]] = vit[x[0]] || ''; });
+      d.procs = (e.procs || []).slice();
+      if (d.bp && d.procs.indexOf('BP') < 0) d.procs.push('BP');
+      if (d.rbs && d.procs.indexOf('BSR') < 0) d.procs.push('BSR');
+    }
+    d.v = e.v; d.dxs = CEC.dxOf(e); delete d.queued;
+    var btn = document.querySelector('[data-act=qe-save]'); if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Saving\u2026'; }
+    api('apiUpdateEntry', sh.id, JSON.stringify(d)).then(function (saved) {
+      var i = sh.entries.map(function (x) { return x.id; }).indexOf(saved.id);
+      if (i >= 0) sh.entries[i] = saved;
+      closeQuick(); toast((Q.kind === 'ecg' ? (Q.ecg ? 'ECG done' : 'ECG removed') : 'Vitals saved') + ': ' + saved.name); render();
+    }, function (x) {
+      if (!retried && /changed this patient a moment ago/.test(errText(x))) {   // a doctor saved the patient meanwhile: take the latest details and save again
+        return loadState().then(function () { if (S.qe === Q) saveQuick(true); }, function () { if (btn) { btn.disabled = false; btn.textContent = 'Save'; } $('qErr').innerHTML = '<div class="err">' + h(errText(x)) + '</div>'; });
+      }
+      if (btn) { btn.disabled = false; btn.textContent = 'Save'; } $('qErr').innerHTML = '<div class="err">' + h(errText(x)) + '</div>';
+    });
+  }
+  function closeQuick() { S.qe = null; $('sheet').classList.add('hidden'); $('sheet').innerHTML = ''; document.body.style.overflow = ''; }
   function closeForm() { S.form = null; $('sheet').classList.add('hidden'); $('sheet').innerHTML = ''; document.body.style.overflow = ''; }
   function setOn(id, v) {
     var el = $(id); if (!el) return;
@@ -2744,9 +2945,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var f = S.form, err = [];
     var mr = f.auto ? '' : $('fMr').value.trim(), name = $('fName').value.trim().replace(/\s+/g, ' '), age = $('fAge').value.trim(), note = $('fNote') ? $('fNote').value.trim() : '';
     var obsH = $('fObs') ? $('fObs').value.trim() : '';
-    var bp = $('fBp') ? $('fBp').value.replace(/\s+/g, '') : '', rbs = $('fRbs') ? $('fRbs').value.trim() : '';
-    if (bp && !/^\d{2,3}\/\d{2,3}$/.test(bp)) err.push('BP like 130/80');
-    if (rbs && !/^\d{2,3}$/.test(rbs)) err.push('RBS as a number in mg/dL');
+    var vit = readVitals(err), bp = vit.bp || '', rbs = vit.rbs || '';
     if (bp && f.procs.indexOf('BP') < 0) f.procs.push('BP');
     if (rbs && f.procs.indexOf('BSR') < 0) f.procs.push('BSR');
     if (!mr && !f.auto) err.push('MR No.');
@@ -2764,7 +2963,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
       dx: dxs.filter(function (d) { return d !== 'Brought dead' && CEC.DX_LIST.indexOf(d) < 0 && S.custom.dx.indexOf(d) < 0; }),
       proc: f.procs.filter(function (p) { return !isStdProc(p) && S.custom.proc.indexOf(p) < 0; }),
       med: f.meds.filter(function (m) { return CEC.MEDS.indexOf(m) < 0 && S.custom.med.indexOf(m) < 0; }) } : null;
-    return { err: err, entry: { id: f.editId, autoMr: !!f.auto, mr: mr, name: name, age: age === '' ? '' : +age, sex: f.sex, cat: f.cat, bp: bp, rbs: rbs,
+    var base = f.editId ? (targetShift().entries.filter(function (x) { return x.id === f.editId; })[0] || {}) : {};
+    VIT.forEach(function (x) { if (!(x[0] in vit)) vit[x[0]] = base[x[0]] || ''; });        // registration form: keep vitals entered elsewhere
+    return { err: err, entry: { id: f.editId, autoMr: !!f.auto, mr: mr, name: name, age: age === '' ? '' : +age, sex: f.sex, cat: f.cat, bp: vit.bp, rbs: vit.rbs,
+      pulse: vit.pulse, temp: vit.temp, spo2: vit.spo2, wt: vit.wt, ht: vit.ht,
       procs: canEdit() ? f.procs.slice() : f.procs.filter(function (p) { return CEC.STAFF_PROCS.indexOf(p) >= 0; }), note: canEdit() ? note : '',
       meds: canEdit() ? f.meds.slice() : [], newOpts: newOpts,
       dxs: canEdit() ? dxs : [], out: canEdit() ? out : '', obsH: out === 'OBS' ? obsH : '', signed: !!(signing || f.signed) } };
@@ -2792,7 +2994,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       toast('No internet: ' + e.name + ' is saved on this phone and will be sent automatically.');
       if (!S.form) render();
     };
-    if (APP_BUILD && isNew && isOff()) { keepOnPhone(); if (mode === 'next') openForm(target, null); else closeForm(); render(); return; }
+    if (APP_BUILD && isNew && isOff()) { keepOnPhone(); if (mode === 'next') openForm(target, null); else closeForm(); render(); if (mode === 'vitals') toast('Saved on this phone. Vitals can be added after it is sent.'); return; }
     S.pending++;
     api(isNew ? 'apiAddEntry' : 'apiUpdateEntry', sh.id, JSON.stringify(e)).then(function (saved) {
       S.pending--;
@@ -2805,7 +3007,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
       }
       var i = sh.entries.map(function (x) { return x.id; }).indexOf(isNew ? temp.id : saved.id);
       if (i >= 0) sh.entries[i] = saved; else sh.entries.push(saved);
-      if (!S.form) render();
+      if (mode === 'vitals' && !S.form && !S.qe) openQuick(saved, 'vitals', target);
+      else if (!S.form) render();
     }, function (err) {
       S.pending--;
       if (APP_BUILD && isNew && err && err.offline) { keepOnPhone(); return; }
@@ -2815,7 +3018,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     });
     var msg = (signing ? 'Signed off' : 'Saved') + (e.autoMr ? ' ' + e.name : ' MR ' + e.mr);
     if (mode === 'next') { toast(msg + '. Enter the next patient.'); openForm(target, null); }
-    else { closeForm(); toast(msg); }
+    else { closeForm(); toast(mode === 'vitals' ? msg + '. Opening vitals\u2026' : msg); }
     render();
   }
   function deletePatient() {
@@ -2878,9 +3081,74 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   /* ---------- Make death certificate ---------- */
   function loadCerts() {
-    return Promise.all([api('apiCerts'), api('apiPendingCerts')]).then(function (r) {
-      S.certs = r[0] || []; S.pend = r[1] || []; S.pendCerts = S.pend.length; if (S.view === 'certs') render();
-    }, function (e) { S.certs = []; S.pend = []; toast('Could not load: ' + errText(e)); });
+    return Promise.all([api('apiCerts'), api('apiPendingCerts'), api('apiPaperCerts').then(null, function () { return []; })]).then(function (r) {
+      S.certs = r[0] || []; S.pend = r[1] || []; S.papers = r[2] || []; S.pendCerts = S.pend.length; if (S.view === 'certs') render();
+    }, function (e) { S.certs = []; S.pend = []; S.papers = []; toast('Could not load: ' + errText(e)); });
+  }
+  /* ---------- certificates written by hand: a photo of the certificate is compulsory ---------- */
+  function openPaper(p) {
+    p = p || {};
+    S.pp = { entryId: p.id || '', photo: null, mime: '' };
+    var el = $('sheet'), fixed = !!p.id;
+    el.innerHTML = '<div class="sh-head"><button data-act="pp-close">Cancel</button><h3>Paper death certificate</h3><span></span></div><div class="sh-body"><form id="ppf" novalidate autocomplete="off">' +
+      '<p class="small" style="margin:12px 0 0">For a certificate written by hand, a <b>photo of the filled certificate is compulsory</b>. It is kept privately with the record.</p>' +
+      '<div class="fsec">Patient</div>' +
+      (fixed ? '<div class="kv"><b>' + h(p.name) + '</b> &middot; MR ' + h(p.mr) + '<div class="muted small">' + (p.cat === 'BD' ? 'Brought dead' : 'Expired in CEC') + ' &middot; ' + CEC.dmy(p.censusDate) + '</div></div>'
+        : '<label class="lb" for="ppMr">MR No. <span class="req">*</span></label><input class="in" id="ppMr" autocapitalize="characters">' +
+          '<label class="lb" for="ppName">Name of the deceased <span class="req">*</span></label><input class="in" id="ppName" autocapitalize="words">') +
+      '<div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><label class="lb" for="ppNo">Certificate No. on paper</label><input class="in" id="ppNo" placeholder="optional"></div>' +
+      '<div><label class="lb" for="ppDate">Date of death</label><input class="in" type="date" id="ppDate" value="' + h(p.censusDate || '') + '"></div></div>' +
+      '<div class="fsec">Photo of the certificate <span class="req">*</span></div>' +
+      '<div class="sbtns"><label class="btn pri" for="ppCam">' + ICON.cam + ' Take photo</label><label class="btn" for="ppFile">' + ICON.img + ' Choose photo</label></div>' +
+      '<input type="file" id="ppCam" accept="image/*" capture="environment" class="hidden"><input type="file" id="ppFile" accept="image/*" class="hidden">' +
+      '<div id="ppPrev" class="ppprev"><span class="muted small">No photo yet.</span></div>' +
+      '<div id="ppErr"></div></form></div><div class="sh-foot"><button class="btn pri" data-act="pp-save" disabled>Save</button></div>';
+    el.classList.remove('hidden'); document.body.style.overflow = 'hidden';
+  }
+  /* Photos are made smaller on the phone (longest side 1800 px, JPEG) before they are sent. */
+  function shrinkPhoto(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var max = 1800, w = img.naturalWidth, hh = img.naturalHeight, k = Math.min(1, max / Math.max(w, hh));
+        var c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(hh * k);
+        var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL('image/jpeg', 0.78));
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('This photo could not be opened. Take it again or choose a JPEG photo.')); };
+      img.src = url;
+    });
+  }
+  function paperPhoto(file) {
+    if (!file || !S.pp) return;
+    $('ppPrev').innerHTML = '<span class="spin"></span> Preparing the photo\u2026';
+    shrinkPhoto(file).then(function (dataUrl) {
+      if (!S.pp) return;
+      S.pp.photo = dataUrl.split(',')[1]; S.pp.mime = 'image/jpeg';
+      $('ppPrev').innerHTML = '<img src="' + dataUrl + '" alt="Photo of the paper death certificate"><div class="muted small">' + Math.round(S.pp.photo.length * 0.75 / 1024) + ' KB &middot; tap Take photo again to replace it</div>';
+      var b = document.querySelector('[data-act=pp-save]'); if (b) b.disabled = false;
+    }, function (e) { $('ppPrev').innerHTML = '<div class="err">' + h(errText(e)) + '</div>'; });
+  }
+  function savePaper() {
+    var P = S.pp, err = [], d = { entryId: P.entryId, paperNo: $('ppNo').value.trim(), deathDate: $('ppDate').value };
+    if (!P.entryId) { d.mr = $('ppMr').value.trim(); d.name = $('ppName').value.trim().replace(/\s+/g, ' '); if (!d.mr) err.push('MR No.'); if (!d.name) err.push('name'); }
+    if (!P.photo) err.push('a photo of the certificate');
+    if (err.length) { $('ppErr').innerHTML = '<div class="err">Please add: ' + h(err.join(', ')) + '.</div>'; return; }
+    var b = document.querySelector('[data-act=pp-save]'); b.disabled = true; b.innerHTML = '<span class="spin"></span>Saving\u2026';
+    api('apiSavePaperCert', JSON.stringify(d), P.photo, P.mime).then(function (r) {
+      S.pend = (S.pend || []).filter(function (x) { return x.id !== P.entryId; }); S.pendCerts = Math.max(0, S.pend.length);
+      S.papers = [r].concat(S.papers || []); closePaper(); toast('Paper certificate saved with its photo'); render();
+    }, function (e) { b.disabled = false; b.textContent = 'Save'; $('ppErr').innerHTML = '<div class="err">' + h(errText(e)) + '</div>'; });
+  }
+  function closePaper() { S.pp = null; $('sheet').classList.add('hidden'); $('sheet').innerHTML = ''; document.body.style.overflow = ''; }
+  function viewPaper(id) {
+    toast('Opening the photo\u2026');
+    api('apiPaperPhoto', id).then(function (r) {
+      var src = 'data:' + (r.mime || 'image/jpeg') + ';base64,' + r.data;
+      modal('Paper death certificate', '<img src="' + src + '" alt="Photo of the paper death certificate" style="width:100%;border-radius:8px;border:1px solid var(--line)">', [{ label: 'Download', value: 'dl' }, { label: 'Close', cls: 'pri', value: true }])
+        .then(function (v) { if (v === 'dl') offerFile(r.name || 'paper-certificate.jpg', fromB64(r.data), r.mime || 'image/jpeg', false); });
+    }, function (e) { toast(errText(e)); });
   }
   function pendRowHtml(p) {
     return '<div class="drow blink"><div class="pr-name">' + h(p.name || '(no name)') + (p.mr ? ' <span class="muted">&middot; MR ' + h(p.mr) + '</span>' : '') + '</div>' +
@@ -2888,7 +3156,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       h(CEC.weekday(p.censusDate).slice(0, 3) + ' ' + CEC.dmy(p.censusDate) + ' \u00b7 ' + CEC.hm(p.t) + ' hrs \u00b7 ' + CEC.shiftName(p.shift) + ' shift') +
       (p.age !== '' && p.age != null ? ' \u00b7 ' + h(p.age) + ' y' : '') + (p.sex ? ' \u00b7 ' + (p.sex === 'M' ? 'Male' : 'Female') : '') + '</div>' +
       '<div class="sbtns"><button class="btn sm pri" data-act="cert-pend" data-id="' + h(p.id) + '">Make certificate</button>' +
-      '<button class="btn sm" data-act="cert-paper" data-id="' + h(p.id) + '">Issued on paper</button></div></div>';
+      '<button class="btn sm" data-act="cert-paper" data-id="' + h(p.id) + '">' + ICON.cam + ' Issued on paper (photo)</button></div></div>';
   }
   function certsHtml() {
     if (!canCert()) return '<section class="card">Death certificates are for doctors and nursing staff only.</section>';
@@ -2899,7 +3167,15 @@ if (typeof module !== 'undefined') module.exports = CEC;
       (pend.length ? '<div class="plist" style="margin-top:8px">' + pend.map(pendRowHtml).join('') + '</div>' : '<p class="muted small" style="margin:8px 0 0"><b>None pending.</b></p>') + '</section>' +
       '<section class="card"><div class="ct">Make death certificate</div><p class="muted small" style="margin:0 0 4px">Fill the certificate here to keep its details in the system and print it filled. ' +
       'You can also open it from a Brought dead or Expired patient\u2019s record. To fill one by hand, download a blank copy.</p>' +
-      '<button class="btn pri block" data-act="cert-new">+ New death certificate</button><button class="btn block" data-act="blank-dc" style="margin-top:8px">' + ICON.dl + ' Blank certificate (to fill by hand)</button></section>' +
+      '<button class="btn pri block" data-act="cert-new">+ New death certificate</button><button class="btn block" data-act="blank-dc" style="margin-top:8px">' + ICON.dl + ' Blank certificate (to fill by hand)</button>' +
+      '<button class="btn block" data-act="pp-new" style="margin-top:8px">' + ICON.cam + ' Upload a certificate filled by hand (photo)</button></section>' +
+      '<section class="card"><div class="ct">Certificates written by hand (' + (S.papers || []).length + ')</div><p class="muted small" style="margin:0">Each has a photo of the paper certificate.</p>' +
+      ((S.papers || []).length ? '<div class="plist" style="margin-top:8px">' + S.papers.slice(0, 100).map(function (x) {
+        return '<div class="drow"><div class="pr-name">' + h(x.name) + ' <span class="muted">&middot; MR ' + h(x.mr) + '</span></div><div class="pr-sub">' + (x.paperNo ? 'No. ' + h(x.paperNo) + ' &middot; ' : '') +
+          (x.deathDate ? 'died ' + h(CEC.dmy(x.deathDate)) + ' &middot; ' : '') + 'photo saved ' + h(fmtTime(x.at)) + (isAdmin() && x.by ? ' by ' + h(x.by) : '') + '</div>' +
+          '<div class="sbtns ico"><button class="btn sm" data-act="pp-view" data-id="' + h(x.id) + '">' + ICON.eye + ' View photo</button>' +
+          (isAdmin() ? '<button class="btn sm dan" data-act="pp-del" data-id="' + h(x.id) + '">Delete</button>' : '') + '</div></div>';
+      }).join('') + '</div>' : '<p class="muted small" style="margin:6px 0 0">None yet.</p>') + '</section>' +
       '<section class="card"><div class="ct">Saved certificates (' + S.certs.length + ')</div>' +
       (S.certs.length ? '<div class="plist" style="margin-top:8px">' + S.certs.slice(0, 100).map(function (c) {
         return '<div class="drow"><div class="pr-name">' + h(c.name) + (c.mr ? ' <span class="muted">&middot; MR ' + h(c.mr) + '</span>' : '') + '</div>' +
@@ -2912,7 +3188,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
   var ICON = {
     eye: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
     pen: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>',
-    dl: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>'
+    dl: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>',
+    cam: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+    img: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-6-6-9 9"/></svg>'
   };
   /* ---------- patient lists (OPD days) ---------- */
   function lastWeekday(dow) {
@@ -3025,7 +3303,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         '<label class="lb" for="lbDx">Diagnosis <span class="muted">(any of these; separate with commas)</span></label><input class="in" id="lbDx" placeholder="e.g. ACS, Hypertension, DKA" value="' + h(f.dx) + '">' : '') +
       '</section>' +
       '<section class="card"><div class="ct">3. Columns and layout</div><div class="sbtns">' +
-      [['entry', 'Entry details only'], ['readings', 'With BP / RBS / ECG']].concat(clin ? [['clinical', 'Clinical']] : [], [['all', 'All columns']]).map(function (c) {
+      [['entry', 'Entry details only'], ['readings', 'With vitals and ECG']].concat(clin ? [['clinical', 'Clinical']] : [], [['all', 'All columns']]).map(function (c) {
         return '<button class="btn sm" data-act="lb-cols" data-v="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div>' +
       '<div class="lbgrid">' + cols.map(function (c) { return lbTick('cols', c.k, c.h, c.k === 'remarks' || c.k === 'sign' ? ' <span class="muted small">(blank)</span>' : ''); }).join('') + '</div>' +
       '<div class="row2" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div><label class="lb" for="lbGroup">Group by</label><select class="in" id="lbGroup">' +
@@ -3239,6 +3517,42 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var d = s.replace(/\D/g, '').slice(0, 6), n = /^[12]/.test(d) ? 3 : 2;
     return d.length > n ? d.slice(0, n) + '/' + d.slice(n) : d;
   }
+  /* ---------- vitals: all optional; nothing is shown for a vital that was not filled ---------- */
+  var VIT = [['bp', 'BP', 'mmHg', 'fBp'], ['pulse', 'Pulse', '/min', 'fPulse'], ['temp', 'Temp', '\u00b0F', 'fTemp'], ['spo2', 'SpO2', '%', 'fSpo2'],
+    ['rbs', 'RBS', 'mg/dL', 'fRbs'], ['wt', 'Weight', 'kg', 'fWt'], ['ht', 'Height', 'cm', 'fHt']];
+  var VIT_RANGE = { pulse: [20, 250, 0], temp: [30, 113, 1], spo2: [30, 100, 0], wt: [0.5, 300, 1], ht: [30, 250, 0], rbs: [10, 999, 0] };
+  function tempUnit(v) { return +v <= 45 ? '\u00b0C' : '\u00b0F'; }
+  function vitalsText(e) {
+    return VIT.filter(function (x) { return e && e[x[0]] !== '' && e[x[0]] != null; }).map(function (x) {
+      var v = e[x[0]];
+      return x[1] + ' ' + v + (x[0] === 'temp' ? ' ' + tempUnit(v) : x[0] === 'spo2' ? '%' : x[0] === 'bp' || x[0] === 'rbs' ? '' : ' ' + x[2]);
+    }).join(' \u00b7 ');
+  }
+  function vitalsHtml(e, title) {
+    var cell = function (x) {
+      var k = x[0], ph = { bp: 'e.g. 130/80', pulse: 'e.g. 88', temp: 'e.g. 98.6', spo2: 'e.g. 97', rbs: 'e.g. 140', wt: 'e.g. 70', ht: 'e.g. 165' }[k];
+      var mode = k === 'temp' || k === 'wt' ? 'decimal' : 'numeric', max = k === 'bp' ? 7 : k === 'temp' || k === 'wt' ? 5 : 3;
+      return '<div><label class="lb" for="' + x[3] + '">' + x[1] + ' <span class="muted">(' + x[2] + ')</span></label><input class="in" id="' + x[3] + '"' + (k === 'bp' ? ' data-fmt="bp"' : '') +
+        ' inputmode="' + mode + '" maxlength="' + max + '" placeholder="' + ph + '" value="' + h(e[k] == null ? '' : e[k]) + '"></div>';
+    };
+    return '<div class="fsec">' + (title || 'Vitals') + ' <span class="muted small" style="font-weight:400;text-transform:none;letter-spacing:0">(fill what was checked; the rest can be added later)</span></div>' +
+      '<div class="vgrid">' + VIT.map(cell).join('') + '</div>';
+  }
+  function readVitals(err) {
+    var o = {};
+    VIT.forEach(function (x) {
+      var el = $(x[3]); if (!el) return;
+      var v = el.value.trim().replace(',', '.'), k = x[0];
+      if (k === 'bp') v = v.replace(/\s+/g, '');
+      o[k] = v;
+      if (!v) return;
+      if (k === 'bp') { if (!/^\d{2,3}\/\d{2,3}$/.test(v)) err.push('BP like 130/80'); return; }
+      var r = VIT_RANGE[k], n = parseFloat(v);
+      if (!/^\d{1,3}(\.\d{1,2})?$/.test(v) || isNaN(n) || n < r[0] || n > r[1] || (k === 'temp' && n > 45 && n < 86) || (!r[2] && /\./.test(v) && k !== 'temp'))
+        err.push(x[1] + (k === 'temp' ? ' (\u00b0F like 98.6, or \u00b0C like 37)' : k === 'rbs' ? ' as a number in mg/dL' : ' as a number'));
+    });
+    return o;
+  }
   function fmtMob(v) {
     var d = String(v || '').replace(/\D/g, '');
     if (d.indexOf('92') === 0) { if (d.length < 12) return (/^\s*\+/.test(v) ? '+' : '') + d; d = '0' + d.slice(2, 12); }   // +92 300 1234567 -> 0300-1234567
@@ -3310,6 +3624,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (S.welLoading) return S.welLoading;
     S.welLoading = api('apiWelcome').then(function (r) {
       S.welLoading = null; S.wel = r; S.welAt = Date.now();
+      if (S.me) store_('cec_wel', { uid: S.me.id, r: { w: r.w, stats: r.stats, imgs: r.imgs, rosters: r.rosters, appts: r.appts } });
       if ((S.view === 'home' || S.view === 'roster') && !S.form && !S.cert && !$('modal').innerHTML) render();
     }, function (e) { S.welLoading = null; S.welAt = Date.now(); if (!S.wel) S.wel = { w: null, stats: null, imgs: {}, rosters: {} }; if (!(e && e.offline)) toast('Could not load the home page details: ' + errText(e)); });
     return S.welLoading;
@@ -3353,69 +3668,75 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<div class="small"><b>' + S.pendCerts + '</b> patient' + (S.pendCerts === 1 ? '' : 's') + ' (Brought dead / Expired in CEC) still need a certificate.</div></div></div>' +
       '<button class="btn pri block" data-act="go" data-v="certs">Open pending certificates</button></section>' : '';
   }
-  /* Nursing staff and students: a plain page with patient entry on top (no rosters or welcome details). */
-  function staffHomeHtml() {
-    var html = '<div class="narrow">', st = S.wel && S.wel.stats, ap = S.wel && S.wel.appts, sh = S.work;
-    if (sh) {
-      var c = counts(sh.entries || []);
-      html += '<section class="card quick"><div class="eyebrow">Running now</div><h3>' + h(CEC.shiftName(sh.shift)) + ' shift</h3><div class="muted small">' + h(CEC.shiftTimes(S.settings, sh.shift)) +
-        ' &middot; ' + c.T + ' patient' + (c.T === 1 ? '' : 's') + (c.wait ? ' &middot; ' + c.wait + ' pending' : '') + '</div>' +
-        (canEnter() ? '<button class="btn pri block bigb" data-act="new-pt">+ New patient entry</button>' : '') +
-        '<button class="btn block" data-act="go" data-v="shift" style="margin-top:8px">Open patient dashboard</button></section>';
-    }
-    html += pendAlertHtml();
-    if (st) html += '<section class="card"><div class="ct">Patients served this month</div><div class="muted small">' + h(CEC.monthName(st.month + '-01')) + ', up to ' + CEC.dmy(st.date) + '</div>' +
-      '<div class="stats3"><div><b>' + st.T + '</b><span>Total</span></div><div><b>' + st.M + '</b><span>Male</span></div><div><b>' + st.F + '</b><span>Female</span></div></div>' +
-      '<div class="catline">Today\u2019s census day so far: <b>' + st.today + '</b></div></section>';
-    if (ap && canAppt()) html += '<section class="card"><div class="ct">Next appointment days</div>' + CEC.APPTS.map(function (t) {
-      var x = ap[t.c];
-      return '<button class="shrow" data-act="ap-type" data-v="' + t.c + '"><span class="sic" style="font-size:12px">' + h(t.c === 'ECHO' ? 'Echo' : t.c) + '</span><span class="sm"><b>' + h(t.full) + '</b><div class="muted small">' +
-        (x ? CEC.weekday(x.date) + ', ' + CEC.dmy(x.date) + ' &middot; ' + x.n + ' booked' : 'No bookings yet') + '</div></span><span class="chev">&rsaquo;</span></button>';
-    }).join('') + '</section>';
-    return html + '</div>';
+  var DASH_CATS = ['EMR', 'OPD', 'BD', 'ECHO', 'ETT'];
+  /* The running shift with its patients by category and how many are still waiting for a doctor's sign-off. */
+  function dashCardHtml() {
+    var sh = S.open || S.work;
+    if (!sh) return '<section class="card center muted"><span class="spin"></span>Loading the shift&hellip;</section>';
+    var list = sh.entries || [], c = counts(list), pv = S.prevShift, pw = pv && pv.entries ? pv.entries.filter(function (e) { return !e.signed; }).length : 0;
+    var tiles = DASH_CATS.map(function (k) {
+      var l = list.filter(function (e) { return e.cat === k; }), w = l.filter(function (e) { return !e.signed; }).length;
+      return '<button class="bdt' + (w ? ' w' : '') + '" data-act="dash-cat" data-from="home" data-v="' + k + '"><b>' + l.length + '</b><span class="bdl">' + h(CEC.label(CEC.CATS, k)) + '</span>' +
+        '<span class="bdw">' + (w ? w + ' waiting' : l.length ? 'all signed off' : '&nbsp;') + '</span></button>';
+    }).join('');
+    return '<section class="card dashc"><div class="sc-top"><div><div class="eyebrow">Patient dashboard &middot; running now</div><h2>' + h(CEC.shiftName(sh.shift)) + ' shift</h2>' +
+      '<div class="muted small">Census day ' + CEC.dmy(sh.censusDate) + ' &middot; ' + h(CEC.shiftTimes(S.settings, sh.shift)) + '</div></div><span class="pill open">Open</span></div>' +
+      '<div class="bdsum"><span><b>' + c.T + '</b> patient' + (c.T === 1 ? '' : 's') + '</span><span class="' + (c.wait ? 'wt' : '') + '"><b>' + c.wait + '</b> waiting for sign-off</span><span><b>' + (c.T - c.wait) + '</b> signed off</span></div>' +
+      '<div class="bdgrid">' + tiles + '</div>' +
+      (pw && canEnter() ? '<button class="bdprev" data-act="go" data-v="shift">' + h(CEC.shiftName(pv.shift)) + ' shift: <b>' + pw + '</b> still waiting for sign-off (until ' + CEC.hm(S.prevUntil) + ' hrs) &rsaquo;</button>' : '') +
+      '<div class="sbtns">' + (canEnter() ? '<button class="btn pri" data-act="home-new">+ New patient</button>' : '') + '<button class="btn" data-act="go" data-v="shift">Open patient dashboard</button></div></section>';
   }
-  function homeHtml() {
-    if (!S.wel || Date.now() - S.welAt > 120000) setTimeout(function () { loadWelcome(); }, 0);
-    if (!canEdit() && !isAdmin()) return staffHomeHtml();
-    var W = welcome(), st = S.wel && S.wel.stats, left = '', right = pendAlertHtml();
-    if (S.open) {
-      var c = counts(S.open.entries || []);
-      right += '<section class="card quick"><div class="eyebrow">Running now</div><h3>' + h(CEC.shiftName(S.open.shift)) + ' shift</h3><div class="muted small">' + h(CEC.shiftTimes(S.settings, S.open.shift)) +
-        ' &middot; ' + c.T + ' patient' + (c.T === 1 ? '' : 's') + (c.wait ? ' &middot; ' + c.wait + ' pending' : '') + '</div>' +
-        '<button class="btn pri block" data-act="go" data-v="shift">Open patient dashboard</button></section>';
-    }
-    if (S.wel && !st) { /* students: no patient totals */ }
-    else {
-    right += '<section class="card"><div class="ct">Patients served this month</div>';
-    if (st) {
-      right += '<div class="muted small">' + h(CEC.monthName(st.month + '-01')) + ', up to ' + CEC.dmy(st.date) + '</div>' +
-        '<div class="stats3"><div><b>' + st.T + '</b><span>Total</span></div><div><b>' + st.M + '</b><span>Male</span></div><div><b>' + st.F + '</b><span>Female</span></div></div>' +
-        '<div class="catline">' + CEC.CATS.map(function (k) { return h(k.l) + ' <b>' + ((st.byCat || {})[k.c] || 0) + '</b>'; }).join(' &middot; ') + '</div>' +
-        '<div class="catline">Today’s census day so far: <b>' + st.today + '</b></div>';
-    } else right += '<div class="center muted" style="padding:12px"><span class="spin"></span>Loading&hellip;</div>';
-    right += '</section>';
-    }
-    var ap = S.wel && S.wel.appts;
-    if (ap && canAppt()) right += '<section class="card"><div class="ct">Next appointment days</div>' + CEC.APPTS.map(function (t) {
-      var x = ap[t.c];
-      return '<button class="shrow" data-act="ap-type" data-v="' + t.c + '"><span class="sic" style="font-size:12px">' + h(t.c === 'ECHO' ? 'Echo' : t.c) + '</span><span class="sm"><b>' + h(t.full) + '</b><div class="muted small">' +
-        (x ? CEC.weekday(x.date) + ', ' + CEC.dmy(x.date) + ' &middot; ' + x.n + ' booked' : 'No bookings yet &middot; usually ' + h(t.days.map(function (d) { return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]; }).join(' / '))) + '</div></span><span class="chev">&rsaquo;</span></button>';
-    }).join('') + '</section>';
-    right += '<section class="card"><div class="ct">Shifts and duty rosters</div><p class="muted small" style="margin:0">Open a shift to see its doctors and roster.</p>' + CEC.SHIFTS.map(function (sh) {
-      var n = (W.shifts[sh.c] || []).length, nr = rostersOf(sh.c).length, hasR = nr ? nr + ' roster' + (nr === 1 ? '' : 's') : '';
-      return '<button class="shrow" data-act="roster" data-v="' + sh.c + '"><span class="sic">' + sh.l.charAt(0) + '</span><span class="sm"><b>' + sh.l + ' shift</b><div class="muted small">' +
-        h(CEC.shiftTimes(S.settings, sh.c)) + ' &middot; ' + n + ' doctor' + (n === 1 ? '' : 's') + (hasR ? ' &middot; ' + hasR : '') + '</div></span><span class="chev">&rsaquo;</span></button>';
-    }).join('') + '</section>';
-    if (isAdmin()) right += '<section class="card"><div class="ct">Admin</div><p class="muted small" style="margin:0">Change the text, names, photos and the doctors of each shift. Rosters are uploaded on each shift’s page.</p>' +
-      '<button class="btn block" data-act="wel-edit">Edit welcome page</button></section>';
-    left += '<section class="card about"><div class="ct">About the centre</div>' + (W.intro ? '<p>' + h(W.intro) + '</p>' : '') +
+  function servedHtml() {
+    var st = S.wel && S.wel.stats;
+    var html = '<section class="card"><div class="ct">Patients served</div>';
+    if (!st) return html + '<div class="center muted" style="padding:12px"><span class="spin"></span>Loading&hellip;</div></section>';
+    return html + '<div class="muted small">' + h(CEC.monthName(st.month + '-01')) + ', up to ' + CEC.dmy(st.date) + '</div>' +
+      '<div class="stats3"><div><b>' + st.T + '</b><span>This month</span></div><div><b>' + st.M + '</b><span>Male</span></div><div><b>' + st.F + '</b><span>Female</span></div></div>' +
+      '<div class="catline">' + CEC.CATS.map(function (k) { return h(k.l) + ' <b>' + ((st.byCat || {})[k.c] || 0) + '</b>'; }).join(' &middot; ') + '</div>' +
+      '<div class="catline">Today’s census day so far: <b>' + st.today + '</b></div></section>';
+  }
+  function aboutHtml() {
+    var W = welcome(), team = imgSrc('team'), hero = imgSrc('hero');
+    return '<section class="card about abt"><div class="ct">About the department</div>' +
+      (hero ? '<img class="abthero" data-slot="hero" src="' + hero + '" alt="Cardiac Emergency Centre building, Sindh Government Hospital Liaquatabad">' : '') +
+      '<h3 style="margin:10px 0 2px">Cardiac Emergency Centre</h3><div class="muted small">Sindh Government Hospital Liaquatabad, Karachi</div>' +
+      (W.intro ? '<p>' + h(W.intro) + '</p>' : '') +
       (W.aims.length ? '<h4>Our aims</h4><ul>' + W.aims.map(function (x) { return '<li>' + h(x) + '</li>'; }).join('') + '</ul>' : '') +
-      (W.facilities.length ? '<h4>Facilities</h4><ul>' + W.facilities.map(function (x) { return '<li>' + h(x) + '</li>'; }).join('') + '</ul>' : '') + '</section>';
-    left += '<section class="card"><div class="ct">Faculty</div><div class="leaders">' + leaderHtml('hod', W.hod, W.hodTitle) + leaderHtml('rmo', W.rmo, W.rmoTitle) + leaderHtml('cmo', W.cmo, W.cmoTitle) + '</div></section>';
-    var team = imgSrc('team');
-    if (team) left += '<section class="card"><div class="ct">Our team</div><img class="teamimg" data-slot="team" src="' + team + '" alt="' + h(W.teamCaption || 'Team photo') + '">' +
-      (W.teamCaption ? '<div class="muted small" style="margin-top:6px">' + h(W.teamCaption) + '</div>' : '') + '</section>';
-    return heroHtml() + '<div class="home"><div class="hr">' + right + '</div><div class="hl">' + left + '</div></div>';
+      (W.facilities.length ? '<h4>Facilities</h4><ul>' + W.facilities.map(function (x) { return '<li>' + h(x) + '</li>'; }).join('') + '</ul>' : '') +
+      '<h4>Faculty</h4><div class="leaders">' + leaderHtml('hod', W.hod, W.hodTitle) + leaderHtml('rmo', W.rmo, W.rmoTitle) + leaderHtml('cmo', W.cmo, W.cmoTitle) + '</div>' +
+      (team ? '<h4>Our team</h4><img class="teamimg" data-slot="team" src="' + team + '" alt="' + h(W.teamCaption || 'Team photo') + '">' + (W.teamCaption ? '<div class="muted small" style="margin-top:6px">' + h(W.teamCaption) + '</div>' : '') : '') +
+      (isAdmin() ? '<button class="btn block" data-act="wel-edit" style="margin-top:12px">Edit this page (admin)</button>' : '') + '</section>';
+  }
+  /* Students: four big buttons and nothing else. */
+  function studentHomeHtml() {
+    var sh = S.open || S.work, c = sh ? counts(sh.entries || []) : null;
+    var tile = function (act, icon, t, sub) { return '<button class="stile" data-act="' + act + '"><span class="sti" aria-hidden="true">' + icon + '</span><b>' + t + '</b><span>' + sub + '</span></button>'; };
+    return '<div class="narrow">' + (sh ? '<div class="sline"><b>' + h(CEC.shiftName(sh.shift)) + ' shift</b> &middot; ' + h(CEC.shiftTimes(S.settings, sh.shift)) + ' &middot; ' + c.T + ' patient' + (c.T === 1 ? '' : 's') + '</div>' : '') +
+      '<div class="stiles">' +
+      tile('go" data-v="shift', '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h10M7 17h6"/></svg>', 'Patient dashboard', 'Patients of this shift') +
+      tile('new-reg', '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="8" r="4"/><path d="M3 21c0-4 3-6 7-6s7 2 7 6"/><path d="M19 8v6M16 11h6"/></svg>', 'Patient registration', 'MR, name, age, gender, category') +
+      tile('pick-vitals', '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg>', 'Vitals', 'BP, pulse, temp, RBS, SpO2, weight, height') +
+      tile('pick-ecg', '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h3l2-6 3 12 3-9 2 3h7"/></svg>', 'ECG', 'Mark the ECG as done') +
+      '</div></div>';
+  }
+  /* Nursing staff: the shift dashboard, pending certificates and patients served. */
+  function staffHomeHtml() { return '<div class="narrow">' + dashCardHtml() + pendAlertHtml() + servedHtml() + '</div>'; }
+  function homeHtml() {
+    if (!S.wel) { var cw = store_('cec_wel'); if (cw && S.me && cw.uid === S.me.id) { S.wel = cw.r; S.welAt = 0; } }
+    if (!S.wel || Date.now() - S.welAt > 120000) setTimeout(function () { loadWelcome(); }, 0);
+    if (!canClin()) return studentHomeHtml();
+    if (!canEdit() && !isAdmin()) return staffHomeHtml();
+    return '<div class="home1">' + dashCardHtml() + pendAlertHtml() + aboutHtml() + servedHtml() + '</div>';
+  }
+  /* Shifts and duty rosters (menu): the three shifts with their doctors and rosters. */
+  function rostersHtml() {
+    if (!S.wel || Date.now() - S.welAt > 120000) setTimeout(function () { loadWelcome(); }, 0);
+    var W = welcome();
+    return '<div class="narrow"><section class="card"><div class="ct">Shifts and duty rosters</div><p class="muted small" style="margin:0">Open a shift to see its doctors and duty rosters.</p>' + CEC.SHIFTS.map(function (sh) {
+      var n = (W.shifts[sh.c] || []).length, nr = rostersOf(sh.c).length, hasR = nr ? nr + ' roster' + (nr === 1 ? '' : 's') : 'no roster yet';
+      return '<button class="shrow" data-act="roster" data-v="' + sh.c + '"><span class="sic">' + sh.l.charAt(0) + '</span><span class="sm"><b>' + sh.l + ' shift</b><div class="muted small">' +
+        h(CEC.shiftTimes(S.settings, sh.c)) + ' &middot; ' + n + ' doctor' + (n === 1 ? '' : 's') + ' &middot; ' + hasR + '</div></span><span class="chev">&rsaquo;</span></button>';
+    }).join('') + '</section></div>';
   }
   /* ---------- a shift's doctors and duty roster ---------- */
   function rosterHtml() {
@@ -3651,7 +3972,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<div class="pr-sub">' + [withDate ? '<b>' + h(CEC.weekday(a.date).slice(0, 3) + ' ' + CEC.dmy(a.date)) + '</b>' : '', a.time ? h(a.time) + ' hrs' : '',
         [a.sex === 'M' ? 'Male' : a.sex === 'F' ? 'Female' : '', a.age !== '' && a.age != null ? h(a.age) + ' y' : ''].filter(Boolean).join(', '),
         '<a href="tel:' + h(String(a.phone).replace(/[^\d+]/g, '')) + '">' + h(a.phone) + '</a>'].filter(Boolean).join(' &middot; ') + '</div>' +
-      (a.indication || a.refBy ? '<div class="pr-sub">' + h(a.indication || '') + (a.refBy ? (a.indication ? ' &middot; ' : '') + 'referred by ' + h(a.refBy) : '') + '</div>' : '') +
+
       (isAdmin() && a.bookedBy ? '<div class="pr-audit">Booked by ' + h(a.bookedBy) + (a.updatedBy ? ' &middot; changed by ' + h(a.updatedBy) : '') + '</div>' : '') +
       '</div><span class="tag ' + ST_CLS[a.status] + '">' + h(st) + '</span></div>' +
       '<div class="sbtns ico"><button class="btn sm" data-act="ap-edit" data-id="' + h(a.id) + '">' + ICON.pen + ' Edit</button>' +
@@ -3725,10 +4046,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<div class="row2"><div>' + inp('aAge', 'Age (years)', a.age, 'inputmode="numeric" maxlength="3"') + '</div><div><label class="lb">Gender</label><div class="seg" id="aSex">' +
       [['M', 'Male'], ['F', 'Female']].map(function (g) { return '<button type="button" data-act="a-sex" data-v="' + g[0] + '">' + g[1] + '</button>'; }).join('') + '</div></div></div>' +
       inp('aPhone', 'Contact no. <span class="req">*</span>', fmtMob(a.phone), MOB_ATTR) +
-      inp('aAtt', 'Attendant / relation <span class="muted">(optional)</span>', a.attendant, 'placeholder="e.g. Son, Bilal"') +
-      '<div class="fsec">Details</div>' + inp('aInd', 'Indication / reason', a.indication) + '<div class="chipsx" id="aIndS" style="margin-top:6px"></div>' +
-      inp('aRef', 'Referred by', a.refBy != null ? a.refBy : (S.me.role === 'doctor' ? S.me.name : '')) +
-      '<label class="lb" for="aInstr">Instructions for the patient <span class="muted">(printed on the slip)</span></label><textarea class="in" id="aInstr" rows="4">' + h(a.instr != null ? a.instr : t.instr) + '</textarea>' +
+      '<p class="muted small" style="margin:10px 0 0">The slip prints the usual instructions for ' + h(t.full) + ' by itself.</p>' +
       (isNew ? '' : '<label class="lb">Status</label><div class="seg" id="aSt">' + CEC.APPT_STATUS.map(function (x) { return '<button type="button" data-act="a-st" data-v="' + x.c + '">' + h(x.l) + '</button>'; }).join('') + '</div>') +
       '<div id="aErr"></div></form></div><div class="sh-foot"><button class="btn" data-act="ap-save">Save</button><button class="btn pri" data-act="ap-saveprint">Save &amp; print slip</button></div>';
     el.classList.remove('hidden'); document.body.style.overflow = 'hidden';
@@ -3748,12 +4066,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
     $('aDateInfo').innerHTML = F.date ? '<b>' + CEC.weekday(F.date) + ', ' + CEC.dmy(F.date) + '</b> &middot; ' + n + ' already booked' +
       (isUsual(F.type, F.date) ? '' : ' &middot; <span style="color:var(--amb)">not a usual ' + h(t.l) + ' day (' + dayLabel(F.type) + ')</span>') +
       (F.date < pkToday() ? ' &middot; <span style="color:var(--red)">date has passed</span>' : '') : '';
-    $('aIndS').innerHTML = (IND[F.type] || []).map(function (x) { return '<button type="button" class="btn sm" data-act="a-ind" data-v="' + h(x) + '">' + h(x) + '</button>'; }).join('');
+
   }
   function readAppt() {
     var F = S.af, err = [], v = function (id) { return $(id).value.trim(); };
     var a = { id: F.id, type: F.type, date: F.date, time: v('aTime'), mr: v('aMr'), name: v('aName').replace(/\s+/g, ' '), age: v('aAge'), sex: F.sex,
-      phone: v('aPhone'), attendant: v('aAtt'), indication: v('aInd'), refBy: v('aRef'), instr: $('aInstr').value.trim(), status: F.status, entryId: F.entryId };
+      phone: v('aPhone'), status: F.status, entryId: F.entryId };
     if (!a.date) err.push('date');
     if (!a.name) err.push('patient name');
     if (a.phone.replace(/\D/g, '').length < 7) err.push('contact number');
@@ -3803,9 +4121,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function changePassword() {
     var o = $('pOld').value, n = $('pNew').value, n2 = $('pNew2').value;
     if (!o || !n) return toast('Enter your current and new password');
-    if (n.length < 6) return toast('New password must be at least 6 characters');
+    if (pwProblem(n)) return toast(pwProblem(n));
     if (n !== n2) return toast('The new passwords do not match');
-    api('apiChangePassword', o, n).then(function () { toast('Password changed'); render(); }, function (e) { toast(errText(e)); });
+    api('apiChangePassword', o, n).then(function (r) {
+      if (r && r.token) { S.token = r.token; store_('cec_token', r.token); var off = store_('cec_off'); if (APP_BUILD && off) rememberLogin(S.me.login, n, r.token); }
+      S.defaultPw = false;
+      toast('Password changed. You were signed out on your other devices.'); render();
+    }, function (e) { toast(errText(e)); });
   }
 
   document.addEventListener('click', function (ev) {
@@ -3863,9 +4185,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         break;
       }
       case 'a-type': {
-        var oldT = CEC.apptType(S.af.type), ins = $('aInstr');
         S.af.type = v; if (!isUsual(v, S.af.date)) S.af.date = firstUsual(v);
-        if (ins && (ins.value.trim() === oldT.instr || !ins.value.trim())) ins.value = CEC.apptType(v).instr;
         if (S.ap.type !== v) { S.ap.type = v; S.ap.list = null; S.ap.key = ''; loadAppts().then(function () { if (S.af) syncAppt(); }); }
         syncAppt(); break;
       }
@@ -3908,7 +4228,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'work-current': S.work = S.open; S.filter = 'all'; S.q = ''; render(); refresh(true); break;
       case 'refresh': refresh(false).then(function () { if (S.me) toast('Updated'); }); break;
       case 'filter': S.filter = v; render(); break;
+      case 'dash-cat': {
+        var inCat = ((S.work || {}).entries || []).filter(function (x) { return !v || x.cat === v; });
+        S.dashCat = v || ''; if (el.getAttribute('data-from') === 'home') S.filter = inCat.some(function (x) { return !x.signed; }) ? 'wait' : 'all';
+        if (S.view !== 'shift') { setView('shift'); refresh(true); } else render();
+        break;
+      }
       case 'new-pt': if (S.work) openForm('work', null); break;
+      case 'home-new': if (S.open) { S.work = S.open; openForm('work', null); } break;
       case 'detail-add': if (addable(S.detail)) openForm('detail', null); break;
       case 'edit-pt': {
         var src = el.getAttribute('data-src') || 'work', sh = src === 'detail' ? S.detail : src === 'prev' ? S.prevShift : S.work;
@@ -3972,6 +4299,26 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'dx-remove': S.form.dxs = S.form.dxs.filter(function (x) { return x !== v; }); renderDx(); break;
       case 'save-pt': savePatient('save'); break;
       case 'save-next': savePatient('next'); break;
+      case 'save-vit': savePatient('vitals'); break;
+      case 'pp-new': openPaper(null); break;
+      case 'pp-close': closePaper(); break;
+      case 'pp-save': savePaper(); break;
+      case 'pp-view': viewPaper(id); break;
+      case 'pp-del': confirmBox('Delete this photo record?', 'It is kept encrypted in the recycle bin for 90 days and can be restored by the admin.', 'Delete', true).then(function (ok) {
+        if (ok) api('apiDeletePaperCert', id).then(function () { S.papers = (S.papers || []).filter(function (x) { return x.id !== id; }); S.certs = null; toast('Deleted'); render(); }, function (e) { toast(errText(e)); });
+      }); break;
+      case 'new-reg': if (S.work) openForm('work', null); break;
+      case 'pick-vitals': pickPatient('vitals'); break;
+      case 'pick-ecg': pickPatient('ecg'); break;
+      case 'qp-pick': {
+        var qsrc = el.getAttribute('data-src'), qsh = qsrc === 'prev' ? S.prevShift : S.work, qe = qsh && qsh.entries.filter(function (x) { return x.id === id; })[0];
+        closeModal();
+        if (qe) openQuick(qe, S.pickKind, qsrc);
+        break;
+      }
+      case 'qe-ecg': S.qe.ecg = v === 'yes'; setOn('qEcg', v); break;
+      case 'qe-save': saveQuick(); break;
+      case 'qe-close': closeQuick(); break;
       case 'sign-pt': savePatient('sign'); break;
       case 'del-pt': deletePatient(); break;
       case 'letter-now': S.prev = 'shift'; openLetter({ type: 'shift', shifts: [S.work], annex: true }); break;
@@ -4031,10 +4378,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'cert-paper': {
         var pq = (S.pend || []).filter(function (x) { return x.id === id; })[0];
         if (!pq) break;
-        confirmBox('Certificate issued on paper?', h(pq.name) + (pq.mr ? ' (MR ' + h(pq.mr) + ')' : '') + ' will be taken off the pending list. This is recorded in the activity log.', 'Yes, issued on paper', false).then(function (ok) {
-          if (!ok) return;
-          api('apiSkipCert', pq.id).then(function () { S.pend = S.pend.filter(function (x) { return x.id !== pq.id; }); S.pendCerts = S.pend.length; toast('Taken off the pending list'); render(); }, function (e) { toast(errText(e)); });
-        });
+        openPaper(pq);
         break;
       }
       case 'cert-open': getCert(id).then(function (c) { if (c) openCert(c); }); break;
@@ -4104,6 +4448,24 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'u-approve': setUser({ id: id, status: 'active', canEnter: $('en_' + id).checked, canEdit: $('ed_' + id).checked }, 'Account approved'); break;
       case 'u-reject': confirmBox('Reject this request?', 'The person will not be able to sign in.', 'Reject', true).then(function (ok) { if (ok) setUser({ id: id, status: 'rejected' }, 'Request rejected'); }); break;
       case 'u-edit': { var u = (S.users || []).filter(function (x) { return x.id === id; })[0]; if (u) editUser(u); break; }
+      case 'u-signout': {
+        closeModal();
+        api('apiSignOutUser', id).then(function (r) { if (r && r.token) { S.token = r.token; store_('cec_token', r.token); } toast('Signed out on all devices. They must sign in again.'); }, function (e) { toast(errText(e)); });
+        break;
+      }
+      case 'sec-all': confirmBox('Sign out everybody?', 'Every user must sign in again on every phone and computer (use this if a password may have leaked). You stay signed in here.', 'Sign out everybody', true).then(function (ok) {
+        if (ok) api('apiSignOutAll').then(function (r) { if (r && r.token) { S.token = r.token; store_('cec_token', r.token); } toast('Everybody was signed out.'); }, function (e) { toast(errText(e)); });
+      }); break;
+      case 'sec-backup': toast('Making a backup copy\u2026 this can take a minute'); api('apiBackupNow').then(function (r) { toast('Backup saved: ' + r.name); S.bin = null; render(); }, function (e) { toast(errText(e)); }); break;
+      case 'sec-load': S.bin = null; loadBin(); break;
+      case 'bin-restore': {
+        var bi = (S.bin && S.bin.items || []).filter(function (x) { return x.id === id; })[0];
+        confirmBox('Restore this?', '<b>' + h(bi ? bi.title : '') + '</b><br>' + h(bi ? bi.label : '') + '. It goes back to where it was.', 'Restore', false).then(function (ok) {
+          if (!ok) return;
+          api('apiBinRestore', id).then(function () { toast('Restored'); if (S.form) closeForm(); S.bin = null; S.certs = null; S.ap.list = null; S.docs = null; loadBin(); refresh(true); }, function (e) { toast(errText(e)); });
+        }); break;
+      }
+      case 'ver-show': showVersions(id); break;
       case 'load-log': toast('Loading activity\u2026'); api('apiActivity', 500).then(function (l) { S.log = l; render(); }, function (e) { toast(errText(e)); }); break;
     }
   });
@@ -4129,9 +4491,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
       }, 250);
       return;
     }
+    if (t.id === 'qpQ') {
+      var qq = t.value.trim().toLowerCase();
+      Array.prototype.forEach.call(document.querySelectorAll('#qpList .qp'), function (b) { b.classList.toggle('hidden', !!qq && b.getAttribute('data-q').indexOf(qq) < 0); });
+      return;
+    }
     if (t.id === 'fDx') { S.form.dxq = t.value; renderDxList(); }
     else if (t.id === 'apQ') { S.ap.q = t.value; $('apRes').innerHTML = apSearchHtml(); }
-    else if (t.id === 'q') { S.q = t.value; $('plist').innerHTML = rowsHtml(S.work.entries, S.q, S.filter, 'work'); }
+    else if (t.id === 'q') { S.q = t.value; $('plist').innerHTML = rowsHtml(S.work.entries, S.q, S.filter, 'work', S.dashCat); }
     else if (t.id === 'logQ') {
       S.logQ = t.value; var ql = S.logQ.toLowerCase();
       $('logList').innerHTML = logRows(S.log.filter(function (r) { return !ql || (r.name + ' ' + r.action + ' ' + r.mr + ' ' + r.details + ' ' + r.shift).toLowerCase().indexOf(ql) >= 0; }));
@@ -4139,6 +4506,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   });
   document.addEventListener('change', function (ev) {
     var t = ev.target;
+    if ((t.id === 'ppCam' || t.id === 'ppFile') && t.files && t.files[0]) { paperPhoto(t.files[0]); t.value = ''; return; }
     if (t.getAttribute && t.getAttribute('data-dx') && S.form) {
       var dv = t.getAttribute('data-dx'), di = S.form.dxs.indexOf(dv);
       if (t.checked && di < 0) S.form.dxs.push(dv); else if (!t.checked && di >= 0) S.form.dxs.splice(di, 1);
