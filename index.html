@@ -462,6 +462,19 @@ label.btn{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 }
 .stiles .stile.wide .stt{color:var(--ink)}.stiles .stile.wide .stt span{color:var(--mute)}
 .stiles+.card,.stiles+section{margin-top:12px}
+.home1 .stiles{margin:0 0 12px}
+.qrow{display:flex;align-items:center;gap:10px;cursor:default}
+.qrow .qbtns{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0}
+.qrow .qbtns .btn{min-width:96px}
+.prow .chev{margin-left:auto;color:var(--mute);font-size:22px;align-self:center;padding-left:6px}
+table.mini{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+table.mini th,table.mini td{border-bottom:1px solid var(--line);padding:6px 4px;text-align:left}
+table.mini td:not(:first-child),table.mini th:not(:first-child){text-align:right;width:70px}
+.blist{max-height:420px;overflow:auto;margin-top:6px;border:1px solid var(--line);border-radius:8px}
+.brow{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;padding:7px 10px;border-bottom:1px solid var(--line);font-size:13px}
+.brow .bdx{margin-left:auto;font-weight:700;color:var(--g7)}
+@media (min-width:900px) and (max-width:1599px){.nav.many{gap:0;padding:0 4px}.nav.many .ni>button{padding:13px 8px 11px;font-size:13px;gap:6px}.nav.many .ni>button svg:not(.caret){display:none}}
+@media (min-width:900px) and (max-width:1149px){.nav.many .ni>button{padding:13px 4px 11px;font-size:12px}}
 
 </style>
 </head>
@@ -708,7 +721,10 @@ var CEC = (function () {
     ['Cardiac: heart failure and structural', [
       'Heart failure|hf|ccf|chf|lvf|congestive heart failure|congestive cardiac failure|cardiac failure|hfref|hfpef|adhf|acute decompensated heart failure|decompensated heart failure|lv dysfunction|lv systolic dysfunction',
       'Acute pulmonary edema|apo|pulmonary edema|pulmonary oedema|acute pulmonary oedema|flash pulmonary edema|acute lvf',
-      'Cardiomyopathy (dilated / hypertrophic)|cardiomyopathy|dcm|hcm|hocm|dilated cardiomyopathy|hypertrophic cardiomyopathy|peripartum cardiomyopathy|ischemic cardiomyopathy',
+      'Post-MI heart failure|post mi hf|post-mi hf|post mi heart failure|post-mi heart failure|heart failure post mi|ischemic cardiomyopathy|ischaemic cardiomyopathy|icmp',
+      'Dilated cardiomyopathy|dcm|dilated cardiomyopathy|dcmp|idiopathic dilated cardiomyopathy',
+      'Hypertrophic cardiomyopathy|hcm|hocm|hypertrophic cardiomyopathy|hypertrophic obstructive cardiomyopathy',
+      'Cardiomyopathy|cardiomyopathy|cardiomyopathy (dilated / hypertrophic)|peripartum cardiomyopathy|ppcm',
       'Rheumatic heart disease|rhd|rheumatic|rheumatic fever',
       'Mitral stenosis (MS)|ms|mitral stenosis',
       'Mitral regurgitation (MR)|mitral regurgitation|severe mr',
@@ -951,6 +967,32 @@ var CEC = (function () {
     if (e.dx) return canonList([e.dx]);
     return [];
   }
+  /* One diagnosis per patient in the census tables and lists: the one closest to heart disease
+     (acute coronary and other acute cardiac first, then cardiac disease, chronic cardiac, cardiac symptoms, cardiac arrest, then the rest).
+     The patient record keeps every diagnosis the doctor chose. */
+  var DX_T1 = ['STEMI', 'NSTEMI', 'Myocardial infarction (MI)', 'Acute coronary syndrome / unstable angina', 'Cardiogenic shock', 'Acute pulmonary edema', 'Hypertensive emergency',
+    'Aortic dissection (suspected)', 'Pulmonary embolism (suspected)'];
+  var DX_T3 = ['Ischemic heart disease (IHD)', 'Known IHD, post-PCI (stented)', 'Known IHD, post-CABG', 'Post-thrombolysis follow-up', 'Uncontrolled hypertension', 'Hypertension',
+    'Pregnancy-induced hypertension / pre-eclampsia', 'Permanent pacemaker / ICD patient', 'Post valve replacement (prosthetic valve)', 'Dyslipidemia', 'Peripheral vascular disease', 'Deep vein thrombosis'];
+  var DX_T4 = ['Chest pain, cardiac cause not excluded', 'Atypical chest pain', 'Chest pain (non-cardiac)', 'Palpitations', 'Syncope', 'Sinus tachycardia', 'Warfarin / INR review',
+    'Over-anticoagulation / high INR', 'Abnormal ECG for evaluation', 'Pre-operative cardiac assessment', 'Cardiac follow-up / review'];
+  var DX_TIER = null;
+  function dxTier(d) {
+    if (!DX_TIER) {
+      DX_TIER = {};
+      DX_GROUPS.forEach(function (g) { var cardiac = /^Cardiac/.test(g[0]); g[1].forEach(function (n) { DX_TIER[n] = cardiac ? 2 : 6; }); });
+      DX_T1.forEach(function (n) { DX_TIER[n] = 1; }); DX_T3.forEach(function (n) { DX_TIER[n] = 3; }); DX_T4.forEach(function (n) { DX_TIER[n] = 4; });
+      DX_TIER['Cardiac arrest'] = 5; DX_TIER['Brought dead'] = 0;
+    }
+    return DX_TIER.hasOwnProperty(d) ? DX_TIER[d] : 7;
+  }
+  function mainDx(e) {
+    var l = dxOf(e);
+    if (l.length < 2) return l;
+    var best = l[0];
+    l.forEach(function (d) { if (dxTier(d) < dxTier(best)) best = d; });
+    return [best];
+  }
   function sexCount(list) {
     var r = { M: 0, F: 0, T: 0 };
     list.forEach(function (e) { if (e.sex === 'M') r.M++; else if (e.sex === 'F') r.F++; r.T++; });
@@ -984,7 +1026,7 @@ var CEC = (function () {
   function dxTable(list) {
     var g = {}, lab = {};
     list.forEach(function (e) {
-      var d = dxOf(e); if (!d.length) d = [NOT_RECORDED];
+      var d = mainDx(e); if (!d.length) d = [NOT_RECORDED];
       d.forEach(function (x) { var k = x.toLowerCase(); if (!lab[k]) lab[k] = x; (g[k] = g[k] || []).push(e); });   // "Leg pain" and "leg Pain" are one row
     });
     var rows = Object.keys(g).map(function (k) { var c = sexCount(g[k]); return [lab[k], c.M, c.F, c.T]; });
@@ -993,7 +1035,7 @@ var CEC = (function () {
     return {
       cols: [{ h: 'S. No.', w: 0.09, a: 'c' }, { h: 'Diagnosis', w: 0.49, a: 'l' }, { h: 'Male', w: 0.14, a: 'c' }, { h: 'Female', w: 0.14, a: 'c' }, { h: 'Total', w: 0.14, a: 'c' }],
       rows: rows.map(function (r, i) { return [i + 1].concat(r); }), total: null, empty: 'No patients recorded',
-      note: multi ? 'A patient with more than one diagnosis is counted under each diagnosis.' : ''
+      note: multi ? 'Each patient is counted once, under the diagnosis closest to heart disease.' : ''
     };
   }
   function procItems(list) {
@@ -1052,7 +1094,7 @@ var CEC = (function () {
             var o = e.out ? short(OUTS, e.out) : 'Awaiting doctor';
             if (e.out === 'OBS' && e.obsH) o += ' (' + e.obsH + ' h)';
             return [i + 1, (withShift ? e._shift + ' ' : '') + hm(e.t), e.mr, e.name, (e.age !== '' && e.age != null ? e.age : '-') + '/' + (e.sex || '-'),
-              dxOf(e).join(', ') || '-', (e.procs || []).map(function (p) { return label(PROCS, p); }).join(', ') || '-', o];
+              mainDx(e).join(', ') || '-', (e.procs || []).map(function (p) { return label(PROCS, p); }).join(', ') || '-', o];
           })
         }
       });
@@ -1600,7 +1642,7 @@ var CEC = (function () {
     var rbs = col('RBS', 0.05, 'c', function (e) { return e.rbs || (has(e, 'BSR') ? 'Done' : '-'); });
     var ecg = col('ECG', 0.045, 'c', function (e) { return has(e, 'ECG') ? 'Yes' : '-'; });
     var neb = col('Nebs', 0.05, 'c', function (e) { return has(e, 'NEB') ? 'Yes' : '-'; });
-    var dx = col('Diagnosis', 0.18, 'l', function (e) { return dxOf(e).join(', ') || '-'; });
+    var dx = col('Diagnosis', 0.18, 'l', function (e) { return mainDx(e).join(', ') || '-'; });
     var out = col('Outcome', 0.11, 'l', function (e) { return e.out ? short(OUTS, e.out) : 'Awaiting doctor'; });
     var seen = col('Doctor seen', 0.08, 'c', function (e) { return e.signed ? 'Yes' : 'No'; });
     var rem = col('Remarks', 0.13, 'l', function () { return ''; });
@@ -1655,7 +1697,7 @@ var CEC = (function () {
     { k: 'ht', m: 32, t: function (e) { return e.ht ? 'Ht ' + e.ht + ' cm' : ''; }, h: 'Height', w: 4.5, a: 'c', f: function (e) { return e.ht ? e.ht + ' cm' : ''; } },
     { k: 'ecg', m: 26, t: function (e) { return has(e, 'ECG') ? 'ECG done' : ''; }, h: 'ECG', w: 4, a: 'c', f: function (e) { return has(e, 'ECG') ? 'Yes' : ''; } },
     { k: 'neb', m: 28, t: function (e) { return has(e, 'NEB') ? 'Nebs done' : ''; }, h: 'Nebs', w: 4, a: 'c', f: function (e) { return has(e, 'NEB') ? 'Yes' : ''; } },
-    { k: 'dx', m: 84, t: function (e) { return dxOf(e).join(', '); }, h: 'Diagnosis', w: 16, a: 'l', clin: true, f: function (e) { return dxOf(e).join(', ') || '-'; } },
+    { k: 'dx', m: 84, t: function (e) { return mainDx(e).join(', '); }, h: 'Diagnosis', w: 16, a: 'l', clin: true, f: function (e) { return mainDx(e).join(', ') || '-'; } },
     { k: 'procs', m: 62, t: function (e) { var l = (e.procs || []).filter(erProc).map(function (p) { return label(PROCS, p); }); return l.length ? 'Procedures: ' + l.join(', ') : ''; }, h: 'ER procedures', w: 13, a: 'l', clin: true, f: function (e) { return (e.procs || []).filter(erProc).map(function (p) { return label(PROCS, p); }).join(', ') || '-'; } },
     { k: 'meds', m: 74, t: function (e) { return (e.meds || []).length ? 'Meds: ' + e.meds.join(', ') : ''; }, h: 'Medications', w: 15, a: 'l', clin: true, f: function (e) { return (e.meds || []).join(', ') || '-'; } },
     { k: 'out', m: 52, h: 'Outcome', w: 9, a: 'l', clin: true, f: outText },
@@ -1969,7 +2011,7 @@ var CEC = (function () {
 
   return {
     CATS: CATS, OUTS: OUTS, PROCS: PROCS, SHIFTS: SHIFTS, DEFAULTS: DEFAULTS, label: label, short: short, shiftName: shiftName, ymd: ymd, addDays: addDays,
-    dmy: dmy, hm: hm, dxOf: dxOf, shiftTimes: shiftTimes, censusDateFor: censusDateFor, suggestShift: suggestShift, sexCount: sexCount, monthName: monthName,
+    dmy: dmy, hm: hm, dxOf: dxOf, mainDx: mainDx, shiftTimes: shiftTimes, censusDateFor: censusDateFor, suggestShift: suggestShift, sexCount: sexCount, monthName: monthName,
     shiftModel: shiftModel, dayModel: dayModel, monthModel: monthModel, letterHtml: letterHtml, letterPdf: letterPdf, summaryText: summaryText, esc: h,
     EXAMS: EXAMS, deathCertPdf: deathCertPdf, opdSlipPdf: opdSlipPdf, slipOps: slipOps, slipPdf: slipPdf, slipSvg: slipSvg, slipVitals: slipVitals, STAFF_PROCS: STAFF_PROCS, listPdf: listPdf, listCsv: listCsv,
     certHtml: certHtml, weekday: weekday, MEDS: MEDS, DX_GROUPS: DX_GROUPS, DX_LIST: DX_LIST, DXKW: DXKW, FREQ_DX: FREQ_DX, canonDx: canonDx, canonList: canonList, dxMatch: dxMatch, dxKey: dxKey, LIST_KINDS: LIST_KINDS, listSpec: listSpec, LIST_COLS: LIST_COLS, LIST_COLSETS: LIST_COLSETS, LIST_PRESETS: LIST_PRESETS, LIST_DEF: LIST_DEF,
@@ -2168,7 +2210,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       render();
     }, function (e) { if (!silent && !isAuthErr(e) && !(e && e.offline)) toast('Could not refresh: ' + errText(e)); if (e && e.offline && !S.form && !S.cert && !S.af) render(); });
   }
-  setInterval(function () { if (S.loaded && S.me && (S.view === 'shift' || S.view === 'home') && !document.hidden) refresh(true); }, 20000);
+  setInterval(function () { if (S.loaded && S.me && (S.view === 'shift' || S.view === 'home' || Q_KINDS[S.view]) && !document.hidden) refresh(true); }, 20000);
 
   function saveToDrive(filename, bytes, mime) {
     toast('Saving to Google Drive\u2026');
@@ -2324,7 +2366,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     rosters: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M7 13h4M7 17h7"/>',
     lists: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="3" stroke-linecap="round"/>',
     appt: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M9 15l2 2 4-4"/>',
-    settings: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/>'
+    settings: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/>',
+    bulk: '<path d="M3 6h11M3 12h8M3 18h6"/><path d="M14 15l3 3 5-6"/>'
   };
   function navIcon(k) { return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">' + NAV_ICON[k] + '</svg>'; }
   var CEN_MODES = [['shift', 'Per shift data'], ['day', 'Daily data (24 hours)'], ['month', 'Monthly data'], ['year', 'Annual data']];
@@ -2336,6 +2379,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (canClin()) a.push({ v: 'forms', l: 'Download forms' });              // not for students
     if (canClin()) a.push({ v: 'lists', l: 'Patient lists' });
     if (canClin()) a.push({ v: 'census', l: 'Patient census', sub: CEN_MODES });
+    if (isAdmin()) a.push({ v: 'bulk', l: 'Bulk sign-off' });
     a.push({ v: 'settings', l: isAdmin() ? 'Account & admin' : 'Account', badge: isAdmin() ? (S.pendingUsers || 0) + (S.pendingResets || 0) : 0 });
     return a;
   }
@@ -2344,7 +2388,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (v === 'detail') return 'census';
     if (v === 'letter') return S.prev === 'detail' ? 'census' : S.prev;
     if (v === 'roster') return 'rosters';
-    if (v === 'wedit') return 'home';
+    if (v === 'wedit' || Q_KINDS[v]) return 'home';
     return v;
   }
   function navHtml() {
@@ -2378,7 +2422,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       headerHeight(); return;
     }
     nav.classList.remove('hidden'); $('menuBtn').classList.remove('hidden'); ub.classList.remove('hidden');
-    nav.innerHTML = navHtml(); headerHeight(); renderBanner();
+    nav.innerHTML = navHtml(); nav.classList.toggle('many', navItems().length > 9); headerHeight(); renderBanner();
     if (isOff() && ['home', 'shift', 'letter', 'detail'].indexOf(S.view) < 0) {
       v.innerHTML = '<section class="card"><div class="ct">Needs internet</div><p class="small" style="margin:6px 0 0">This page needs internet. Without internet you can add new patients on the Patient dashboard; they are sent automatically later.</p>' +
         '<button class="btn pri block" data-act="go" data-v="shift">Open patient dashboard</button></section>';
@@ -2401,6 +2445,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     else if (S.view === 'roster') v.innerHTML = rosterHtml();
     else if (S.view === 'wedit') v.innerHTML = weditHtml();
     else if (S.view === 'appt') v.innerHTML = canAppt() ? apptHtml() : '<section class="card">You do not have the right to give appointments.</section>';
+    else if (S.view === 'bulk') v.innerHTML = bulkHtml();
+    else if (Q_KINDS[S.view]) v.innerHTML = canEnter() ? queueHtml(S.view) : '<section class="card">You do not have the right to add patients.</section>';
     if (S.view === 'shift' && S.work && canEnter()) {
       a.innerHTML = '<div class="in2"><button class="btn pri" data-act="new-pt">+ New patient' +
         (S.open && S.work.id !== S.open.id ? ' (' + h(CEC.shiftName(S.work.shift)) + ', ' + CEC.dmy(S.work.censusDate) + ')' : '') + '</button></div>';
@@ -2433,10 +2479,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       if (rd) procs = rd + (procs ? ' \u00b7 ' + procs : '');
       var out = e.out ? CEC.short(CEC.OUTS, e.out) + (e.out === 'OBS' && e.obsH ? ' (' + e.obsH + ' h)' : '') : '';
       var stTag = e.signed ? (e.cat !== 'BD' && out ? '<span class="tag out">' + h(out) + '</span>' : '') + '<span class="tag ok">&#10003; ' + (canClin() ? 'Signed off' : 'Seen by doctor') + '</span>'
-        : st === 'vit' ? '<span class="tag vit">Waiting for vitals</span>'
-        : st === 'adv' ? '<span class="tag adv">' + h(left.join(' + ')) + ' advised</span><span class="tag wait">Awaiting doctor</span>'
-        : st === 'back' ? '<span class="tag back">' + h((e.adv || []).join(' + ')) + ' done</span><span class="tag wait">Back to doctor</span>'
-        : '<span class="tag wait">Awaiting doctor</span>';
+        : (left.length ? '<span class="tag adv">' + h(left.join(' + ')) + ' advised</span>' : '') + '<span class="tag wait">Awaiting doctor</span>';
       return '<button class="prow" data-act="edit-pt" data-src="' + (src || 'work') + '" data-id="' + h(e.id) + '"><div class="pr-l"><div class="pr-no">' + x.n + '</div><div class="pr-t">' + CEC.hm(e.t) +
         '</div></div><div class="pr-m"><div class="pr-name">' + (e.tok ? '<span class="tokb ' + (e.tok.indexOf('ER') === 0 ? 'er' : '') + '">' + h(e.tok) + '</span> ' : '') + h(e.name || '(no name)') + ' <span class="muted">&middot; ' + (e.mr ? 'MR ' + h(e.mr) : '</span><span class="mrp">MR pending</span><span>') + '</span></div>' +
         '<div class="pr-sub">' + (e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '') + (e.age !== '' && e.age != null ? ', ' + h(e.age) + ' y' : '') +
@@ -2455,11 +2498,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<div class="muted small">Census day ' + CEC.dmy(s.censusDate) + ' &middot; ' + h(CEC.shiftTimes(S.settings, s.shift)) + '</div></div>' +
       '<span class="pill ' + (isCur ? 'open' : 'closed') + '">' + (isCur ? 'Open' : 'Locked') + '</span></div>' +
       '<div class="role">' + (isCur ? 'Every patient registered now goes into this shift. At ' + CEC.hm(S.openEnds) + ' hrs it locks and new patients go into the ' + h(next) + ' shift automatically.'
-        : 'You are working in this shift as admin. Patients you add go into it.') + '</div>' + statsHtml(s.entries) + stageChips(s.entries) +
+        : 'You are working in this shift as admin. Patients you add go into it.') + '</div>' + statsHtml(s.entries) +
       '<div class="sbtns">' + (canClin() ? '<button class="btn sm" data-act="letter-now">Shift list and letter so far</button>' : '') +
       (isAdmin() ? '<button class="btn sm" data-act="work-pick">Choose another shift</button>' + (isCur ? '' : '<button class="btn sm pri" data-act="work-current">Back to current shift</button>') : '') +
       '</div></section>';
-    if (isCur && canEnter() && s.entries.length) html += openItemsHtml(s.entries);
     var pv = S.prevShift;
     if (pv && isCur && canEnter()) {
       var waiting = pv.entries.filter(function (e) { return !e.signed; });
@@ -2555,7 +2597,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function topDx(entries, n) {
     var g = {};
-    entries.forEach(function (e) { CEC.dxOf(e).forEach(function (d) { g[d] = (g[d] || 0) + 1; }); });
+    entries.forEach(function (e) { CEC.mainDx(e).forEach(function (d) { g[d] = (g[d] || 0) + 1; }); });
     var k = Object.keys(g).sort(function (a, b) { return g[b] - g[a]; }).slice(0, n);
     return k.length ? '<div class="small" style="margin-top:10px"><b>Top diagnoses:</b> ' + k.map(function (d) { return h(d) + ' (' + g[d] + ')'; }).join(', ') + '</div>' : '';
   }
@@ -2824,16 +2866,15 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function openForm(target, entry, roWhy) {
     var e = entry || {}, doctor = canEdit();
     S.form = { target: target, editId: e.id || null, sex: e.sex || '', cat: e.cat || '', dxs: CEC.dxOf(e).slice(), procs: (e.procs || []).slice(), meds: (e.meds || []).slice(),
-      out: e.out || '', obsH: e.obsH || '', signed: !!e.signed, dupOk: false, dxq: '', v: e.v || '', ro: !!roWhy, adv: (e.adv || []).slice(), tok: e.tok || '' };
+      out: e.out || '', obsH: e.obsH || '', signed: !!e.signed, dupOk: false, dxq: '', v: e.v || '', ro: !!roWhy, adv: (e.adv || []).slice(), tok: e.tok || '', orig: entry ? clone(entry) : null };
     var sh = targetShift(), no = entry ? sh.entries.map(function (x) { return x.id; }).indexOf(e.id) + 1 : sh.entries.length + 1;
     var el = $('sheet');
-    var regOnly = !entry && !canClin() && !doctor;          // students: registration only; vitals and ECG have their own buttons
+    var regOnly = !entry && !doctor;                         // registration: biodata only; vitals, ECG and the slip have their own pages
     S.form.regOnly = regOnly;
-    var foot, readings = vitalsHtml(e);
+    var foot, readings = entry ? vitalsHtml(e) : '';
     if (roWhy) foot = '<button class="btn" data-act="close-form">Close</button>';
     else if (regOnly) foot = '<button class="btn" data-act="save-next">Save &amp; next</button><button class="btn" data-act="save-vit">Save &amp; add vitals</button><button class="btn pri" data-act="save-pt">Save</button>';
-    else if (!doctor) foot = entry ? '<button class="btn" data-act="save-pt">Save changes</button><button class="btn pri" data-act="save-slip">Save &amp; print slip</button>'
-      : '<button class="btn" data-act="save-next">Save &amp; next</button><button class="btn" data-act="save-pt">Save</button><button class="btn pri" data-act="save-slip">Save &amp; print slip</button>';
+    else if (!doctor) foot = '<button class="btn pri" data-act="save-pt">Save changes</button>';
     else if (e.signed) foot = '<button class="btn pri" data-act="save-pt">Save changes</button>';
     else foot = (entry ? '' : '<button class="btn" data-act="save-next">Save &amp; next</button>') + '<button class="btn" data-act="save-pt">Save</button><button class="btn pri" data-act="sign-pt">&#10003; Sign off</button>';
     el.innerHTML = '<div class="sh-head"><button data-act="close-form">Cancel</button><h3>' + (entry ? 'Patient record' : regOnly ? 'Patient registration' : 'New patient') + '</h3>' +
@@ -2843,7 +2884,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       (entry && isAdmin() ? '<div style="margin-top:10px"><button type="button" class="btn sm" data-act="ver-show" data-id="' + h(e.id) + '">Earlier versions</button></div>' : '') +
       (target === 'prev' && !roWhy ? '<div class="warn" style="margin-top:12px">This patient belongs to the ' + h(CEC.shiftName(sh.shift)) + ' shift, which is now locked for new patients.</div>' : '') +
       '<div class="fsec">Patient registration</div>' +
-      '<div class="mrrow"><label class="lb" for="fMr">MR No. <span class="req" id="mrReq">*</span><span class="muted" id="mrOpt"> (Emergency / BD: can be added later)</span></label>' + (entry ? '' : '<label class="tog"><input type="checkbox" id="fAuto"> Automatic MR</label>') + '</div>' +
+      '<div class="mrrow"><label class="lb" for="fMr">MR No. <span class="req">*</span></label>' + (entry ? '' : '<label class="tog"><input type="checkbox" id="fAuto"> Automatic MR</label>') + '</div>' +
       '<input class="in" id="fMr" autocapitalize="characters" value="' + h(e.mr || '') + '">' + (entry ? '' : '<div class="mrinfo" id="mrInfo"></div>') +
       '<label class="lb" for="fName">Patient name <span class="req">*</span></label><input class="in" id="fName" autocapitalize="words" value="' + h(e.name || '') + '">' +
       '<div class="row2"><div><label class="lb" for="fAge">Age (years)</label><input class="in" id="fAge" inputmode="numeric" maxlength="3" value="' + h(e.age == null ? '' : e.age) + '"></div>' +
@@ -2851,8 +2892,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       [['M', 'Male'], ['F', 'Female']].map(function (g) { return '<button type="button" data-act="f-sex" data-v="' + g[0] + '">' + g[1] + '</button>'; }).join('') + '</div></div></div>' +
       '<label class="lb">Category <span class="req">*</span></label><div class="seg cats" id="fCat">' +
       CEC.CATS.map(function (c) { return '<button type="button" data-act="f-cat" data-v="' + c.c + '">' + h(c.l) + '</button>'; }).join('') + '</div>' +
-      (doctor ? '<div class="fsec">Checks and tests</div><div class="seg procs" id="fChk">' + procBtns('chk', e) + '</div>' + readings + '<div class="fsec">Advised by the doctor</div><div class="seg" id="fAdv"><button type="button" data-act="f-adv" data-v="ECG">ECG advised</button><button type="button" data-act="f-adv" data-v="RBS">RBS advised</button></div>' +
-        '<p class="muted small" style="margin:4px 0 0">The ECG room sees these patients first. When the ECG is done (or the RBS is written) the patient shows as back to the doctor.</p>' + slipLine(e) +
+      (doctor ? '<div class="fsec">Checks and tests</div><div class="seg procs" id="fChk">' + procBtns('chk', e) + '</div>' + readings + advHtml(e) +
         '<div class="fsec">ER procedures</div><div class="seg procs" id="fEr">' + procBtns('er', e) + '</div>' +
         '<div class="chips" id="procX" style="margin-top:8px"></div><div class="addrow"><input class="in" id="fProcX" placeholder="Other procedure, e.g. chest tube">' +
         '<button type="button" class="btn" data-act="proc-add">Add</button></div>' +
@@ -2866,11 +2906,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
         CEC.OUTS.filter(function (o) { return o.c !== 'BD'; }).map(function (o) { return '<button type="button" data-act="f-out" data-v="' + o.c + '">' + h(o.l) + '</button>'; }).join('') + '</div>' +
         '<div id="obsWrap" class="hidden"><label class="lb" for="fObs">Hours kept under observation</label><input class="in" id="fObs" inputmode="numeric" maxlength="2" value="' + h(e.obsH || '4') + '"></div></div>' +
         ''
-        : regOnly ? '<p class="muted small fnote">After saving, add the vitals and ECG with the <b>Vitals</b> and <b>ECG</b> buttons on the home page (or tap Save &amp; add vitals).</p>'
+        : regOnly ? '<p class="muted small fnote">After saving, take the vitals on the <b>Vitals</b> page (or tap Save &amp; add vitals). The OPD / ER slip is then ready on the <b>OPD / ER slip</b> page.</p>'
         : '<div class="fsec">Checks done</div><div class="seg procs" id="fProc">' +
           CEC.PROCS.filter(function (p) { return CEC.STAFF_PROCS.indexOf(p.c) >= 0; }).map(function (p) { return '<button type="button" data-act="f-proc" data-v="' + p.c + '">' + h(p.l) + '</button>'; }).join('') +
-          '</div>' + readings + '<div class="fsec">Advised by the doctor</div><div class="seg" id="fAdv"><button type="button" data-act="f-adv" data-v="ECG">ECG advised</button><button type="button" data-act="f-adv" data-v="RBS">RBS advised</button></div>' +
-        '<p class="muted small" style="margin:4px 0 0">The ECG room sees these patients first. When the ECG is done (or the RBS is written) the patient shows as back to the doctor.</p>' + slipLine(e) + (canClin() && entry ? assessHtml(e) : '') + (roWhy ? '' : '<p class="muted small fnote">A doctor adds the diagnosis and outcome and signs the patient off. You can correct these details until then.</p>')) +
+          '</div>' + readings + advHtml(e) + (canClin() && entry ? assessHtml(e) : '') + (roWhy ? '' : '<p class="muted small fnote">A doctor adds the diagnosis and outcome and signs the patient off. You can correct these details until then.</p>')) +
       (canAppt() && entry && e.cat !== 'BD' && e.out !== 'EXP' ? '<div class="fsec">Give an appointment</div><div class="sbtns" style="margin-top:6px">' + CEC.APPTS.map(function (t) {
         return '<button type="button" class="btn sm" data-act="pt-appt" data-v="' + t.c + '">' + h(t.c === 'ECHO' ? 'Echo' : t.l) + '</button>'; }).join('') + '</div>' : '') +
       (canCert() ? '<div id="certWrap" class="hidden"><button type="button" class="btn block" data-act="cert-from-pt">Death certificate</button></div>' : '') +
@@ -2883,11 +2922,16 @@ if (typeof module !== 'undefined') module.exports = CEC;
     });
     if (!entry) setTimeout(function () { var m = S.form && S.form.auto ? $('fName') : $('fMr'); if (m) m.focus(); }, 60);
   }
+  /* Advised tests and the slip, in a saved patient's record (not at registration). */
+  function advHtml(e) {
+    if (!e.id) return '';
+    return '<div class="fsec">Advised by the doctor</div><div class="seg" id="fAdv"><button type="button" data-act="f-adv" data-v="ECG">ECG advised</button><button type="button" data-act="f-adv" data-v="RBS">RBS advised</button></div>' +
+      '<p class="muted small" style="margin:4px 0 0">The patient then appears on the ECG page until the ECG is done (or the RBS is written).</p>' + slipLine(e);
+  }
   function slipLine(e) {
-    var ro = S.form && S.form.ro;
-    return '<div class="slipln"><span>' + (e.tok ? 'OPD / ER slip: <b>' + h(e.tok) + '</b>' : 'No OPD / ER slip yet') + '</span>' +
-      (ro ? (e.tok ? '<button type="button" class="btn sm" data-act="slip-reprint" data-id="' + h(e.id) + '">Print again</button>' : '')
-        : canEdit() ? '<button type="button" class="btn sm" data-act="save-slip">Save &amp; print slip</button>' : '') + '</div>';
+    if (e.signed) return e.tok ? '<div class="slipln"><span>OPD / ER slip: <b>' + h(e.tok) + '</b> (signed off)</span></div>' : '';
+    return '<div class="slipln"><span>' + (e.tok ? 'OPD / ER slip: <b>' + h(e.tok) + '</b>' : 'No OPD / ER slip yet (it is made when the vitals are saved)') + '</span>' +
+      '<button type="button" class="btn sm" data-act="slip-reprint" data-id="' + h(e.id) + '">' + (e.tok ? 'Print slip' : 'Make slip &amp; print') + '</button></div>';
   }
   function assessHtml(e) {
     var dx = CEC.dxOf(e), procs = (e.procs || []).filter(function (p) { return CEC.STAFF_PROCS.indexOf(p) < 0; }).map(function (p) { return CEC.label(CEC.PROCS, p); }), meds = e.meds || [];
@@ -2899,71 +2943,91 @@ if (typeof module !== 'undefined') module.exports = CEC;
       (e.note ? '<div><b>Comments:</b> ' + h(e.note) + '</div>' : '') + (e.signed ? '<div class="signed">&#10003; Signed off ' + h(fmtTime(e.signedAt)) + '</div>' : '') + '</div>';
   }
   /* ---------- quick Vitals and ECG (home page buttons): choose a patient of this shift, then fill only that ---------- */
-  function pickPatient(kind) {
-    if (!S.work) return toast('Loading the shift\u2026');
-    if (isOff()) return toast(kind === 'slip' ? 'Slips need internet.' : 'Vitals and ECG need internet.');
-    S.pickKind = kind;
-    if (!pickPatient.fresh) {                              // show the latest list (another phone may have just advised an ECG)
-      var shown = false, go = function () { if (shown) return; shown = true; pickPatient.fresh = true; try { if (S.me && !S.form && !S.qe && !S.qer) pickPatient(kind); } finally { pickPatient.fresh = false; } };
-      modal(kind === 'ecg' ? 'ECG' : kind === 'slip' ? 'OPD / ER slip' : 'Vitals', '<div class="center muted" style="padding:14px"><span class="spin"></span>Loading the latest list&hellip;</div>', [{ label: 'Cancel', value: false }]).then(function () { shown = true; });
-      loadState().then(function () { if (!shown) { closeModal(); go(); } }, function () { if (!shown) { closeModal(); go(); } });
-      setTimeout(function () { if (!shown) { closeModal(); go(); } }, 4000);
-      return;
+  /* ---------- Vitals, ECG and OPD / ER slip pages: lists like the patient dashboard ----------
+     Vitals: patients without vitals (a patient leaves the list when the vitals are saved; the slip number is given at the same time).
+     Slips: ready to print, then "Printed" for 5 minutes; after that the slip is printed again from the patient dashboard until sign-off.
+     ECG: patients with ECG / RBS advised, then "Done" for 5 minutes. */
+  var RECENT_MS = 5 * 60000;
+  function recent(iso) { var t = iso ? new Date(iso).getTime() : 0; return t > 0 && Date.now() - t < RECENT_MS; }
+  function qShifts() {
+    var a = [];
+    if (S.work) a.push({ sh: S.work, src: 'work' });
+    if (S.prevShift && S.open && S.work && S.work.id === S.open.id) a.push({ sh: S.prevShift, src: 'prev' });
+    return a;
+  }
+  function qItems(test) {
+    var out = [];
+    qShifts().forEach(function (x) { (x.sh.entries || []).forEach(function (e) { if (!/^(q-|tmp)/.test(e.id) && test(e)) out.push({ e: e, sh: x.sh, src: x.src }); }); });
+    return out.sort(function (a, b) { return (a.e.t || '') < (b.e.t || '') ? -1 : 1; });   // waiting the longest first
+  }
+  var Q_KINDS = {
+    vit: { title: 'Vitals', sub: 'Patients waiting for vitals. Tap a patient to enter the vitals; the OPD / ER slip is then ready on the OPD / ER slip page.',
+      lists: [['Waiting for vitals', function (e) { return !e.signed && e.cat !== 'BD' && !hasVitals(e); }]], empty: 'No patient is waiting for vitals.' },
+    slipq: { title: 'OPD / ER slips', sub: 'Slips are ready as soon as the vitals are saved. Tap Print.',
+      lists: [['Ready to print', function (e) { return !!e.tok && !e.tokPr && !e.signed; }], ['Printed (shown for 5 minutes)', function (e) { return !!e.tok && !!e.tokPr && recent(e.tokPr); }]],
+      empty: 'No slip is waiting. Slips appear here after the vitals are saved.' },
+    ecgq: { title: 'ECG', sub: 'Patients the doctor advised ECG (or RBS). Tap a patient to mark it done.',
+      lists: [['ECG / RBS advised', function (e) { return advLeft(e).length > 0; }], ['Done (shown for 5 minutes)', function (e) { return (e.adv || []).length > 0 && !advLeft(e).length && recent(e.advDone); }]],
+      empty: 'No ECG or RBS is waiting.' }
+  };
+  function qRow(x, kind, done) {
+    var e = x.e, vt = vitalsText(e), left = advLeft(e);
+    var info = kind === 'vit' ? h(CEC.label(CEC.CATS, e.cat)) + ' &middot; registered ' + CEC.hm(e.t)
+      : kind === 'slipq' ? (vt ? h(vt) : '<span class="muted">no vitals</span>') + (done ? ' &middot; printed ' + CEC.hm(e.tokPr) : '')
+      : (done ? '<b style="color:var(--g7)">' + h((e.adv || []).join(' + ')) + ' done</b>' : '<b class="advt">' + h(left.join(' + ')) + ' advised</b>') + (e.rbs ? ' &middot; RBS ' + h(e.rbs) : '');
+    var main = '<div class="pr-m"><div class="pr-name">' + (e.tok ? '<span class="tokb ' + (e.tok.indexOf('ER') === 0 ? 'er' : '') + '">' + h(e.tok) + '</span> ' : '') + h(e.name || '(no name)') +
+      ' <span class="muted">&middot; MR ' + h(e.mr) + '</span></div><div class="pr-sub">' + (e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '') + (e.age !== '' && e.age != null ? ', ' + h(e.age) + ' y' : '') +
+      (x.src === 'prev' ? ' &middot; ' + h(CEC.shiftName(x.sh.shift)) + ' shift' : '') + '</div><div class="pr-proc">' + info + '</div></div>';
+    if (kind === 'slipq') {
+      var other = e.tok.indexOf('ER') === 0 ? 'OPD' : 'ER';
+      return '<div class="prow qrow"><div class="pr-l"><div class="pr-t">' + CEC.hm(e.t) + '</div></div>' + main + '<div class="qbtns">' +
+        '<button class="btn ' + (done ? '' : 'pri') + '" data-act="q-print" data-src="' + x.src + '" data-id="' + h(e.id) + '">' + (done ? 'Print again' : 'Print') + '</button>' +
+        (done ? '' : '<button class="lnk" data-act="q-swap" data-v="' + other + '" data-src="' + x.src + '" data-id="' + h(e.id) + '">Make it ' + other + '</button>') + '</div></div>';
     }
-    var info = function (e) {
-      if (kind === 'ecg') { var l = advLeft(e); return (e.procs || []).indexOf('ECG') >= 0 ? '<b style="color:var(--g7)">ECG done</b>' + (l.length ? ' &middot; <b class="advt">' + h(l.join(' + ')) + ' advised</b>' : '') : l.length ? '<b class="advt">' + h(l.join(' + ')) + ' advised</b>' : '<span class="muted">no ECG yet</span>'; }
-      if (kind === 'slip') return (e.tok ? '<b style="color:var(--g7)">Slip ' + h(e.tok) + '</b>' : '<span class="muted">no slip yet</span>') + (vitalsText(e) ? ' &middot; ' + h(vitalsText(e)) : ' &middot; <span class="muted">no vitals</span>');
-      return vitalsText(e) ? '<b style="color:var(--g7)">' + h(vitalsText(e)) + '</b>' : '<span class="muted">no vitals yet</span>';
-    };
-    var first = function (e) { return kind === 'ecg' ? advLeft(e).indexOf('ECG') >= 0 || (advLeft(e).length > 0 && (e.procs || []).indexOf('ECG') >= 0) : kind === 'slip' ? !e.tok : !hasVitals(e); };
-    var heads = { ecg: ['ECG / RBS advised: waiting', 'Other patients'], slip: ['No slip yet', 'Slip already printed'], vitals: ['Waiting for vitals', 'Vitals taken'] }[kind];
-    var row = function (e, src) {
-      return '<button type="button" class="prow qp" data-act="qp-pick" data-src="' + src + '" data-id="' + h(e.id) + '" data-q="' + h((e.mr + ' ' + e.name + ' ' + (e.tok || '')).toLowerCase()) + '"><div class="pr-m"><div class="pr-name">' +
-        (e.tok ? '<span class="tokb ' + (e.tok.indexOf('ER') === 0 ? 'er' : '') + '">' + h(e.tok) + '</span> ' : '') + h(e.name || '(no name)') +
-        ' <span class="muted">&middot; ' + (e.mr ? 'MR ' + h(e.mr) : 'MR pending') + '</span></div><div class="pr-sub">' + h(CEC.label(CEC.CATS, e.cat)) + ' &middot; ' + CEC.hm(e.t) + ' &middot; ' + info(e) + '</div></div></button>';
-    };
-    var group = function (sh, src, label) {
-      var list = (sh && sh.entries || []).filter(function (e) { return !/^(q-|tmp)/.test(e.id); }).slice().reverse();
-      if (!list.length) return '';
-      var a = list.filter(first), b = list.filter(function (e) { return !first(e); });
-      if (kind === 'ecg' || kind === 'vitals') a.reverse();             // waiting the longest comes first
-      return '<div class="gh">' + h(label) + '</div>' + (a.length ? '<div class="gh2">' + h(heads[0]) + ' (' + a.length + ')</div>' + a.map(function (e) { return row(e, src); }).join('') : '') +
-        (b.length ? '<div class="gh2">' + h(heads[1]) + ' (' + b.length + ')</div>' + b.map(function (e) { return row(e, src); }).join('') : '');
-    };
-    var cur = group(S.work, 'work', CEC.shiftName(S.work.shift) + ' shift'), pv = S.prevShift ? group(S.prevShift, 'prev', CEC.shiftName(S.prevShift.shift) + ' shift (earlier)') : '';
-    modal(kind === 'ecg' ? 'ECG: choose the patient' : kind === 'slip' ? 'OPD / ER slip: choose the patient' : 'Vitals: choose the patient', '<input class="in" id="qpQ" placeholder="Find MR, name or slip no." autocomplete="off">' +
-      '<div class="plist qplist" id="qpList">' + (cur || pv ? cur + pv : '<div class="empty">No patients registered in this shift yet. Register the patient first.</div>') + '</div>',
-      [{ label: 'Cancel', value: false }]);
-    setTimeout(function () { var q = $('qpQ'); if (q) q.focus(); }, 60);
+    return '<button class="prow" data-act="q-open" data-v="' + kind + '" data-src="' + x.src + '" data-id="' + h(e.id) + '"><div class="pr-l"><div class="pr-t">' + CEC.hm(e.t) + '</div></div>' + main + '<span class="chev">&rsaquo;</span></button>';
+  }
+  function queueHtml(kind) {
+    var K = Q_KINDS[kind];
+    if (!S.work) return '<section class="card center muted"><span class="spin"></span>Loading the shift&hellip;</section>';
+    var groups = K.lists.map(function (l, i) { return { h: l[0], items: qItems(l[1]), done: i > 0 }; });
+    var any = groups.some(function (g) { return g.items.length; });
+    return '<div class="narrow"><div class="listhead"><h3>' + h(K.title) + ' &middot; ' + h(CEC.shiftName(S.work.shift)) + ' shift</h3><button class="btn sm" data-act="q-refresh" aria-label="Refresh list">&#8635; ' +
+      (S.synced ? CEC.hm(S.synced.toISOString()) : 'Refresh') + '</button></div><p class="muted small" style="margin:0 0 10px">' + h(K.sub) + '</p>' +
+      (any ? groups.filter(function (g) { return g.items.length || !g.done; }).map(function (g) {
+        return '<div class="gh2">' + h(g.h) + ' (' + g.items.length + ')</div><div class="plist">' + (g.items.length ? g.items.map(function (x) { return qRow(x, kind, g.done); }).join('') : '<div class="empty">None.</div>') + '</div>';
+      }).join('') : '<div class="plist"><div class="empty">' + h(K.empty) + '</div></div>') +
+      '<p class="muted small" style="margin:12px 0 0">Other patients: open them from the <button class="lnk" data-act="go" data-v="shift">Patient dashboard</button>.</p></div>';
+  }
+  function openQueue(kind) {
+    if (isOff()) return toast('This page needs internet.');
+    setView(kind); refresh(true);
   }
   function openQuick(e, kind, src) {
-    S.qe = { id: e.id, kind: kind, src: src || 'work', ecg: (e.procs || []).indexOf('ECG') >= 0, adv: (e.adv || []).slice() };
-    var el = $('sheet'), rbsAsk = kind === 'ecg' && ((e.adv || []).indexOf('RBS') >= 0 || e.rbs);
+    var rbsAsk = kind === 'ecg' && ((e.adv || []).indexOf('RBS') >= 0 || e.rbs), sug = e.tok ? e.tok.split(' ')[0] : e.cat === 'OPD' ? 'OPD' : e.cat === 'EMR' ? 'ER' : '';
+    S.qe = { id: e.id, kind: kind, src: src || 'work', ecg: (e.procs || []).indexOf('ECG') >= 0, slip: sug };
+    var el = $('sheet');
     el.innerHTML = '<div class="sh-head"><button data-act="qe-close">Cancel</button><h3>' + (kind === 'ecg' ? 'ECG' : 'Vitals') + '</h3><span>' + (e.tok ? h(e.tok) : '') + '</span></div><div class="sh-body"><form id="qf" novalidate autocomplete="off">' +
-      '<div class="kv" style="margin-top:12px"><b>' + h(e.name) + '</b> &middot; ' + (e.mr ? 'MR ' + h(e.mr) : '<span class="mrp">MR pending</span>') + '<div class="muted small">' + h(CEC.label(CEC.CATS, e.cat)) + ' &middot; ' +
+      '<div class="kv" style="margin-top:12px"><b>' + h(e.name) + '</b> &middot; MR ' + h(e.mr) + '<div class="muted small">' + h(CEC.label(CEC.CATS, e.cat)) + ' &middot; ' +
       (e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '') + (e.age !== '' && e.age != null ? ', ' + h(e.age) + ' y' : '') + ' &middot; registered ' + CEC.hm(e.t) + '</div>' +
       ((e.adv || []).length ? '<div class="small" style="margin-top:4px"><b class="advt">Doctor advised: ' + h(e.adv.join(' + ')) + '</b></div>' : '') + '</div>' +
       (kind === 'ecg' ? '<div class="fsec">ECG</div><div class="seg" id="qEcg"><button type="button" data-act="qe-ecg" data-v="yes">ECG done</button><button type="button" data-act="qe-ecg" data-v="no">Not done</button></div>' +
         (rbsAsk ? '<div class="vgrid" style="margin-top:6px"><div><label class="lb" for="fRbs">RBS <span class="muted">(mg/dL)</span></label><input class="in" id="fRbs" inputmode="numeric" maxlength="3" placeholder="e.g. 140" value="' + h(e.rbs || '') + '"></div></div>' : '')
-        : vitalsHtml(e) + '<div class="fsec">Advised by the doctor</div><div class="seg" id="qAdv"><button type="button" data-act="qe-adv" data-v="ECG">ECG advised</button><button type="button" data-act="qe-adv" data-v="RBS">RBS advised</button></div>') +
+        : vitalsHtml(e) + (e.tok ? '<div class="slipln"><span>Slip <b>' + h(e.tok) + '</b> is ready</span></div>'
+          : '<div class="fsec">OPD / ER slip</div><div class="seg" id="qSlip"><button type="button" data-act="qe-slipk" data-v="OPD">OPD</button><button type="button" data-act="qe-slipk" data-v="ER">ER</button></div>' +
+            '<p class="muted small" style="margin:4px 0 0">The slip number is given when you save, so the slip is ready on the OPD / ER slip page. ' + (e.cat === 'ETT' || e.cat === 'ECHO' ? 'ETT / Echo: tap OPD or ER only if a slip is needed.' : 'Choosing the other one also changes the category.') + '</p>')) +
       '<div id="qErr"></div></form></div><div class="sh-foot">' + (kind === 'ecg' ? '<button class="btn pri" data-act="qe-save">Save</button>'
-        : '<button class="btn" data-act="qe-save">Save</button><button class="btn pri" data-act="qe-slip">Save &amp; print slip' + (e.tok ? ' (' + h(e.tok) + ')' : '') + '</button>') + '</div>';
+        : '<button class="btn" data-act="qe-save">Save</button><button class="btn pri" data-act="qe-saveprint">Save &amp; print slip</button>') + '</div>';
     el.classList.remove('hidden'); document.body.style.overflow = 'hidden';
     if (kind === 'ecg') setOn('qEcg', S.qe.ecg ? 'yes' : 'no');
-    else { setOn('qAdv', S.qe.adv); setTimeout(function () { var b = $('fBp'); if (b && !b.value) b.focus(); }, 60); }
+    else { setOn('qSlip', S.qe.slip); setTimeout(function () { var b = $('fBp'); if (b && !b.value) b.focus(); }, 60); }
   }
   function quickShift() { return S.qe && S.qe.src === 'prev' ? S.prevShift : S.work; }
-  function quickSlip() {
-    var Q = S.qe, err = [], vit = readVitals(err);
-    if (err.length) { $('qErr').innerHTML = '<div class="err">Please check: ' + h(err.join(', ')) + '.</div>'; return; }
-    var sh = quickShift(), e = sh && sh.entries.filter(function (x) { return x.id === Q.id; })[0];
-    if (!e) return;
-    askKind(Object.assign({}, e, vit)).then(function (kind) { if (kind && S.qe === Q) saveQuick(false, kind); });
-  }
-  function saveQuick(retried, kind) {
+  function saveQuick(retried, print) {
     var Q = S.qe, err = [], vit = retried ? Q.vit : readVitals(err);
     if (err.length) { $('qErr').innerHTML = '<div class="err">Please check: ' + h(err.join(', ')) + '.</div>'; return; }
-    Q.vit = vit; if (kind) Q.kind2 = kind;
+    if (!retried) Q.print = !!print;
+    if (Q.kind !== 'ecg' && !retried && !VIT.some(function (x) { return vit[x[0]]; })) { $('qErr').innerHTML = '<div class="err">Enter at least one vital (for example the BP).</div>'; return; }
+    Q.vit = vit;
     var sh = quickShift(), e = sh && sh.entries.filter(function (x) { return x.id === Q.id; })[0];
     if (!e) { closeQuick(); return toast('This patient is no longer in the list. Refresh the page.'); }
     var d = Object.assign({}, e);                         // the latest details of the patient, with only the vitals or the ECG changed
@@ -2975,16 +3039,18 @@ if (typeof module !== 'undefined') module.exports = CEC;
       d.procs = (e.procs || []).slice();
       if (d.bp && d.procs.indexOf('BP') < 0) d.procs.push('BP');
       if (d.rbs && d.procs.indexOf('BSR') < 0) d.procs.push('BSR');
-      d.adv = Q.adv.slice();
+      if (!e.tok) d.slip = Q.slip || 'none';
     }
-    if (Q.kind2) d.slip = Q.kind2;
     d.v = e.v; d.dxs = CEC.dxOf(e); delete d.queued;
-    var btn = document.querySelector(Q.kind2 ? '[data-act=qe-slip]' : '[data-act=qe-save]'), lbl = btn ? btn.innerHTML : '';
+    var btn = document.querySelector(Q.print ? '[data-act=qe-saveprint]' : '[data-act=qe-save]'), lbl = btn ? btn.innerHTML : '';
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Saving\u2026'; }
     api('apiUpdateEntry', sh.id, JSON.stringify(d)).then(function (saved) {
       putEntry(sh, saved);
-      closeQuick(); toast((Q.kind === 'ecg' ? (Q.ecg ? 'ECG done' : 'ECG removed') : 'Vitals saved') + ': ' + saved.name); render();
-      if (Q.kind2) printSlip(saved);
+      closeQuick();
+      if (Q.kind === 'ecg') toast((Q.ecg ? 'ECG done' : 'ECG removed') + ': ' + saved.name);
+      else toast('Vitals saved: ' + saved.name + (saved.tok ? '. Slip ' + saved.tok + (Q.print ? ' printing.' : ' is ready on the OPD / ER slip page.') : '.'));
+      render();
+      if (Q.print && saved.tok) printSlip(saved, sh);
     }, function (x) {
       if (!retried && /changed this patient a moment ago/.test(errText(x))) {   // a doctor saved the patient meanwhile: take the latest details and save again
         return loadState().then(function () { if (S.qe === Q) saveQuick(true); }, function () { if (btn) { btn.disabled = false; btn.innerHTML = lbl; } $('qErr').innerHTML = '<div class="err">' + h(errText(x)) + '</div>'; });
@@ -3002,8 +3068,6 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function syncForm() {
     var f = S.form;
     setOn('fAdv', f.adv || []);
-    var mrLater = f.cat === 'EMR' || f.cat === 'BD';
-    if ($('mrOpt')) { $('mrOpt').classList.toggle('hidden', !mrLater); $('mrReq').classList.toggle('hidden', mrLater); }
     setOn('fSex', f.sex); setOn('fCat', f.cat); setOn('fProc', f.procs); setOn('fChk', f.procs); setOn('fEr', f.procs); setOn('fMed', f.meds); setOn('fOut', f.out);
     if ($('procX')) $('procX').innerHTML = f.procs.filter(function (p) { return !isStdProc(p) && S.custom.proc.indexOf(p) < 0; }).map(function (p) {
       return '<span class="chip">' + h(p) + '<button type="button" data-act="proc-remove" data-v="' + h(p) + '" aria-label="Remove ' + h(p) + '">&times;</button></span>';
@@ -3160,14 +3224,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var vit = readVitals(err), bp = vit.bp || '', rbs = vit.rbs || '';
     if (bp && f.procs.indexOf('BP') < 0) f.procs.push('BP');
     if (rbs && f.procs.indexOf('BSR') < 0) f.procs.push('BSR');
-    if (!mr && !f.auto && f.cat !== 'EMR' && f.cat !== 'BD') err.push('MR No.');
+    if (!mr && !f.auto) err.push('MR No.');
     if (!name) err.push('patient name');
     if (age && !/^\d{1,3}$/.test(age)) err.push('age in years (numbers only)');
     if (!f.sex) err.push('gender');
     if (!f.cat) err.push('category');
     var dxs = f.cat === 'BD' ? ['Brought dead'] : f.dxs.slice(), out = f.cat === 'BD' ? 'BD' : f.out;
     if (signing || f.signed) {
-      if (!mr && !f.auto) err.push('MR No. (needed before sign-off)');
       if (!dxs.length) err.push('working diagnosis');
       if (!out) err.push('outcome');
       if (out === 'OBS' && !/^\d{1,2}$/.test(obsH)) err.push('hours of observation');
@@ -3185,25 +3248,16 @@ if (typeof module !== 'undefined') module.exports = CEC;
       dxs: canEdit() ? dxs : [], out: canEdit() ? out : '', obsH: out === 'OBS' ? obsH : '', signed: !!(signing || f.signed),
       adv: f.regOnly ? (base.adv || []) : (f.adv || []).slice() } };
   }
-  /* "Save & print slip": check the form, ask OPD or ER, then save with the slip number and print. */
-  function saveWithSlip() {
-    var r = readForm(false), box = $('fErr'), f = S.form;
-    if (r.err.length) { box.innerHTML = '<div class="err">Please enter: ' + h(r.err.join(', ')) + '.</div>'; box.scrollIntoView({ block: 'nearest' }); return; }
-    if (isOff()) { box.innerHTML = '<div class="err">The slip number needs internet. Tap Save; print the slip when the internet is back.</div>'; return; }
-    var e = Object.assign({}, r.entry, { tok: f.tok, mr: r.entry.autoMr ? (S.mr ? S.mr.next : '') : r.entry.mr });
-    askKind(e).then(function (kind) { if (kind && S.form === f) savePatient('slip', kind); });
-  }
-  function savePatient(mode, kind) {
+  function savePatient(mode) {
     var signing = mode === 'sign', r = readForm(signing), f = S.form, box = $('fErr'), sh = targetShift();
     if (r.err.length) { box.innerHTML = '<div class="err">Please enter: ' + h(r.err.join(', ')) + '.</div>'; box.scrollIntoView({ block: 'nearest' }); return; }
-    if (mode === 'slip') r.entry.slip = kind;
     var dup = r.entry.autoMr || !r.entry.mr ? null : sh.entries.filter(function (x) { return String(x.mr).toLowerCase() === r.entry.mr.toLowerCase() && x.id !== r.entry.id; })[0];
     if (dup && !f.dupOk) {
       f.dupOk = true;
       box.innerHTML = '<div class="err dup">MR ' + h(dup.mr) + ' was already entered at ' + CEC.hm(dup.t) + '. Tap again to save it anyway.</div>';
       box.scrollIntoView({ block: 'nearest' }); return;
     }
-    var e = r.entry, isNew = !e.id, target = f.target, temp = null;
+    var e = r.entry, isNew = !e.id, target = f.target, temp = null, orig = f.orig;
     if (isNew) { temp = Object.assign({}, e, { id: 'tmp' + Date.now(), t: new Date().toISOString(), signed: false, mr: e.autoMr ? (S.mr ? S.mr.next : 'Auto') : e.mr }); sh.entries.push(temp); }
     if (e.autoMr && S.mr) S.mr = { last: S.mr.next, next: nextMr(S.mr.next), at: new Date().toISOString() };   // the next form shows the following number
     var i0 = isNew ? -1 : sh.entries.map(function (x) { return x.id; }).indexOf(e.id), before = i0 >= 0 ? sh.entries[i0] : {};
@@ -3226,24 +3280,47 @@ if (typeof module !== 'undefined') module.exports = CEC;
       if (e.autoMr) toast('MR ' + saved.mr + ' given to ' + saved.name + '. Write it on the slip.');
       if (isNew && saved.shiftId && saved.shiftId !== sh.id) {
         sh.entries = sh.entries.filter(function (x) { return x.id !== temp.id; });
-        toast('The shift had changed, so MR ' + saved.mr + ' was saved in the new shift.'); refresh(true); if (mode === 'slip') printSlip(saved); return;
+        toast('The shift had changed, so MR ' + saved.mr + ' was saved in the new shift.'); refresh(true); return;
       }
       var i = sh.entries.map(function (x) { return x.id; }).indexOf(isNew ? temp.id : saved.id);
       if (i >= 0) sh.entries[i] = saved; else sh.entries.push(saved);
       if (mode === 'vitals' && !S.form && !S.qe) openQuick(saved, 'vitals', target);
       else if (!S.form) render();
-      if (mode === 'slip') printSlip(saved);
     }, function (err) {
       S.pending--;
       if (APP_BUILD && isNew && err && err.offline) { keepOnPhone(); return; }
       if (isNew) sh.entries = sh.entries.filter(function (x) { return x.id !== temp.id; });
+      if (!isNew && orig && /changed this patient a moment ago/.test(errText(err))) {   // someone else saved meanwhile (e.g. ECG done): keep both changes
+        S.pending++;
+        return loadState().then(function () {
+          var fe = findEntry(e.id); if (!fe) throw err;
+          return api('apiUpdateEntry', fe.sh.id, JSON.stringify(mergeEdit(fe.e, e, orig))).then(function (saved) {
+            S.pending--; putEntry(fe.sh, saved); if (!S.form && !S.qe) render();
+          });
+        }).then(null, function (x) {
+          S.pending--;
+          modal('Not saved', '<p>MR ' + h(e.mr) + ' (' + h(e.name) + ') was not saved: ' + h(errText(x)) + '</p><p>Please open the patient again and repeat your change.</p>', [{ label: 'OK', cls: 'pri', value: true }]);
+          refresh(true);
+        });
+      }
       modal('Not saved', '<p>' + (e.autoMr ? 'The patient' : 'MR ' + h(e.mr)) + ' (' + h(e.name) + ') was not saved: ' + h(errText(err)) + '</p><p>' + (isNew ? 'Please enter it again.' : 'Please open the patient again and repeat your change.') + '</p>', [{ label: 'OK', cls: 'pri', value: true }]);
       refresh(true);
     });
     var msg = (signing ? 'Signed off' : 'Saved') + (e.autoMr || !e.mr ? ' ' + e.name : ' MR ' + e.mr);
     if (mode === 'next') { toast(msg + '. Enter the next patient.'); openForm(target, null); }
-    else { closeForm(); toast(mode === 'vitals' ? msg + '. Opening vitals\u2026' : mode === 'slip' ? msg + '. Getting the slip number\u2026' : msg); }
+    else { closeForm(); toast(mode === 'vitals' ? msg + '. Opening vitals\u2026' : msg); }
     render();
+  }
+  /* My changes (mine, compared with the record as I opened it: orig) put on top of the latest saved record (latest). */
+  function mergeEdit(latest, mine, orig) {
+    var m = clone(latest), str = function (v) { return v == null ? '' : String(v); };
+    ['mr', 'name', 'age', 'sex', 'cat', 'bp', 'rbs', 'pulse', 'temp', 'spo2', 'wt', 'ht', 'note', 'out', 'obsH', 'signed'].forEach(function (k) { if (str(mine[k]) !== str(orig[k])) m[k] = mine[k]; });
+    m.dxs = CEC.dxOf(mine).join('|') !== CEC.dxOf(orig).join('|') ? (mine.dxs || []).slice() : CEC.dxOf(latest);
+    ['meds', 'adv'].forEach(function (k) { if ((mine[k] || []).join('|') !== (orig[k] || []).join('|')) m[k] = (mine[k] || []).slice(); });
+    var op = orig.procs || [], mp = mine.procs || [], lp = latest.procs || [];
+    m.procs = lp.filter(function (p) { return !(op.indexOf(p) >= 0 && mp.indexOf(p) < 0); }).concat(mp.filter(function (p) { return op.indexOf(p) < 0 && lp.indexOf(p) < 0; }));
+    m.v = latest.v; m.newOpts = mine.newOpts; delete m.queued;
+    return m;
   }
   function deletePatient() {
     var f = S.form, sh = targetShift(), e = sh.entries.filter(function (x) { return x.id === f.editId; })[0];
@@ -3288,19 +3365,6 @@ if (typeof module !== 'undefined') module.exports = CEC;
     for (var i = 0; i < OPEN_ITEMS.length; i++) if (OPEN_ITEMS[i][0] === f) return OPEN_ITEMS[i][1];
     return '';
   }
-  function stageChips(list, from) {
-    var c = stageCounts(list);
-    return '<div class="stgrid">' + STAGES.map(function (s) {
-      return '<button class="stc ' + s[0] + (c[s[0]] && s[0] !== 'done' ? ' n' : '') + '" data-act="dash-filter" data-v="st:' + s[0] + '"' + (from ? ' data-from="home"' : '') + '><b>' + c[s[0]] + '</b><span>' + h(s[1]) + '</span></button>';
-    }).join('') + '</div>';
-  }
-  function openItemsHtml(list, title) {
-    var rows = OPEN_ITEMS.map(function (k) { return [k, list.filter(function (e) { return openTest(k[0], e); }).length]; }).filter(function (x) { return x[1]; });
-    return '<section class="card openit"><div class="ct">' + h(title || 'Before the shift ends') + '</div>' + (rows.length ? '<p class="muted small" style="margin:0 0 6px">Finish these so the shift list and letter are complete. Tap to see the patients.</p>' +
-      rows.map(function (x) { return '<button class="oirow" data-act="dash-filter" data-v="' + x[0][0] + '"><b>' + x[1] + '</b><span>' + h(x[0][1]) + '</span><span class="chev">&rsaquo;</span></button>'; }).join('')
-      : '<p class="small" style="margin:0;color:var(--g7)">&#10003; Nothing left open: every patient has an MR No., vitals and a doctor&rsquo;s sign-off.</p>') + '</section>';
-  }
-  function endsSoon() { return S.openEnds && new Date(S.openEnds).getTime() - Date.now() < 60 * 60000; }
 
   /* ---------- OPD / ER slip: printed on half an A4 sheet (or A5) by the printer of the PC or phone ---------- */
   var SLIP_LOGO = 'data:image/jpeg;base64,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';
@@ -3308,25 +3372,32 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function slipPaper() { return store_('cec_paper') === 'a5' ? 'a5' : 'a4half'; }
   function slipName(e) { return (e.tok || 'Slip').replace(/\s+/g, '_') + '_' + String(e.name || 'patient').replace(/[^A-Za-z0-9]+/g, '_') + '.pdf'; }
   function slipPdfOffer(e) { offerFile(slipName(e), CEC.slipPdf(e, slipLogoBytes(), slipPaper()), 'application/pdf', false); }
-  var printEnd = null;
-  function printSlip(e) {
+  var printEnd = null, logoWarm = new Image();
+  logoWarm.src = SLIP_LOGO;                                // decoded once, so a slip prints at once
+  /* Prints the slip at once (the number and details are already on the phone or PC). sh: the patient's shift, to record the printing. */
+  function printSlip(e, sh) {
     var pa = $('printArea'), paper = slipPaper();
-    if (!pa || typeof window.print !== 'function') return slipPdfOffer(e);
+    if (!pa || typeof window.print !== 'function') { slipPdfOffer(e); markPrinted(e, sh); return; }
     pa.innerHTML = CEC.slipSvg(e, SLIP_LOGO, paper);
     var ps = $('pageSize');
     if (!ps) { ps = document.createElement('style'); ps.id = 'pageSize'; document.head.appendChild(ps); }
     ps.textContent = '@page{size:' + (paper === 'a5' ? '148.5mm 210mm' : 'A4 landscape') + ';margin:0}';
     document.body.classList.add('printing');
     clearTimeout(printEnd);
-    var done = function () { clearTimeout(printEnd); printEnd = setTimeout(function () { document.body.classList.remove('printing'); ps.textContent = ''; }, 1500); window.removeEventListener('afterprint', done); };
+    var end = function () { document.body.classList.remove('printing'); ps.textContent = ''; };
+    var done = function () { clearTimeout(printEnd); printEnd = setTimeout(end, 1500); window.removeEventListener('afterprint', done); };
     window.addEventListener('afterprint', done);
-    printEnd = setTimeout(function () { document.body.classList.remove('printing'); ps.textContent = ''; }, 120000);
-    var img = pa.querySelector('image');
-    setTimeout(function () {
-      try { window.print(); } catch (x) { done(); return slipPdfOffer(e); }
-      S.lastSlip = e;
-      toast((e.tok || 'Slip') + ' sent to the printer.' + (paper === 'a4half' ? ' Next slip: put the same sheet back, turned round.' : ''));
-    }, img ? 250 : 50);
+    printEnd = setTimeout(end, 120000);
+    try { window.print(); } catch (x) { done(); slipPdfOffer(e); }
+    markPrinted(e, sh);
+    toast((e.tok || 'Slip') + ' sent to the printer.' + (paper === 'a4half' ? ' Next slip: put the same sheet back, turned round.' : ''));
+  }
+  function markPrinted(e, sh) {
+    if (!sh || !e.id || /^(q-|tmp)/.test(e.id) || !e.tok) return;      // a test slip is not recorded
+    var cur = (sh.entries || []).filter(function (x) { return x.id === e.id; })[0];
+    if (cur) cur.tokPr = new Date().toISOString();
+    if (S.view === 'slipq') setTimeout(render, 0);
+    api('apiSlipPrinted', sh.id, e.id).then(function (saved) { putEntry(sh, saved); if (S.view === 'slipq' && !typing()) render(); }, function () { });
   }
   function kindFor(e) { return e.tok ? e.tok.split(' ')[0] : (e.cat === 'EMR' || e.cat === 'BD') ? 'ER' : 'OPD'; }
   /* Asks OPD or ER (the answer decides the number). Resolves to 'OPD', 'ER' or null. */
@@ -3349,64 +3420,48 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* Slip for a patient already saved: ask OPD or ER, get the number (a reprint needs no internet), print. */
   function slipFor(e, sh) {
     if (/^(q-|tmp)/.test(e.id)) return toast('Wait until this patient is saved, then print the slip.');
+    if (e.tok) return printSlip(e, sh);                    // the number is already there: print at once
     return askKind(e).then(function (kind) {
       if (!kind) return;
-      if (e.tok && e.tok.split(' ')[0] === kind) return printSlip(e);
-      if (isOff()) return toast('A new slip number needs internet.');
-      toast('Getting the slip number…');
-      return api('apiSlip', sh.id, e.id, kind).then(function (saved) { putEntry(sh, saved); render(); printSlip(saved); },
+      if (isOff()) return toast('A slip number needs internet.');
+      toast('Getting the slip number\u2026');
+      return api('apiSlip', sh.id, e.id, kind).then(function (saved) { putEntry(sh, saved); render(); printSlip(saved, sh); },
         function (x) { toast('No slip: ' + errText(x)); });
     });
   }
 
-  /* ---------- quick ER entry: name and gender now, MR and vitals later; gives an ER number at once ---------- */
-  function openQuickEr() {
-    if (!S.open) return toast('Loading the shift…');
-    S.qer = { sex: '', cat: 'EMR' };
-    var el = $('sheet');
-    el.innerHTML = '<div class="sh-head"><button data-act="qer-close">Cancel</button><h3>Quick ER entry</h3><span></span></div><div class="sh-body"><form id="qerf" novalidate autocomplete="off">' +
-      '<p class="muted small" style="margin:12px 0 0">Treat the patient first. Save the name and gender now; the MR No., vitals and slip can be added when the patient is stable.</p>' +
-      '<label class="lb" for="qName">Patient name <span class="req">*</span></label><div class="addrow"><input class="in" id="qName" autocapitalize="words" placeholder="Name, or tap Unknown">' +
-      '<button type="button" class="btn" data-act="qer-unknown">Unknown</button></div>' +
-      '<div class="row2"><div><label class="lb">Gender <span class="req">*</span></label><div class="seg" id="qSex"><button type="button" data-act="qer-sex" data-v="M">Male</button><button type="button" data-act="qer-sex" data-v="F">Female</button></div></div>' +
-      '<div><label class="lb" for="qAge">Age (years)</label><input class="in" id="qAge" inputmode="numeric" maxlength="3"></div></div>' +
-      '<label class="lb">Category</label><div class="seg" id="qCat"><button type="button" data-act="qer-cat" data-v="EMR">Emergency / Resus</button><button type="button" data-act="qer-cat" data-v="BD">Brought dead</button></div>' +
-      '<label class="lb" for="qMr">MR No. <span class="muted">(can be added later)</span></label><input class="in" id="qMr" autocapitalize="characters">' +
-      '<div id="qerErr"></div></form></div><div class="sh-foot"><button class="btn" data-act="qer-save">Save</button><button class="btn pri" data-act="qer-print">Save &amp; print ER slip</button></div>';
-    el.classList.remove('hidden'); document.body.style.overflow = 'hidden';
-    setOn('qCat', 'EMR');
-    setTimeout(function () { var n = $('qName'); if (n) n.focus(); }, 60);
+  /* ---------- admin: bulk sign-off of waiting OPD patients (testing period) ---------- */
+  function loadBulk() {
+    if (S.bulkLoading) return;
+    S.bulkLoading = true;
+    api('apiBulkPreview', !!S.bulkCur).then(function (r) { S.bulkLoading = false; S.bulk = r; if (S.view === 'bulk') render(); },
+      function (e) { S.bulkLoading = false; S.bulk = { err: errText(e) }; if (S.view === 'bulk') render(); });
   }
-  function closeQuickEr() { S.qer = null; $('sheet').classList.add('hidden'); $('sheet').innerHTML = ''; document.body.style.overflow = ''; }
-  function saveQuickEr(print) {
-    var Q = S.qer, name = $('qName').value.trim().replace(/\s+/g, ' '), age = $('qAge').value.trim(), mr = $('qMr').value.trim(), err = [];
-    if (!name) err.push('name (or tap Unknown)');
-    if (!Q.sex) err.push('gender');
-    if (age && !/^\d{1,3}$/.test(age)) err.push('age in years (numbers only)');
-    if (err.length) { $('qerErr').innerHTML = '<div class="err">Please enter: ' + h(err.join(', ')) + '.</div>'; return; }
-    var sh = S.open, d = { mr: mr, name: name, age: age === '' ? '' : +age, sex: Q.sex, cat: Q.cat, procs: [], dxs: [], slip: 'ER' };
-    if (APP_BUILD && isOff()) {
-      queueAdd(Object.assign({}, d), new Date().toISOString());
-      closeQuickEr(); render(); return toast('No internet: ' + name + ' is saved on this phone. The ER number comes when it is sent.');
-    }
-    var b = document.querySelector('[data-act=qer-save]'), b2 = document.querySelector('[data-act=qer-print]');
-    if (b) b.disabled = true; if (b2) { b2.disabled = true; b2.innerHTML = '<span class="spin"></span>Saving…'; }
-    S.pending++;
-    api('apiAddEntry', sh.id, JSON.stringify(d)).then(function (saved) {
-      S.pending--;
-      var tsh = saved.shiftId && saved.shiftId !== sh.id ? null : sh;
-      if (tsh) putEntry(tsh, saved);
-      if (Q.cat === 'BD') S.pendCerts = (S.pendCerts || 0) + 1;
-      closeQuickEr(); render();
-      toast((saved.tok || 'Saved') + ': ' + saved.name + (saved.mr ? '' : '. Add the MR No. later.'));
-      if (print) printSlip(saved);
-      if (!tsh) refresh(true);
-    }, function (x) {
-      S.pending--;
-      if (APP_BUILD && x && x.offline) { queueAdd(Object.assign({}, d), new Date().toISOString()); closeQuickEr(); render(); return toast('No internet: saved on this phone. The ER number comes when it is sent.'); }
-      if (b) b.disabled = false; if (b2) { b2.disabled = false; b2.innerHTML = 'Save &amp; print ER slip'; }
-      $('qerErr').innerHTML = '<div class="err">' + h(errText(x)) + '</div>';
-    });
+  function bulkHtml() {
+    if (!isAdmin()) return '<section class="card">For the admin only.</section>';
+    var B = S.bulk;
+    var html = '<div class="narrow"><section class="card"><div class="ct">Bulk sign-off: waiting OPD patients</div>' +
+      '<p class="small" style="margin:4px 0 0">For the testing period. Every <b>OPD</b> patient still waiting for a doctor is signed off with <b>one common diagnosis</b>, chosen in real-life proportions ' +
+      '(rare ones such as cardiomyopathy only once or twice a week). The BP decides hypertension: 180/110 or more is Hypertensive urgency, 140/90 or more is mostly Hypertension, and a normal or low BP never gets a hypertension diagnosis. ' +
+      'Emergency / Resus, Brought dead, ETT and Echo patients are not touched. In the Sheet these sign-offs show "' + 'Bulk sign-off by admin' + '" and can be undone below.</p>' +
+      '<label class="tog"><input type="checkbox" data-act="bulk-cur"' + (S.bulkCur ? ' checked' : '') + '> Include the running shift (patients who may still see a doctor)</label></section>';
+    if (!B) { setTimeout(loadBulk, 0); return html + '<section class="card center muted"><span class="spin"></span>Finding waiting OPD patients&hellip;</section></div>'; }
+    if (B.err) return html + '<section class="card"><div class="err">' + h(B.err) + '</div><button class="btn block" data-act="bulk-reload">Try again</button></section></div>';
+    var list = B.list || [], g = {};
+    list.forEach(function (x) { g[x.dx] = (g[x.dx] || 0) + 1; });
+    var rows = Object.keys(g).map(function (k) { return [k, g[k]]; }).sort(function (a, b) { return b[1] - a[1] || (a[0] < b[0] ? -1 : 1); });
+    html += '<section class="card"><div class="ct">Waiting OPD patients: ' + list.length + '</div>' +
+      (list.length ? '<table class="mini"><tr><th>Diagnosis that will be given</th><th>Patients</th><th>%</th></tr>' + rows.map(function (r) {
+        return '<tr><td>' + h(r[0]) + '</td><td>' + r[1] + '</td><td>' + (100 * r[1] / list.length < 1 ? '&lt;1' : Math.round(100 * r[1] / list.length)) + '%</td></tr>'; }).join('') + '</table>' +
+        '<button class="btn pri block" data-act="bulk-go" style="margin-top:12px">Sign off ' + list.length + ' OPD patient' + (list.length === 1 ? '' : 's') + '</button>' +
+        '<details style="margin-top:10px"><summary class="small">See each patient</summary><div class="blist">' + list.slice(0, 400).map(function (x) {
+          return '<div class="brow"><span class="muted">' + CEC.dmy(x.date) + ' ' + h(CEC.shiftName(x.shift).charAt(0)) + ' ' + CEC.hm(x.t) + '</span><b>' + h(x.name) + '</b> <span class="muted">MR ' + h(x.mr) +
+            ' &middot; ' + (x.age !== '' && x.age != null ? h(x.age) + '/' : '') + h(x.sex || '') + (x.bp ? ' &middot; BP ' + h(x.bp) : '') + '</span><span class="bdx">' + h(x.dx) + '</span></div>';
+        }).join('') + (list.length > 400 ? '<div class="muted small">… and ' + (list.length - 400) + ' more</div>' : '') + '</div></details>'
+        : '<p class="small" style="margin:4px 0 0;color:var(--g7)">&#10003; No OPD patient is waiting for a doctor' + (S.bulkCur ? '' : ' in the shifts that have ended') + '.</p>') + '</section>';
+    html += '<section class="card"><div class="ct">Undo</div><p class="small" style="margin:4px 0 8px">Bulk sign-offs so far: <b>' + (B.done || 0) + '</b>. Undo puts every bulk sign-off that nobody changed afterwards back to "awaiting doctor".</p>' +
+      '<button class="btn dan block" data-act="bulk-undo"' + (B.done ? '' : ' disabled') + '>Undo all bulk sign-offs</button></section></div>';
+    return html;
   }
 
   /* ---------- this device: slip paper, counter PC ---------- */
@@ -3423,6 +3478,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<details class="muted small" style="margin-top:10px"><summary>Setting up the HP LaserJet M15w</summary><ul style="margin:6px 0 0;padding-left:18px">' +
       '<li><b>PC:</b> connect the PC to the same Wi-Fi as the printer and add it once in Windows (Settings &gt; Printers). In the print window choose <b>HP LaserJet M15w</b>; Chrome remembers it. Margins: None or Default.</li>' +
       '<li><b>Android phone:</b> same Wi-Fi as the printer; Settings &gt; Connected devices &gt; Printing &gt; turn on <b>Default print service</b> (or install <b>HP Print Service Plugin</b>). In the print window choose the M15w and paper A4.</li>' +
+      '<li><b>Fastest on the counter PC</b> (no print window): set the M15w as the default printer in Windows, then right-click the Chrome shortcut &gt; Properties &gt; Target and add <b>&nbsp;--kiosk-printing</b> at the end. Open the census from that shortcut; Print then prints at once.</li>' +
       '<li>If printing does not open, use <b>Test slip as PDF</b> and print the PDF.</li></ul></details></section>';
   }
 
@@ -4113,10 +4169,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
     return '<section class="card dashc"><div class="sc-top"><div><div class="eyebrow">Patient dashboard &middot; live</div><h2>' + h(CEC.shiftName(sh.shift)) + ' shift</h2>' +
       '<div class="muted small">Census day ' + CEC.dmy(sh.censusDate) + ' &middot; ' + h(CEC.shiftTimes(S.settings, sh.shift)) + (S.synced ? ' &middot; updated ' + CEC.hm(S.synced.toISOString()) : '') + '</div></div><span class="pill open">Open</span></div>' +
       '<div class="bdsum"><span><b>' + c.T + '</b> patient' + (c.T === 1 ? '' : 's') + '</span><span class="' + (c.wait ? 'wt' : '') + '"><b>' + c.wait + '</b> waiting for sign-off</span><span><b>' + (c.T - c.wait) + '</b> signed off</span></div>' +
-      '<div class="bdgrid b3">' + tiles + '</div>' + stageChips(list, true) +
+      '<div class="bdgrid b3">' + tiles + '</div>' +
       (other ? '<div class="muted small" style="margin-top:8px">+ ' + other + ' ETT / Echo registration' + (other === 1 ? '' : 's') + ' (inside the patient dashboard)</div>' : '') +
       (pw && canEnter() ? '<button class="bdprev" data-act="go" data-v="shift">' + h(CEC.shiftName(pv.shift)) + ' shift: <b>' + pw + '</b> still waiting for sign-off (until ' + CEC.hm(S.prevUntil) + ' hrs) &rsaquo;</button>' : '') +
-      '<div class="sbtns">' + (!simple && canEnter() ? '<button class="btn pri" data-act="home-new">+ New patient</button>' : '') + '<button class="btn' + (simple ? ' block' : '') + '" data-act="go" data-v="shift">Open patient dashboard</button></div></section>';
+      '<div class="sbtns"><button class="btn block" data-act="go" data-v="shift">Open patient dashboard</button></div></section>';
   }
   function servedHtml() {
     var st = S.wel && S.wel.stats;
@@ -4139,25 +4195,24 @@ if (typeof module !== 'undefined') module.exports = CEC;
       (team ? '<h4>Our team</h4><img class="teamimg" data-slot="team" src="' + team + '" alt="' + h(W.teamCaption || 'Team photo') + '">' + (W.teamCaption ? '<div class="muted small" style="margin-top:6px">' + h(W.teamCaption) + '</div>' : '') : '') +
       (isAdmin() ? '<button class="btn block" data-act="wel-edit" style="margin-top:12px">Edit this page (admin)</button>' : '') + '</section>';
   }
-  /* Students and nursing staff: the live dashboard, then big buttons. Everything else stays in the menu. */
-  function simpleHomeHtml() {
-    var tile = function (act, icon, t, sub, cls) { var txt = '<b>' + t + '</b><span>' + sub + '</span>'; return '<button class="stile' + (cls ? ' ' + cls : '') + '" data-act="' + act + '"><span class="sti" aria-hidden="true">' + icon + '</span>' + (/wide/.test(cls || '') ? '<span class="stt">' + txt + '</span>' : txt) + '</button>'; };
+  /* The same home page for everyone: the big buttons, the live patient dashboard (first for doctors, after the buttons for nursing staff
+     and students), pending death certificates, About the department and Patients served (not for students). */
+  function tilesHtml() {
+    var tile = function (act, icon, t, sub) { return '<button class="stile" data-act="' + act + '"><span class="sti" aria-hidden="true">' + icon + '</span><b>' + t + '</b><span>' + sub + '</span></button>'; };
     var svg = function (d) { return '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2">' + d + '</svg>'; };
-    var sh = S.open || S.work, ends = endsSoon() && sh && (sh.entries || []).length;
-    return '<div class="narrow">' + dashCardHtml(true) + (canClin() ? pendAlertHtml() : '') + '<div class="stiles">' +
-      tile('new-reg', svg('<circle cx="10" cy="8" r="4"/><path d="M3 21c0-4 3-6 7-6s7 2 7 6"/><path d="M19 8v6M16 11h6"/>'), 'Patient registration', canClin() ? 'New patient: details, vitals, slip' : 'MR, name, age, gender, category') +
-      tile('pick-vitals', svg('<path d="M3 12h4l2-5 4 10 2-5h6"/>'), 'Vitals', 'BP, pulse, temp, RBS, SpO2, weight, height') +
-      tile('pick-ecg', svg('<path d="M2 12h3l2-6 3 12 3-9 2 3h7"/>'), 'ECG', 'Advised patients first; mark ECG done') +
-      tile('pick-slip', svg('<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>'), 'OPD / ER slip', 'Print the slip with its number') +
-      tile('quick-er', svg('<path d="M12 3v18M3 12h18"/>'), 'Quick ER entry', 'Emergency now: name and gender, ER number at once', 'er wide') +
-      '</div>' + (ends ? openItemsHtml(sh.entries, 'Before the shift ends (' + CEC.hm(S.openEnds) + ' hrs)') : '') + '</div>';
+    if (!canEnter()) return '';
+    return '<div class="stiles">' +
+      tile('new-reg', svg('<circle cx="10" cy="8" r="4"/><path d="M3 21c0-4 3-6 7-6s7 2 7 6"/><path d="M19 8v6M16 11h6"/>'), 'Patient registration', 'MR, name, age, gender, category') +
+      tile('q-vit', svg('<path d="M3 12h4l2-5 4 10 2-5h6"/>'), 'Vitals', 'BP, pulse, temp, RBS, SpO2, weight, height') +
+      tile('q-ecg', svg('<path d="M2 12h3l2-6 3 12 3-9 2 3h7"/>'), 'ECG', 'Patients the doctor advised ECG') +
+      tile('q-slip', svg('<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>'), 'OPD / ER slip', 'Ready to print after the vitals') +
+      '</div>';
   }
   function homeHtml() {
     if (!S.wel) { var cw = store_('cec_wel'); if (cw && S.me && cw.uid === S.me.id) { S.wel = cw.r; S.welAt = 0; } }
     if (!S.wel || Date.now() - S.welAt > 120000) setTimeout(function () { loadWelcome(); }, 0);
-    if (!canEdit() && !isAdmin()) return simpleHomeHtml();
-    var sh = S.open || S.work, ends = endsSoon() && sh && (sh.entries || []).length;
-    return '<div class="home1">' + dashCardHtml() + pendAlertHtml() + (ends ? openItemsHtml(sh.entries, 'Before the shift ends (' + CEC.hm(S.openEnds) + ' hrs)') : '') + aboutHtml() + servedHtml() + '</div>';
+    var doctor = canEdit() || isAdmin(), dash = dashCardHtml(), tiles = tilesHtml();
+    return '<div class="home1">' + (doctor ? dash + tiles : tiles + dash) + pendAlertHtml() + aboutHtml() + (canClin() ? servedHtml() : '') + '</div>';
   }
   /* Shifts and duty rosters (menu): the three shifts with their doctors and rosters. */
   function rostersHtml() {
@@ -4585,23 +4640,45 @@ if (typeof module !== 'undefined') module.exports = CEC;
         break;
       }
       case 'd-paper': store_('cec_paper', v); render(); break;
+      case 'bulk-cur': S.bulkCur = !!el.checked; S.bulk = null; render(); break;
+      case 'bulk-reload': S.bulk = null; render(); break;
+      case 'bulk-go': {
+        var bl = (S.bulk && S.bulk.list) || [];
+        if (!bl.length) break;
+        confirmBox('Sign off ' + bl.length + ' OPD patients?', 'Each gets the diagnosis shown, with outcome Discharged home (follow-up planned for chronic conditions; hypertensive urgency: discharged after 2 hours of observation). You can undo this later.', 'Sign off', false).then(function (ok) {
+          if (!ok) return;
+          toast('Signing off\u2026');
+          api('apiBulkSignOff', !!S.bulkCur, bl.map(function (x) { return x.id; })).then(function (r) { toast(r.signed + ' OPD patients signed off'); S.bulk = null; render(); refresh(true); },
+            function (e) { toast('Not done: ' + errText(e)); });
+        });
+        break;
+      }
+      case 'bulk-undo': confirmBox('Undo all bulk sign-offs?', 'Those patients go back to "awaiting doctor" with no diagnosis. Patients a doctor changed afterwards stay as they are.', 'Undo', true).then(function (ok) {
+        if (!ok) return;
+        api('apiBulkUndo').then(function (r) { toast(r.undone + ' bulk sign-offs undone'); S.bulk = null; render(); refresh(true); }, function (e) { toast(errText(e)); });
+      }); break;
       case 'd-counter': store_('cec_counter', !!el.checked); toast(el.checked ? 'This PC stays signed in. Sign out yourself at the end of your shift.' : 'This PC signs out after 15 minutes without activity again.'); break;
       case 'd-test': printSlip({ tok: 'OPD 0', mr: 'TEST-123', name: 'Test slip (not a patient)', age: 40, sex: 'M', bp: '120/80', pulse: '72', spo2: '98' }); break;
       case 'd-testpdf': slipPdfOffer({ tok: 'OPD 0', mr: 'TEST-123', name: 'Test slip (not a patient)', age: 40, sex: 'M', bp: '120/80', pulse: '72', spo2: '98' }); break;
-      case 'pick-slip': pickPatient('slip'); break;
-      case 'quick-er': openQuickEr(); break;
-      case 'qer-close': closeQuickEr(); break;
-      case 'qer-save': saveQuickEr(false); break;
-      case 'qer-print': saveQuickEr(true); break;
-      case 'qer-sex': S.qer.sex = v; setOn('qSex', v); break;
-      case 'qer-cat': S.qer.cat = v; setOn('qCat', v); break;
-      case 'qer-unknown': { var qn = $('qName'); qn.value = 'Unknown ' + (S.qer.sex === 'F' ? 'female' : S.qer.sex === 'M' ? 'male' : 'patient'); break; }
-      case 'save-slip': saveWithSlip(); break;
       case 'slip-reprint': { var fe = findEntry(id); if (fe) slipFor(fe.e, fe.sh); break; }
       case 'f-adv': { var fa = S.form.adv, ai2 = fa.indexOf(v); if (ai2 >= 0) fa.splice(ai2, 1); else fa.push(v); setOn('fAdv', fa); break; }
-      case 'qe-adv': { var qa = S.qe.adv, qi = qa.indexOf(v); if (qi >= 0) qa.splice(qi, 1); else qa.push(v); setOn('qAdv', qa); break; }
-      case 'qe-slip': quickSlip(); break;
-      case 'dash-filter': S.filter = v; S.dashCat = ''; S.q = ''; if (S.view !== 'shift') { S.work = S.open || S.work; setView('shift'); refresh(true); } else render(); break;
+      case 'qe-slipk': S.qe.slip = S.qe.slip === v ? '' : v; setOn('qSlip', S.qe.slip); break;
+      case 'qe-saveprint': saveQuick(false, true); break;
+      case 'q-vit': openQueue('vit'); break;
+      case 'q-ecg': openQueue('ecgq'); break;
+      case 'q-slip': openQueue('slipq'); break;
+      case 'q-refresh': refresh(false).then(function () { if (S.me) toast('Updated'); }); break;
+      case 'q-open': { var qsh0 = el.getAttribute('data-src') === 'prev' ? S.prevShift : S.work, qe0 = qsh0 && qsh0.entries.filter(function (x) { return x.id === id; })[0];
+        if (qe0) openQuick(qe0, v === 'ecgq' ? 'ecg' : 'vitals', el.getAttribute('data-src')); break; }
+      case 'q-print': { var qsh1 = el.getAttribute('data-src') === 'prev' ? S.prevShift : S.work, qe1 = qsh1 && qsh1.entries.filter(function (x) { return x.id === id; })[0];
+        if (qe1) printSlip(qe1, qsh1); break; }
+      case 'q-swap': { var qsh2 = el.getAttribute('data-src') === 'prev' ? S.prevShift : S.work, qe2 = qsh2 && qsh2.entries.filter(function (x) { return x.id === id; })[0];
+        if (!qe2) break;
+        confirmBox('Make it ' + v + '?', h(qe2.name) + ' gets a new ' + v + ' number instead of ' + h(qe2.tok) + (qe2.cat === 'OPD' || qe2.cat === 'EMR' ? ', and the category changes to ' + (v === 'ER' ? 'Emergency / Resus' : 'OPD') : '') + '.', 'Make it ' + v, false).then(function (ok) {
+          if (!ok) return;
+          api('apiSlip', qsh2.id, qe2.id, v).then(function (saved) { putEntry(qsh2, saved); toast('Now ' + saved.tok + ': ' + saved.name); render(); }, function (x) { toast(errText(x)); });
+        });
+        break; }
       case 'r-role': S.reg = S.reg || {}; S.reg.name = $('rName').value; S.reg.login = $('rLogin').value; S.reg.email = $('rEmail').value; S.reg.role = v; setOn('rRole', v); break;
       case 'do-login': doLogin(); break;
       case 'app-link': connectApp(); break;
@@ -4621,6 +4698,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         else if (v === 'shift') { setView('shift'); refresh(true); }
         else if (v === 'forms') { S.docs = null; setView('forms'); }
         else if (v === 'certs') { S.certs = null; setView('certs'); }
+        else if (v === 'bulk') { S.bulk = null; setView('bulk'); }
         else if (v === 'home') { S.welAt = 0; setView('home'); refresh(true); }
         else { S.users = isAdmin() ? null : S.users; setView(v); }
         break;
@@ -4773,15 +4851,6 @@ if (typeof module !== 'undefined') module.exports = CEC;
         if (ok) api('apiDeletePaperCert', id).then(function () { S.papers = (S.papers || []).filter(function (x) { return x.id !== id; }); S.certs = null; toast('Deleted'); render(); }, function (e) { toast(errText(e)); });
       }); break;
       case 'new-reg': if (S.work) openForm('work', null); break;
-      case 'pick-vitals': pickPatient('vitals'); break;
-      case 'pick-ecg': pickPatient('ecg'); break;
-      case 'qp-pick': {
-        var qsrc = el.getAttribute('data-src'), qsh = qsrc === 'prev' ? S.prevShift : S.work, qe = qsh && qsh.entries.filter(function (x) { return x.id === id; })[0];
-        closeModal();
-        if (qe && S.pickKind === 'slip') slipFor(qe, qsh);
-        else if (qe) openQuick(qe, S.pickKind, qsrc);
-        break;
-      }
       case 'qe-ecg': S.qe.ecg = v === 'yes'; setOn('qEcg', v); break;
       case 'qe-save': saveQuick(); break;
       case 'qe-close': closeQuick(); break;
@@ -5115,7 +5184,6 @@ if (typeof module !== 'undefined') module.exports = CEC;
     else if (S.cert) { closeCert(); closed = true; }
     else if (S.form) { closeForm(); closed = true; }
     else if (S.qe) { closeQuick(); closed = true; }
-    else if (S.qer) { closeQuickEr(); closed = true; }
     return closed;
   }
   function onBack(st) {
