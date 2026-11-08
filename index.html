@@ -525,6 +525,8 @@ body.demo .top{border-bottom-color:#e8740c}
 .democ .dline:first-of-type{border-top:0}
 .paper .dc .box{position:relative}.paper .dc .box .dnv{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(153,10,10,.6);font:700 10px Helvetica,Arial,sans-serif;letter-spacing:.02em}
 .paper .dc .box .dnv b{font-size:22px;line-height:1.1}
+.vdone{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:#f7faf8}
+.vdone b{font-weight:600;color:var(--muted,#5b6b63);margin-right:2px}
 
 </style>
 </head>
@@ -2379,6 +2381,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (isAdmin() && S.work && S.open && S.work.id !== S.open.id) p = p.then(function () { return api('apiGetShift', S.work.id).then(function (s) { if (s) S.work = s; }); });
     if (S.view === 'census' && canClin() && (S.cen.mode === 'shift' || S.cen.mode === 'day')) p = p.then(function () { return loadDay(S.day); });
     if (S.view === 'detail' && S.detail) p = p.then(function () { return api('apiGetShift', S.detail.id).then(function (s) { if (s) S.detail = s; }); });
+    if (ER_KINDS[S.view] && canClin()) p = p.then(function () { return loadRecent(); });
     return p.then(function () {
       if (S.shiftChanged) { S.shiftChanged = false; toast('The ' + CEC.shiftName(S.open.shift) + ' shift has started. New patients now go into it.'); }
       if (silent && typing()) return;
@@ -2410,7 +2413,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (APP_BUILD && byUser) { store_('cec_cache', ''); var off = store_('cec_off'); if (off) { off.token = ''; store_('cec_off', off); } }
     if (!APP_BUILD) store_('cec_cache', '');              // website: nothing of the census stays on the PC after signing out
     S.token = null; S.me = null; S.form = null; S.cert = null; S.view = 'home'; S.users = null; S.log = null; S.docs = null; S.certs = null;
-    S.wel = null; S.cen = { mode: null }; S.wedit = null; S.lastNav = null; menu(false); applyDemo();
+    S.wel = null; S.cen = { mode: null }; S.wedit = null; S.lastNav = null; S.recent = null; menu(false); applyDemo();
     store_('cec_token', '');
     $('sheet').classList.add('hidden'); $('sheet').innerHTML = ''; document.body.style.overflow = '';
     render();
@@ -2639,7 +2642,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
     else if (S.view === 'appt') v.innerHTML = canAppt() ? apptHtml() : '<section class="card">You do not have the right to give appointments.</section>';
     else if (S.view === 'bulk') v.innerHTML = bulkHtml();
     else if (Q_KINDS[S.view]) v.innerHTML = canEnter() ? queueHtml(S.view) : '<section class="card">You do not have the right to add patients.</section>';
-    else if (ER_KINDS[S.view]) v.innerHTML = canClin() ? erHtml(S.view) : '<section class="card">This is for doctors and nursing staff only.</section>';
+    else if (ER_KINDS[S.view]) {
+      v.innerHTML = canClin() ? erHtml(S.view) : '<section class="card">This is for doctors and nursing staff only.</section>';
+      if (canClin() && (!S.recent || Date.now() - S.recent.at > 60000) && !S.recentBusy) loadRecent().then(function () { if (ER_KINDS[S.view]) erPaint(); });
+    }
     if (S.view === 'shift' && S.work && canEnter()) {
       a.innerHTML = '<div class="in2"><button class="btn pri" data-act="new-pt">+ New patient' +
         (S.open && S.work.id !== S.open.id ? ' (' + h(CEC.shiftName(S.work.shift)) + ', ' + CEC.dmy(S.work.censusDate) + ')' : '') + '</button></div>';
@@ -3098,7 +3104,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       out: e.out || '', obsH: e.obsH || '', signed: !!e.signed, dupOk: false, dxq: '', v: e.v || '', ro: !!roWhy, adv: (e.adv || []).slice(), tok: e.tok || '', orig: entry ? clone(entry) : null };
     var sh = targetShift(), no = entry ? sh.entries.map(function (x) { return x.id; }).indexOf(e.id) + 1 : sh.entries.length + 1;
     var el = $('sheet');
-    var regOnly = !entry && !doctor;                         // registration: biodata only; vitals, ECG and the slip have their own pages
+    var regOnly = !entry;                                    // registration (everyone, doctors too): biodata only; vitals, ECG and the slip have their own pages
     S.form.regOnly = regOnly;
     var foot, readings = entry ? vitalsHtml(e) : '';
     if (roWhy) foot = '<button class="btn" data-act="close-form">Close</button>';
@@ -3121,20 +3127,15 @@ if (typeof module !== 'undefined') module.exports = CEC;
       [['M', 'Male'], ['F', 'Female']].map(function (g) { return '<button type="button" data-act="f-sex" data-v="' + g[0] + '">' + g[1] + '</button>'; }).join('') + '</div></div></div>' +
       '<label class="lb">Category <span class="req">*</span></label><div class="seg cats" id="fCat">' +
       CEC.CATS.map(function (c) { return '<button type="button" data-act="f-cat" data-v="' + c.c + '">' + h(c.l) + '</button>'; }).join('') + '</div>' +
-      (doctor ? '<div class="fsec">Checks and tests</div><div class="seg procs" id="fChk">' + procBtns('chk', e) + '</div>' + readings + advHtml(e) +
-        '<div class="fsec">ER procedures</div><div class="seg procs" id="fEr">' + procBtns('er', e) + '</div>' +
-        '<div class="chips" id="procX" style="margin-top:8px"></div><div class="addrow"><input class="in" id="fProcX" enterkeyhint="done" autocomplete="off" placeholder="Other procedure, e.g. chest tube (Enter adds it)">' +
-        '<button type="button" class="btn" data-act="proc-add">Add</button></div><div class="sugg hidden" id="fProcXS"></div>' +
-        '<div class="fsec">ER medications</div><div class="seg procs meds" id="fMed">' + medBtns() + '</div>' +
-        '<div class="chips" id="medX" style="margin-top:8px"></div><div class="addrow"><input class="in" id="fMedX" enterkeyhint="done" autocomplete="off" placeholder="Other medication, e.g. IV Furosemide (Enter adds it)">' +
-        '<button type="button" class="btn" data-act="med-add">Add</button></div><div class="sugg hidden" id="fMedXS"></div>' +
-        '<textarea class="in" id="fNote" rows="2" placeholder="e.g. referred to NICVD, BP 190/110 on arrival">' + h(e.note || '') + '</textarea>' +
+      (doctor && !regOnly ? docVitalsHtml(e) + slipLine(e) +
+        /* Doctor's record (08-11-2026): biodata, the vitals taken, diagnosis and disposal. ER procedures and medications are given from the home page buttons. */
         '<div class="fsec">Doctor\u2019s assessment</div>' + (e.signed ? '<div class="signed">&#10003; Signed off ' + h(fmtTime(e.signedAt)) + (isAdmin() && e.signedBy ? ' by ' + h(e.signedBy) : '') + '</div>' : '') +
         '<label class="lb" for="fDx">Working diagnosis <span class="muted">(add one or more)</span></label><div id="dxBox"></div>' +
-        '<div id="outWrap"><label class="lb">Outcome / disposition</label><div class="seg outs" id="fOut">' +
+        '<div id="outWrap"><label class="lb">Disposal / outcome</label><div class="seg outs" id="fOut">' +
         CEC.OUTS.filter(function (o) { return o.c !== 'BD'; }).map(function (o) { return '<button type="button" data-act="f-out" data-v="' + o.c + '">' + h(o.l) + '</button>'; }).join('') + '</div>' +
         '<div id="obsWrap" class="hidden"><label class="lb" for="fObs">Hours kept under observation</label><input class="in" id="fObs" inputmode="numeric" maxlength="2" value="' + h(e.obsH || '4') + '"></div></div>' +
-        ''
+        '<label class="lb" for="fNote">Comments <span class="muted">(optional)</span></label><textarea class="in" id="fNote" rows="2" placeholder="e.g. referred to NICVD, BP 190/110 on arrival">' + h(e.note || '') + '</textarea>' +
+        '<p class="muted small" style="margin:6px 0 0">ER procedures and ER medications are added from the home page buttons <b>ER procedures</b> and <b>ER medications given</b> (patients of the last 24 hours).</p>'
         : regOnly ? '<p class="muted small fnote">After saving, take the vitals on the <b>Vitals</b> page (or tap Save &amp; add vitals). The OPD / ER slip is then ready on the <b>OPD / ER slip</b> page.</p>'
         : '<div class="fsec">Checks done</div><div class="seg procs" id="fProc">' +
           CEC.PROCS.filter(function (p) { return CEC.STAFF_PROCS.indexOf(p.c) >= 0; }).map(function (p) { return '<button type="button" data-act="f-proc" data-v="' + p.c + '">' + h(p.l) + '</button>'; }).join('') +
@@ -3150,6 +3151,20 @@ if (typeof module !== 'undefined') module.exports = CEC;
       if (!/^(pt-appt|cert-from-pt|slip-reprint)$/.test(b.getAttribute('data-act') || '')) b.disabled = true;
     });
     if (!entry) setTimeout(function () { var m = S.form && S.form.auto ? $('fName') : $('fMr'); if (m) m.focus(); }, 60);
+  }
+  /* Doctor's record: the vitals already taken (read-only) and "Add vitals", which opens boxes for the ones not taken yet. */
+  function docVitalsHtml(e) {
+    var done = VIT.filter(function (x) { return e[x[0]] !== '' && e[x[0]] != null; }), left = VIT.filter(function (x) { return done.indexOf(x) < 0; });
+    var cell = function (x) {
+      var k = x[0], ph = { bp: 'e.g. 130/80', pulse: 'e.g. 88', temp: 'e.g. 98.6', spo2: 'e.g. 97', rbs: 'e.g. 140', wt: 'e.g. 70', ht: 'e.g. 165' }[k];
+      var mode = k === 'temp' || k === 'wt' ? 'decimal' : 'numeric', max = k === 'bp' ? 7 : k === 'temp' || k === 'wt' ? 5 : 3;
+      return '<div><label class="lb" for="' + x[3] + '">' + x[1] + ' <span class="muted">(' + x[2] + ')</span></label><input class="in" id="' + x[3] + '"' + (k === 'bp' ? ' data-fmt="bp"' : '') +
+        ' inputmode="' + mode + '" maxlength="' + max + '" placeholder="' + ph + '" value=""></div>';
+    };
+    return '<div class="fsec">Vitals</div>' + (done.length ? '<div class="vdone">' + done.map(function (x) {
+      return '<span><b>' + h(x[1]) + '</b> ' + h(e[x[0]]) + ' ' + h(x[0] === 'temp' ? tempUnit(e.temp) : x[2]) + '</span>'; }).join('') + '</div>'
+      : '<p class="muted small" style="margin:4px 0">No vitals taken yet.</p>') +
+      (left.length ? '<button type="button" class="btn sm" data-act="f-addvit" id="fAddVit" style="margin-top:6px">+ Add vitals</button><div id="vitAdd" class="hidden"><div class="vgrid">' + left.map(cell).join('') + '</div></div>' : '');
   }
   /* Advised tests and the slip, in a saved patient's record (not at registration). */
   function advHtml(e) {
@@ -3292,36 +3307,56 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function isErProc(p) { return !CEC.PROCS.some(function (k) { return k.c === p && k.g === 'chk'; }); }
   function erItems(e, kind) { return kind === 'erp' ? (e.procs || []).filter(isErProc) : (e.meds || []).slice(); }
   function erLabel(kind, x) { return kind === 'erp' ? CEC.label(CEC.PROCS, x) : x; }
+  /* The patients of the last 24 hours (from now, not by shift): the running and previous shift as on the dashboard, and older shifts from the server (S.recent). */
+  var ER_WINDOW = 24 * 3600000;
+  function erShift(src) {
+    if (src === 'work') return S.work;
+    if (src === 'prev') return S.prevShift;
+    return ((S.recent && S.recent.shifts) || []).filter(function (s) { return s.id === src; })[0] || null;
+  }
+  function erAll(test) {
+    var a = qShifts(), seen = {}, out = [], cut = Date.now() - ER_WINDOW;
+    a.forEach(function (x) { seen[x.sh.id] = 1; });
+    ((S.recent && S.recent.shifts) || []).forEach(function (s) { if (!seen[s.id]) { seen[s.id] = 1; a.push({ sh: s, src: s.id }); } });
+    a.forEach(function (x) { (x.sh.entries || []).forEach(function (e) { if (!/^(q-|tmp)/.test(e.id) && (new Date(e.t).getTime() || 0) >= cut && test(e)) out.push({ e: e, sh: x.sh, src: x.src }); }); });
+    return out.sort(function (p, q) { return (p.e.t || '') < (q.e.t || '') ? -1 : 1; });
+  }
+  function loadRecent() {
+    if (!canClin() || S.recentBusy) return Promise.resolve();
+    S.recentBusy = true;
+    return api('apiRecent').then(function (r) { S.recentBusy = false; S.recent = { at: Date.now(), shifts: r || [] }; }, function () { S.recentBusy = false; });
+  }
   function erRow(x, kind) {
     var e = x.e, it = erItems(e, kind), busy = S.erBusy && S.erBusy[e.id];
     return '<button class="prow" data-act="er-open" data-v="' + kind + '" data-src="' + x.src + '" data-id="' + h(e.id) + '"' + (busy ? ' disabled' : '') + '><div class="pr-l"><div class="pr-t">' + CEC.hm(e.t) + '</div></div>' +
       '<div class="pr-m"><div class="pr-name">' + h(e.name || '(no name)') + ' <span class="muted">&middot; MR ' + h(e.mr || '-') + '</span></div><div class="pr-sub">' + h(CEC.label(CEC.CATS, e.cat)) +
-      (x.src === 'prev' ? ' &middot; ' + h(CEC.shiftName(x.sh.shift)) + ' shift' : '') + (e.signed ? ' &middot; <span style="color:var(--g7)">&#10003; signed off</span>' : '') + '</div>' +
+      (x.src !== 'work' ? ' &middot; ' + h(CEC.shiftName(x.sh.shift)) + ' shift' + (x.sh.censusDate !== (S.work && S.work.censusDate) ? ', ' + h(CEC.dmy(x.sh.censusDate)) : '') : '') + (e.signed ? ' &middot; <span style="color:var(--g7)">&#10003; signed off</span>' : '') + '</div>' +
       '<div class="pr-proc">' + (busy ? '<span class="spin"></span>Saving&hellip;' : it.length ? h(it.map(function (y) { return erLabel(kind, y); }).join(', ')) : '<span class="muted">none yet</span>') + '</div></div><span class="chev">&rsaquo;</span></button>';
   }
   function erListHtml(kind) {
     var q = (S.erQ || '').trim().toLowerCase();
-    var all = qItems(function (e) { return e.cat !== 'BD' || kind === 'erp' || erItems(e, kind).length; }).reverse();    // newest first
+    var all = erAll(function (e) { return e.cat !== 'BD' || kind === 'erp' || erItems(e, kind).length; }).reverse();    // newest first
     var hits = q ? all.filter(function (x) { return (x.e.name + ' ' + x.e.mr + ' ' + (x.e.tok || '')).toLowerCase().indexOf(q) >= 0; }) : all;
-    return '<div class="plist">' + (hits.length ? hits.slice(0, 150).map(function (x) { return erRow(x, kind); }).join('') : '<div class="empty">' + (q ? 'No patient of this shift matches.' : 'No patients in this shift yet.') + '</div>') + '</div>';
+    return '<div class="plist">' + (hits.length ? hits.slice(0, 250).map(function (x) { return erRow(x, kind); }).join('') : '<div class="empty">' + (q ? 'No patient of the last 24 hours matches.' : 'No patients in the last 24 hours.') + '</div>') + '</div>';
   }
   function erHtml(kind) {
     var K = ER_KINDS[kind];
     if (!S.work) return '<section class="card center muted"><span class="spin"></span>Loading the shift&hellip;</section>';
-    var html = '<div class="narrow"><div class="listhead"><h3>' + h(K.title) + ' &middot; ' + h(CEC.shiftName(S.work.shift)) + ' shift</h3><button class="btn sm" data-act="q-refresh" aria-label="Refresh list">&#8635; ' +
-      (S.synced ? CEC.hm(S.synced.toISOString()) : 'Refresh') + '</button></div><p class="muted small" style="margin:0 0 10px">Tap a patient to add or remove the ' + K.what + ' given. ' +
-      'Doctors and nursing staff can add them, also after the doctor has signed off.</p>';
+    var html = '<div class="narrow"><div class="listhead"><h3>' + h(K.title) + ' &middot; last 24 hours</h3><button class="btn sm" data-act="q-refresh" aria-label="Refresh list">&#8635; ' +
+      (S.synced ? CEC.hm(S.synced.toISOString()) : 'Refresh') + '</button></div><p class="muted small" style="margin:0 0 10px">Every patient registered in the last 24 hours (from now), newest first' +
+      (S.recent ? '' : ' <span class="spin"></span>') + '. Tap a patient to add or remove the ' + K.what + ' given. ' +
+      'Doctors and nursing staff can add them, also after the doctor has signed off and after the shift has ended.</p>';
     if (kind === 'erm') {
       var cnt = {}, pts = 0;
-      (S.work.entries || []).forEach(function (e) { var m = e.meds || []; if (m.length) pts++; m.forEach(function (x) { cnt[x] = (cnt[x] || 0) + 1; }); });
+      erAll(function () { return true; }).forEach(function (x) { var m = x.e.meds || []; if (m.length) pts++; m.forEach(function (y) { cnt[y] = (cnt[y] || 0) + 1; }); });
       var keys = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a] || (a < b ? -1 : 1); });
-      if (keys.length) html += '<details class="card" style="margin:0 0 10px"><summary class="small"><b>This shift: ' + keys.reduce(function (a, k) { return a + cnt[k]; }, 0) + ' medications to ' + pts + ' patient' + (pts === 1 ? '' : 's') + '</b> (count of each)</summary>' +
+      if (keys.length) html += '<details class="card" style="margin:0 0 10px"><summary class="small"><b>Last 24 hours: ' + keys.reduce(function (a, k) { return a + cnt[k]; }, 0) + ' medications to ' + pts + ' patient' + (pts === 1 ? '' : 's') + '</b> (count of each)</summary>' +
         '<table class="mini" style="margin-top:8px"><tr><th>Medication</th><th>Patients</th></tr>' + keys.map(function (k) { return '<tr><td>' + h(k) + '</td><td>' + cnt[k] + '</td></tr>'; }).join('') + '</table></details>';
     }
     return html + '<input class="in" id="erQ" type="search" placeholder="Search name, MR No. or slip number" value="' + h(S.erQ || '') + '" autocomplete="off" enterkeyhint="search" style="margin-bottom:6px"><div id="erRes">' + erListHtml(kind) + '</div></div>';
   }
   function openEr(kind, id, src) {
-    var sh = src === 'prev' ? S.prevShift : S.work, e = sh && sh.entries.filter(function (x) { return x.id === id; })[0];
+    var sh = erShift(src), e = sh && sh.entries.filter(function (x) { return x.id === id; })[0];
     if (!e) return;
     if (/^(q-|tmp)/.test(e.id)) return toast('Wait until this patient is saved.');
     var K = ER_KINDS[kind], cur = erItems(e, kind);
@@ -3363,7 +3398,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function closeEr() { S.er = null; $('sheet').classList.add('hidden'); $('sheet').innerHTML = ''; document.body.style.overflow = ''; overlayClosed(); }
   /* Saved in the background: the sheet closes at once. Only the added and removed items are sent, so nothing else of the patient can be overwritten. */
   function saveEr() {
-    var E = S.er, sh = E.src === 'prev' ? S.prevShift : S.work, e = sh && sh.entries.filter(function (x) { return x.id === E.id; })[0];
+    var E = S.er, sh = erShift(E.src), e = sh && sh.entries.filter(function (x) { return x.id === E.id; })[0];
     if (!e) { closeEr(); return toast('This patient is no longer in the list. Refresh the page.'); }
     var add = E.sel.filter(function (x) { return E.orig.indexOf(x) < 0; }), del = E.orig.filter(function (x) { return E.sel.indexOf(x) < 0; });
     closeEr();
@@ -3714,6 +3749,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
       var i = sh.entries.map(function (x) { return x.id; }).indexOf(isNew ? temp.id : saved.id);
       if (i >= 0) sh.entries[i] = saved; else sh.entries.push(saved);
       if (mode === 'vitals' && !S.form && !S.qe) openQuick(saved, 'vitals', target);
+      else if (signing && nowDead && canCertMake() && !anyOverlay()) {      // brought dead / expired: signing off goes straight to the death certificate
+        toast('Signed off. Opening the death certificate\u2026');
+        api('apiGetCert', '', saved.id).then(function (c) { if (!anyOverlay()) openCert(c || certFromEntry(saved, sh)); else render(); }, function (x) { toast(errText(x)); render(); });
+      }
       else if (!S.form) render();
     }, function (err) {
       S.pending--;
@@ -5392,6 +5431,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'qe-save': saveQuick(); break;
       case 'qe-close': closeQuick(); break;
       case 'sign-pt': savePatient('sign'); break;
+      case 'f-addvit': { var va = $('vitAdd'); if (va) { va.classList.remove('hidden'); el.classList.add('hidden'); var fi = va.querySelector('input'); if (fi) fi.focus(); } break; }
       case 'del-pt': deletePatient(); break;
       case 'letter-now': S.prev = 'shift'; openLetter({ type: 'shift', shifts: [S.work], annex: true }); break;
       case 'day-prev': loadDayAndRender(CEC.addDays(S.day, -1)); break;
@@ -5555,7 +5595,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         toast(on ? 'Opening the practice data\u2026' : 'Going back to the real census\u2026');
         api('apiDemoView', on).then(function (r) {
           S.token = r.token; store_('cec_token', r.token);
-          S.log = null; S.bin = null; S.certs = null; S.pend = null; S.papers = null; S.ap.list = null; S.ap.key = ''; S.dayShifts = null; S.detail = null; S.wel = null; S.work = null; S.lb = null;
+          S.log = null; S.bin = null; S.certs = null; S.pend = null; S.papers = null; S.ap.list = null; S.ap.key = ''; S.dayShifts = null; S.detail = null; S.wel = null; S.work = null; S.lb = null; S.recent = null;
           applyState(r.state); S.stale = false; saveCache(r.state);
           S.view = 'home'; render(); window.scrollTo(0, 0);
           toast(on ? 'Demonstration view: you see the practice data' : 'Back to the real census');
