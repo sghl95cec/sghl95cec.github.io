@@ -493,6 +493,12 @@ table.mini td:not(:first-child),table.mini th:not(:first-child){text-align:right
 .upd .spin{width:10px;height:10px;border-width:2px;margin:0}
 .tag.ppr{background:#fff1d6;color:#7a4b00}.tag.online{background:#e6f0fb;color:#14497e}
 details.card>summary{cursor:pointer}
+/* ---------- accounts and menu (08-11-2026) ---------- */
+.pill.perm{background:var(--g1);color:var(--g7)}.pill.ended{background:#fdeaea;color:#8c1d1d}
+.nav .ni.so>button,.nav .ni.so>button svg{color:#8c1d1d}
+@media (min-width:900px){.nav .ni.so>button{padding-left:12px;padding-right:12px}}
+@media (min-width:900px) and (max-width:1149px){.nav.many .ni>button{padding:13px 3px 11px;font-size:11.5px}.nav.many .caret{display:none}}
+@media (min-width:900px){.nav.many{justify-content:safe center}}
 
 </style>
 </head>
@@ -2216,6 +2222,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function canCert() { return !!(S.me && S.me.canCert); }
   /* Doctors and nursing staff see clinical details, the census and appointments; students do not. */
   function canClin() { return !!(S.me && (S.me.canClin || S.me.canEdit || S.me.admin)); }
+  /* Shifts and duty rosters: doctors and the admin (not nursing staff or students). */
+  function canRosters() { return !!(S.me && (S.me.canEdit || S.me.admin)); }
   /* Appointments: anyone with entry rights, students included. */
   function canAppt() { return canEnter(); }
 
@@ -2308,7 +2316,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         '<button class="btn block" data-act="auth-login">Back to sign in</button></section>';
     }
     setTimeout(warmUp, 0);
-    return '<div class="narrow">' + heroHtml() + '<section class="card"><div class="ct">Sign in</div><p class="muted small" style="margin:0">Use the login ID and password approved by the admin.</p>' +
+    return '<div class="narrow">' + heroHtml(true) + '<section class="card"><div class="ct">Sign in</div><p class="muted small" style="margin:0">Use the login ID and password approved by the admin.</p>' +
       '<label class="lb" for="lId">Login ID</label><input class="in" id="lId" autocapitalize="none" autocomplete="username">' +
       '<label class="lb" for="lPw">Password</label><input class="in" id="lPw" type="password" autocomplete="current-password">' +
       '<button class="btn pri block" data-act="do-login"' + (S.loggingIn ? ' disabled' : '') + '>' + (S.loggingIn ? '<span class="spin"></span>Signing in\u2026' : 'Sign in') + '</button>' +
@@ -2423,20 +2431,24 @@ if (typeof module !== 'undefined') module.exports = CEC;
     lists: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="3" stroke-linecap="round"/>',
     appt: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M9 15l2 2 4-4"/>',
     settings: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/>',
-    bulk: '<path d="M3 6h11M3 12h8M3 18h6"/><path d="M14 15l3 3 5-6"/>'
+    bulk: '<path d="M3 6h11M3 12h8M3 18h6"/><path d="M14 15l3 3 5-6"/>',
+    about: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5h.01" stroke-width="2.6" stroke-linecap="round"/>',
+    signout: '<path d="M14 4h5v16h-5"/><path d="M10 8l-4 4 4 4"/><path d="M6 12h10"/>'
   };
   function navIcon(k) { return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">' + NAV_ICON[k] + '</svg>'; }
   var CEN_MODES = [['shift', 'Per shift data'], ['day', 'Daily data (24 hours)'], ['month', 'Monthly data'], ['year', 'Annual data']];
   function navItems() {
     var a = [{ v: 'home', l: 'Home' }, { v: 'shift', l: 'Patient dashboard' }];
     if (canAppt()) a.push({ v: 'appt', l: 'Appointments', sub: CEC.APPTS.map(function (t) { return [t.c, t.c === 'ECHO' ? 'Echocardiography' : t.l]; }), subAct: 'ap-type' });
-    if (canClin()) a.push({ v: 'rosters', l: 'Shifts & rosters', sub: CEC.SHIFTS.map(function (x) { return [x.c, x.l + ' shift']; }), subAct: 'roster' });
+    if (canRosters()) a.push({ v: 'rosters', l: 'Shifts & rosters', sub: CEC.SHIFTS.map(function (x) { return [x.c, x.l + ' shift']; }), subAct: 'roster' });
     if (canCert()) a.push({ v: 'certs', l: 'Death certificate', badge: S.pendCerts || 0, blink: true });
     if (canClin()) a.push({ v: 'forms', l: 'Download forms' });              // not for students
     if (canClin()) a.push({ v: 'lists', l: 'Registers' });
     if (canClin()) a.push({ v: 'census', l: 'Patient census', sub: CEN_MODES });
     if (isAdmin()) a.push({ v: 'bulk', l: 'Bulk sign-off' });
+    a.push({ v: 'about', l: 'About' });
     a.push({ v: 'settings', l: isAdmin() ? 'Account & admin' : 'Account', badge: isAdmin() ? (S.pendingUsers || 0) + (S.pendingResets || 0) : 0 });
+    a.push({ v: 'signout', l: 'Sign out', act: 'sign-out', cls: 'so' });
     return a;
   }
   function navOn() {
@@ -2444,7 +2456,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (v === 'detail') return 'census';
     if (v === 'letter') return S.prev === 'detail' ? 'census' : S.prev;
     if (v === 'roster') return 'rosters';
-    if (v === 'wedit' || Q_KINDS[v] || ER_KINDS[v]) return 'home';
+    if (v === 'wedit') return 'about';
+    if (Q_KINDS[v] || ER_KINDS[v]) return 'home';
     return v;
   }
   function navHtml() {
@@ -2454,7 +2467,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         var cur = it.v === 'census' ? S.cen.mode : it.v === 'rosters' ? (S.view === 'roster' ? S.rosterShift : '') : S.ap.type;
         return '<button role="menuitem" data-act="' + (it.subAct || 'cen') + '" data-v="' + x[0] + '" class="' + (on === it.v && cur === x[0] ? 'on' : '') + '">' + h(x[1]) + '</button>';
       }).join('') + '</div>' : '';
-      return '<div class="ni"><button data-act="go" data-v="' + it.v + '" class="' + (on === it.v ? 'on' : '') + '"' + (on === it.v ? ' aria-current="page"' : '') + '>' + navIcon(it.v) + '<span>' + h(it.l) + '</span>' +
+      return '<div class="ni' + (it.cls ? ' ' + it.cls : '') + '"><button data-act="' + (it.act || 'go') + '" data-v="' + it.v + '" class="' + (on === it.v ? 'on' : '') + '"' + (on === it.v ? ' aria-current="page"' : '') + '>' + navIcon(it.v) + '<span>' + h(it.l) + '</span>' +
         (it.sub ? '<svg class="caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>' : '') +
         (it.badge ? '<span class="badge' + (it.blink ? ' blink' : '') + '" aria-label="' + it.badge + ' pending">' + it.badge + '</span>' : '') + '</button>' + sub + '</div>';
     }).join('');
@@ -2470,7 +2483,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var ub = $('userbar');
     if (!ub || !S.me) return;
     ub.innerHTML = '<span>Signed in as <b>' + h(S.me.name) + '</b> &middot; ' + h(S.me.roleLabel) + (isAdmin() && S.me.role !== 'admin' ? ' &middot; Admin' : '') +
-      (S.stale ? ' &middot; <span class="upd"><span class="spin"></span>updating</span>' : '') + '</span><button class="lnk" data-act="sign-out">Sign out</button>';
+      (S.stale ? ' &middot; <span class="upd"><span class="spin"></span>updating</span>' : '') + '</span>';
   }
   function headerHeight() { var t = $('top'); if (t) document.documentElement.style.setProperty('--hh', t.offsetHeight + 'px'); }
   window.addEventListener('resize', headerHeight);
@@ -2488,7 +2501,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (isOff() && ['home', 'shift', 'letter', 'detail'].indexOf(S.view) < 0) {
       v.innerHTML = '<section class="card"><div class="ct">Needs internet</div><p class="small" style="margin:6px 0 0">This page needs internet. Without internet you can add new patients on the Patient dashboard; they are sent automatically later.</p>' +
         '<button class="btn pri block" data-act="go" data-v="shift">Open patient dashboard</button></section>';
-      ub.innerHTML = '<span>Signed in as <b>' + h(S.me.name) + '</b> &middot; ' + h(S.me.roleLabel) + '</span><button class="lnk" data-act="sign-out">Sign out</button>';
+      ub.innerHTML = '<span>Signed in as <b>' + h(S.me.name) + '</b> &middot; ' + h(S.me.roleLabel) + '</span>';
       return;
     }
     $('menuBtn').classList.toggle('alert', !!(canCert() && S.pendCerts));
@@ -2501,9 +2514,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
     else if (S.view === 'settings') v.innerHTML = settingsHtml();
     else if (S.view === 'forms') v.innerHTML = canClin() ? formsHtml() : '<section class="card">Download forms are for doctors and nursing staff.</section>';
     else if (S.view === 'lists') { v.innerHTML = canClin() ? listsHtml() : '<section class="card">Registers are for doctors and nursing staff.</section>'; }
-    else if (S.view === 'rosters') v.innerHTML = rostersHtml();
+    else if (S.view === 'rosters') v.innerHTML = canRosters() ? rostersHtml() : '<section class="card">Shifts and rosters are for doctors.</section>';
+    else if (S.view === 'about') v.innerHTML = aboutPageHtml();
     else if (S.view === 'certs') v.innerHTML = certsHtml();
-    else if (S.view === 'roster') v.innerHTML = rosterHtml();
+    else if (S.view === 'roster') v.innerHTML = canRosters() ? rosterHtml() : '<section class="card">Shifts and rosters are for doctors.</section>';
     else if (S.view === 'wedit') v.innerHTML = weditHtml();
     else if (S.view === 'appt') v.innerHTML = canAppt() ? apptHtml() : '<section class="card">You do not have the right to give appointments.</section>';
     else if (S.view === 'bulk') v.innerHTML = bulkHtml();
@@ -2773,10 +2787,20 @@ if (typeof module !== 'undefined') module.exports = CEC;
           '<div class="rights"><label><input type="checkbox" id="en_' + h(u.id) + '" checked> Patient entry</label><label><input type="checkbox" id="ed_' + h(u.id) + '"' + (doc ? ' checked' : '') + '> Editing and sign-off</label></div>' +
           '<div class="sbtns"><button class="btn sm dan" data-act="u-reject" data-id="' + h(u.id) + '">Reject</button><button class="btn sm pri" data-act="u-approve" data-id="' + h(u.id) + '">Approve</button></div></div>';
       }).join('') : '<p class="muted small" style="margin:0">No requests waiting.</p>') + '</section>';
-    var others = S.users.filter(function (u) { return u.status !== 'pending'; });
-    html += '<section class="card"><div class="ct">Users (' + others.length + ')</div>' + others.map(function (u) {
+    var others = S.users.filter(function (u) { return u.status !== 'pending'; }).sort(function (a, b) { return (b.ended ? 1 : 0) - (a.ended ? 1 : 0); });   // ended accounts first
+    var ended = others.filter(function (u) { return u.ended; }).length;
+    html += '<section class="card"><div class="ct">Users (' + others.length + ')</div><p class="muted small" style="margin:0 0 6px">Each account is valid for 3 months from approval. ' +
+      'Extend 3 months, make a person a permanent member, or remove the ID (for example after a transfer). Removing an ID never removes anything the person entered.' +
+      (ended ? ' <b style="color:var(--red)">' + ended + ' account' + (ended === 1 ? ' has' : 's have') + ' ended.</b>' : '') + '</p>' + others.map(function (u) {
+      var t = u.endsAt ? Date.parse(u.endsAt) : 0, soon = t && t - Date.now() < 7 * 86400000;
+      var valid = u.status !== 'active' ? '' : u.permanent ? '<span class="pill perm">Permanent member</span>'
+        : u.ended ? '<span class="pill ended">Ended ' + h(CEC.dmy(CEC.ymd(new Date(t)))) + '</span>'
+        : '<span class="pill' + (soon ? ' ended' : ' none') + '">Valid until ' + h(CEC.dmy(CEC.ymd(new Date(t)))) + '</span>';
       return '<div class="urow"><div><b>' + h(u.name) + '</b> &middot; ' + h(u.roleLabel) + (u.status !== 'active' ? ' <span class="pill none">' + h(u.status) + '</span>' : '') +
-        '<div class="muted small">Login ID ' + h(u.login) + ' &middot; ' + h(rightsText(u)) + '</div></div>' +
+        '<div class="muted small">Login ID ' + h(u.login) + ' &middot; ' + h(rightsText(u)) + '</div>' + (valid ? '<div style="margin-top:4px">' + valid + '</div>' : '') +
+        (u.mainAdmin ? '' : '<div class="sbtns" style="margin-top:6px">' + (u.status === 'active' ? (u.permanent ? '' : '<button class="btn sm" data-act="u-extend" data-id="' + h(u.id) + '">Extend 3 months</button>') +
+          '<button class="btn sm" data-act="u-perm" data-v="' + (u.permanent ? 'no' : 'yes') + '" data-id="' + h(u.id) + '">' + (u.permanent ? 'Not permanent' : 'Make permanent') + '</button>' : '') +
+          '<button class="btn sm dan" data-act="u-del" data-id="' + h(u.id) + '">Remove ID</button></div>') + '</div>' +
         '<button class="btn sm" data-act="u-edit" data-id="' + h(u.id) + '">Change</button></div>';
     }).join('') + '</section>';
     html += '<section class="card"><div class="ct">Activity log</div><p class="muted small" style="margin:0 0 8px">Every sign-in, entry, edit, sign-off, deletion and shift change, newest first.</p>';
@@ -4382,7 +4406,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     S.welLoading = api('apiWelcome').then(function (r) {
       S.welLoading = null; S.wel = r; S.welAt = Date.now();
       if (S.me) store_('cec_wel', { uid: S.me.id, r: { w: r.w, stats: r.stats, imgs: r.imgs, rosters: r.rosters, appts: r.appts } });
-      if ((S.view === 'home' || S.view === 'roster') && !S.form && !S.cert && !$('modal').innerHTML) render();
+      if ((S.view === 'about' || S.view === 'roster' || S.view === 'rosters') && !anyOverlay() && !$('modal').innerHTML && !typing()) render();
     }, function (e) { S.welLoading = null; S.welAt = Date.now(); if (!S.wel) S.wel = { w: null, stats: null, imgs: {}, rosters: {} }; if (!(e && e.offline)) toast('Could not load the home page details: ' + errText(e)); });
     return S.welLoading;
   }
@@ -4395,7 +4419,24 @@ if (typeof module !== 'undefined') module.exports = CEC;
       if (kept) { S.imgCache[id] = kept; return kept; }
       loadImg(id, slot);
     }
-    return IMG[slot] || '';
+    return IMG[slot] || builtinImg(slot);
+  }
+  /* The CEC's own photos are no longer inside the page (it opens faster); the server sends each once, when the About page is opened, and it is kept on the device. */
+  var BUILTIN_SLOTS = ['hero', 'team', 'hod', 'cmo'];
+  function builtinImg(slot) {
+    if (BUILTIN_SLOTS.indexOf(slot) < 0 || !S.me) return '';
+    var k = 'b:' + slot;
+    if (S.imgCache[k]) return S.imgCache[k];
+    var kept = store_('cec_bimg_' + slot);
+    if (kept) { S.imgCache[k] = kept; return kept; }
+    if (S.imgCache[k] === '') return '';                  // on its way
+    S.imgCache[k] = '';
+    api('apiBuiltinImg', slot).then(function (r) {
+      if (!r || !r.src) return;
+      S.imgCache[k] = r.src; store_('cec_bimg_' + slot, r.src);
+      if (S.view === 'about' && !anyOverlay() && !$('modal').innerHTML) render();
+    }, function () { delete S.imgCache[k]; });
+    return '';
   }
   function loadImg(id, slot) {
     if (S.imgCache[id] === '') return;
@@ -4409,8 +4450,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function setSlotImg(slot, url) {
     Array.prototype.forEach.call(document.querySelectorAll('img[data-slot="' + slot + '"]'), function (el) { el.src = url || BLANK_IMG; });
   }
-  function heroHtml() {
-    var src = imgSrc('hero');
+  function heroHtml(noPhoto) {
+    var src = noPhoto ? '' : imgSrc('hero');
     return '<section class="hero' + (src ? '' : ' noimg') + '">' + (src ? '<img data-slot="hero" src="' + src + '" alt="Cardiac Emergency Centre building, Sindh Government Hospital Liaquatabad">' : '') +
       '<div class="hero-t"><div class="eyebrow">Government of Sindh</div><h1>Cardiac Emergency Centre</h1><div>Sindh Government Hospital Liaquatabad, Karachi</div></div></section>';
   }
@@ -4446,15 +4487,6 @@ if (typeof module !== 'undefined') module.exports = CEC;
       (pw && canEnter() ? '<button class="bdprev" data-act="go" data-v="shift">' + h(CEC.shiftName(pv.shift)) + ' shift: <b>' + pw + '</b> still waiting for sign-off (until ' + CEC.hm(S.prevUntil) + ' hrs) &rsaquo;</button>' : '') +
       '<div class="sbtns"><button class="btn block" data-act="go" data-v="shift">Open patient dashboard</button></div></section>';
   }
-  function servedHtml() {
-    var st = S.wel && S.wel.stats;
-    var html = '<section class="card"><div class="ct">Patients served</div>';
-    if (!st) return html + '<div class="center muted" style="padding:12px"><span class="spin"></span>Loading&hellip;</div></section>';
-    return html + '<div class="muted small">' + h(CEC.monthName(st.month + '-01')) + ', up to ' + CEC.dmy(st.date) + '</div>' +
-      '<div class="stats3"><div><b>' + st.T + '</b><span>This month</span></div><div><b>' + st.M + '</b><span>Male</span></div><div><b>' + st.F + '</b><span>Female</span></div></div>' +
-      '<div class="catline">' + CEC.CATS.map(function (k) { return h(k.l) + ' <b>' + ((st.byCat || {})[k.c] || 0) + '</b>'; }).join(' &middot; ') + '</div>' +
-      '<div class="catline">Today’s census day so far: <b>' + st.today + '</b></div></section>';
-  }
   function aboutHtml() {
     var W = welcome(), team = imgSrc('team'), hero = imgSrc('hero');
     return '<section class="card about abt"><div class="ct">About the department</div>' +
@@ -4467,8 +4499,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
       (team ? '<h4>Our team</h4><img class="teamimg" data-slot="team" src="' + team + '" alt="' + h(W.teamCaption || 'Team photo') + '">' + (W.teamCaption ? '<div class="muted small" style="margin-top:6px">' + h(W.teamCaption) + '</div>' : '') : '') +
       (isAdmin() ? '<button class="btn block" data-act="wel-edit" style="margin-top:12px">Edit this page (admin)</button>' : '') + '</section>';
   }
-  /* The same home page for everyone: the big buttons, the live patient dashboard (first for doctors, after the buttons for nursing staff
-     and students), pending death certificates, About the department and Patients served (not for students). */
+  /* The same home page for everyone: the big buttons and the live patient dashboard (first for doctors, after the buttons for nursing staff
+     and students), then pending death certificates. */
   function tilesHtml() {
     var tile = function (act, icon, t, sub) { return '<button class="stile" data-act="' + act + '"><span class="sti" aria-hidden="true">' + icon + '</span><b>' + t + '</b><span>' + sub + '</span></button>'; };
     var svg = function (d) { return '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2">' + d + '</svg>'; };
@@ -4482,11 +4514,22 @@ if (typeof module !== 'undefined') module.exports = CEC;
         tile('q-erm', svg('<rect x="3" y="9" width="18" height="7" rx="3.5" transform="rotate(-35 12 12.5)"/><path d="M9.2 8.6l5.6 7.8"/>'), 'ER medications given', 'For the drug account; also after sign-off') : '') +
       '</div>';
   }
+  /* Home: only the buttons, the live dashboard and pending certificates (About has its own page), so it opens at once and asks the server for nothing extra. */
   function homeHtml() {
+    var doctor = canEdit() || isAdmin(), dash = dashCardHtml(), tiles = tilesHtml();
+    return '<div class="home1">' + endNoticeHtml() + (doctor ? dash + tiles : tiles + dash) + pendAlertHtml() + '</div>';
+  }
+  /* A week before the 3-month account period ends. */
+  function endNoticeHtml() {
+    var m = S.me, t = m && !m.permanent && m.endsAt ? Date.parse(m.endsAt) : 0;
+    if (!t || t - Date.now() > 7 * 86400000) return '';
+    return '<section class="card pendc"><div class="ct" style="color:var(--red)">Your account ends on ' + h(CEC.dmy(CEC.ymd(new Date(t)))) + '</div>' +
+      '<p class="small" style="margin:0">Accounts are valid for 3 months. Ask the admin to extend yours (Account &amp; admin &gt; Users &gt; Extend 3 months) so you can keep signing in.</p></section>';
+  }
+  function aboutPageHtml() {
     if (!S.wel) { var cw = store_('cec_wel'); if (cw && S.me && cw.uid === S.me.id) { S.wel = cw.r; S.welAt = 0; } }
     if (!S.wel || Date.now() - S.welAt > 120000) setTimeout(function () { loadWelcome(); }, 0);
-    var doctor = canEdit() || isAdmin(), dash = dashCardHtml(), tiles = tilesHtml();
-    return '<div class="home1">' + (doctor ? dash + tiles : tiles + dash) + pendAlertHtml() + aboutHtml() + (canClin() ? servedHtml() : '') + '</div>';
+    return '<div class="narrow">' + aboutHtml() + '</div>';
   }
   /* Shifts and duty rosters (menu): the three shifts with their doctors and rosters. */
   function rostersHtml() {
@@ -4591,7 +4634,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       return '<label class="lb" for="' + id + '">' + label + (hint ? ' <span class="muted">(' + hint + ')</span>' : '') + '</label><textarea class="in" id="' + id + '" rows="' + rows + '">' + h(val) + '</textarea>';
     }, inp = function (id, label, val) { return '<label class="lb" for="' + id + '">' + label + '</label><input class="in" id="' + id + '" value="' + h(val) + '">'; };
     var two = function (a, b) { return '<div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div>' + a + '</div><div>' + b + '</div></div>'; };
-    return '<div class="narrow"><div class="lv-head"><button class="btn sm" data-act="go" data-v="home">&lsaquo; Home</button><h2>Edit welcome page</h2></div>' +
+    return '<div class="narrow"><div class="lv-head"><button class="btn sm" data-act="go" data-v="about">&lsaquo; About</button><h2>Edit the About page</h2></div>' +
       '<section class="card"><div class="ct">About the centre</div>' + ta('wIntro', 'Introduction', W.intro, 5) + ta('wAims', 'Aims', W.aims.join('\n'), 7, 'one per line') +
       ta('wFac', 'Facilities', W.facilities.join('\n'), 8, 'one per line') + '</section>' +
       '<section class="card"><div class="ct">Faculty</div>' + two(inp('wHod', 'Head of Department', W.hod), inp('wHodT', 'Title', W.hodTitle)) +
@@ -4983,6 +5026,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'q-send': { var qq = store_('cec_q') || []; qq.forEach(function (x) { x.err = ''; }); store_('cec_q', qq); if (S.token) { S.offline = false; flushQueue(); } else toast('Sign in to send them.'); break; }
       case 'do-register': doRegister(); break;
       case 'sign-out': {
+        menu(false);
         var nq = queueMine().length;
         confirmBox('Sign out?', 'You will need your login ID and password to sign in again.' + (nq ? ' <b>' + nq + ' patient' + (nq === 1 ? ' is' : 's are') + ' still waiting to be sent from this phone</b>; they will be sent after you sign in again with internet.' : ''), 'Sign out', false)
           .then(function (ok) { if (ok) signOut('', true); });
@@ -5046,7 +5090,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'roster-docs': editShiftDoctors(); break;
       case 'roster-upload': uploadRoster(); break;
       case 'wel-edit': setView('wedit'); break;
-      case 'wel-save': saveWelcome(readWedit(), 'Welcome page saved').then(function (ok) { if (ok) setView('home'); }); break;
+      case 'wel-save': saveWelcome(readWedit(), 'About page saved').then(function (ok) { if (ok) setView('about'); }); break;
       case 'img-upload': uploadImage(v); break;
       case 'img-remove': removeImage(v); break;
       case 'img-copy': {
@@ -5281,6 +5325,15 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'change-pw': changePassword(); break;
       case 'u-approve': setUser({ id: id, status: 'active', canEnter: $('en_' + id).checked, canEdit: $('ed_' + id).checked }, 'Account approved'); break;
       case 'u-reject': confirmBox('Reject this request?', 'The person will not be able to sign in.', 'Reject', true).then(function (ok) { if (ok) setUser({ id: id, status: 'rejected' }, 'Request rejected'); }); break;
+      case 'u-extend': setUser({ id: id, extend: true }, 'Account extended by 3 months'); break;
+      case 'u-perm': setUser({ id: id, permanent: v === 'yes' }, v === 'yes' ? 'Made a permanent member' : 'No longer permanent: valid for 3 months from today'); break;
+      case 'u-del': {
+        var ud = (S.users || []).filter(function (x) { return x.id === id; })[0];
+        if (!ud) break;
+        confirmBox('Remove this ID?', '<b>' + h(ud.name) + '</b> (login ID ' + h(ud.login) + ') can no longer sign in and is signed out at once. <b>Nothing they entered is removed</b>: patients, slips, certificates, appointments and the activity log keep their name. To work here again they register again.', 'Remove ID', true)
+          .then(function (ok) { if (ok) api('apiDeleteUser', id).then(function () { toast('ID removed: ' + ud.name + '. Their entries are kept.'); S.users = null; render(); }, function (e) { toast(errText(e)); }); });
+        break;
+      }
       case 'u-edit': { var u = (S.users || []).filter(function (x) { return x.id === id; })[0]; if (u) editUser(u); break; }
       case 'u-signout': {
         closeModal();
