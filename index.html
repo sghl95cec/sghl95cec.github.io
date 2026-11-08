@@ -473,7 +473,8 @@ table.mini td:not(:first-child),table.mini th:not(:first-child){text-align:right
 .blist{max-height:420px;overflow:auto;margin-top:6px;border:1px solid var(--line);border-radius:8px}
 .brow{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;padding:7px 10px;border-bottom:1px solid var(--line);font-size:13px}
 .brow .bdx{margin-left:auto;font-weight:700;color:var(--g7)}
-@media (min-width:900px) and (max-width:1599px){.nav.many{gap:0;padding:0 4px}.nav.many .ni>button{padding:13px 8px 11px;font-size:13px;gap:6px}.nav.many .ni>button svg:not(.caret){display:none}}
+@media (min-width:900px){.nav.many{gap:0;padding:0 4px}.nav.many .ni>button{padding:13px 9px 11px;font-size:13.5px;gap:6px}.nav.many .ni>button svg:not(.caret){display:none}}
+@media (min-width:900px) and (max-width:1399px){.nav.many .ni>button{padding:13px 7px 11px;font-size:13px}}
 @media (min-width:900px) and (max-width:1149px){.nav.many .ni>button{padding:13px 4px 11px;font-size:12px}}
 /* ---------- round 2 (08-11-2026): slips page, ECG ticks, ER procedures / medications, certificates ---------- */
 @media print{
@@ -499,6 +500,16 @@ details.card>summary{cursor:pointer}
 @media (min-width:900px){.nav .ni.so>button{padding-left:12px;padding-right:12px}}
 @media (min-width:900px) and (max-width:1149px){.nav.many .ni>button{padding:13px 3px 11px;font-size:11.5px}.nav.many .caret{display:none}}
 @media (min-width:900px){.nav.many{justify-content:safe center}}
+/* The top bar never makes the page wider than the screen (it wraps to a second line instead), and it is gone after signing out. */
+@media (min-width:900px){.nav{flex-wrap:wrap;max-width:100%}.nav.hidden{display:none!important}}
+body{overflow-x:clip}
+/* ---------- every entry in capitals; suggestions for "other" procedures / medications (08-11-2026) ---------- */
+#sheet input.in:not([type=email]):not([type=password]):not([type=date]):not([type=time]):not([type=number]),#sheet textarea.in,
+.seg.procs button,#erSel button,.dxck span,#dxList button,.chip,.sugg button,.pr-name,.up,.kv>b,table.mini td:first-child,.brow b,.brow .bdx{text-transform:uppercase}
+#sheet input.in::placeholder,#sheet textarea.in::placeholder{text-transform:none}
+.sugg{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px}
+.sugg button{border:1px solid var(--g7);background:var(--g0);color:var(--g9);border-radius:16px;padding:6px 12px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
+.frow .pr-name,.urow b{text-transform:none}
 
 </style>
 </head>
@@ -689,6 +700,8 @@ var CEC = (function () {
   };
   var NOT_RECORDED = 'Not yet recorded (awaiting doctor)';
 
+  /* Every entry is written in capitals (08-11-2026): names, MR, diagnoses, procedures and medications in lists, letters, slips and certificates. */
+  function UP(v) { return typeof v === 'string' ? v.toUpperCase() : v; }
   function label(list, c) { for (var i = 0; i < list.length; i++) if (list[i].c === c) return list[i].l; return c || ''; }
   function short(list, c) { for (var i = 0; i < list.length; i++) if (list[i].c === c) return list[i].s || list[i].l; return c || ''; }
   function shiftName(c) { return label(SHIFTS, c); }
@@ -1053,7 +1066,7 @@ var CEC = (function () {
       var d = mainDx(e); if (!d.length) d = [NOT_RECORDED];
       d.forEach(function (x) { var k = x.toLowerCase(); if (!lab[k]) lab[k] = x; (g[k] = g[k] || []).push(e); });   // "Leg pain" and "leg Pain" are one row
     });
-    var rows = Object.keys(g).map(function (k) { var c = sexCount(g[k]); return [lab[k], c.M, c.F, c.T]; });
+    var rows = Object.keys(g).map(function (k) { var c = sexCount(g[k]); return [UP(lab[k]), c.M, c.F, c.T]; });
     rows.sort(function (a, b) { return b[3] - a[3] || (a[0] < b[0] ? -1 : 1); });
     var multi = list.some(function (e) { return dxOf(e).length > 1; });
     return {
@@ -1064,24 +1077,27 @@ var CEC = (function () {
   }
   function procItems(list) {
     var extra = [];
-    list.forEach(function (e) { (e.procs || []).forEach(function (p) { if (!PROCS.some(function (k) { return k.c === p; }) && extra.indexOf(p) < 0) extra.push(p); }); });
-    return PROCS.concat(extra.sort().map(function (p) { return { c: p, l: p }; }));
+    list.forEach(function (e) { (e.procs || []).forEach(function (p) { if (!PROCS.some(function (k) { return k.c === p; }) && extra.indexOf(UP(p)) < 0) extra.push(UP(p)); }); });
+    return PROCS.map(function (k) { return { c: k.c, l: UP(k.l), std: true }; }).concat(extra.sort().map(function (p) { return { c: p, l: p }; }));
   }
+  function hasProc(e, it) { return (e.procs || []).some(function (x) { return it.std ? x === it.c : UP(x) === it.c; }); }
   function procTable(list) {
     var rows = procItems(list).map(function (p) {
-      var l = list.filter(function (e) { return (e.procs || []).indexOf(p.c) >= 0; }), c = sexCount(l);
+      var l = list.filter(function (e) { return hasProc(e, p); }), c = sexCount(l);
       return [p.l, c.M, c.F, c.T];
     }).filter(function (r) { return r[3] > 0; });
     return { cols: C4('Procedure / intervention'), rows: rows, total: null, empty: 'No procedures recorded' };
   }
+  /* "IV Omeprazole" and "IV OMEPRAZOLE" are one medicine. */
   function medItems(list) {
-    var extra = [];
-    list.forEach(function (e) { (e.meds || []).forEach(function (m) { if (MEDS.indexOf(m) < 0 && extra.indexOf(m) < 0) extra.push(m); }); });
-    return MEDS.concat(extra.sort()).map(function (m) { return { c: m, l: m }; });
+    var keys = MEDS.map(UP), extra = [];
+    list.forEach(function (e) { (e.meds || []).forEach(function (m) { var k = UP(m); if (keys.indexOf(k) < 0 && extra.indexOf(k) < 0) extra.push(k); }); });
+    return keys.concat(extra.sort()).map(function (m) { return { c: m, l: m }; });
   }
+  function hasMed(e, k) { return (e.meds || []).some(function (m) { return UP(m) === k; }); }
   function medTable(list) {
     var rows = medItems(list).map(function (m) {
-      var l = list.filter(function (e) { return (e.meds || []).indexOf(m.c) >= 0; }), c = sexCount(l);
+      var l = list.filter(function (e) { return hasMed(e, m.c); }), c = sexCount(l);
       return [m.l, c.M, c.F, c.T];
     }).filter(function (r) { return r[3] > 0; });
     return { cols: C4('Medication'), rows: rows, total: null, empty: 'No medications recorded' };
@@ -1117,8 +1133,8 @@ var CEC = (function () {
           rows: list.map(function (e, i) {
             var o = e.out ? short(OUTS, e.out) : 'Awaiting doctor';
             if (e.out === 'OBS' && e.obsH) o += ' (' + e.obsH + ' h)';
-            return [i + 1, (withShift ? e._shift + ' ' : '') + hm(e.t), e.mr, e.name, (e.age !== '' && e.age != null ? e.age : '-') + '/' + (e.sex || '-'),
-              mainDx(e).join(', ') || '-', (e.procs || []).map(function (p) { return label(PROCS, p); }).join(', ') || '-', o];
+            return [i + 1, (withShift ? e._shift + ' ' : '') + hm(e.t), UP(e.mr), UP(e.name), (e.age !== '' && e.age != null ? e.age : '-') + '/' + (e.sex || '-'),
+              UP(mainDx(e).join(', ')) || '-', UP((e.procs || []).map(function (p) { return label(PROCS, p); }).join(', ')) || '-', o];
           })
         }
       });
@@ -1190,7 +1206,7 @@ var CEC = (function () {
       body: ['The census of patients attended at the Cardiac Emergency Centre for the 24 hours from ' + t0 + ' hrs on ' + dmy(date) + ' to ' + t0 +
         ' hrs on ' + dmy(next) + ' is submitted as under. A total of ' + c.T + ' patient' + (c.T === 1 ? '' : 's') + ' (Male ' + c.M + ', Female ' + c.F + ') were attended.'],
       sections: letterSections([['Shift-wise census', shiftTab], ['Category-wise census', catTab], ['Diagnosis-wise distribution', dxTable(entries)],
-        ['Procedures and interventions', procTab]].concat(hasMeds(entries) ? [['Medications given in the CEC', byShift(entries, medItems(entries), function (e, k) { return (e.meds || []).indexOf(k) >= 0; }, 'Medication', false)]] : [],
+        ['Procedures and interventions', procTab]].concat(hasMeds(entries) ? [['Medications given in the CEC', byShift(entries, medItems(entries), function (e, k) { return hasMed(e, k); }, 'Medication', false)]] : [],
         [['Outcome of patients', outTab]])),
       notes: notes.concat(unsignedNote(entries)),
       closing: 'Submitted for your kind information, please.',
@@ -1441,8 +1457,13 @@ var CEC = (function () {
     { c: 'PLR', l: 'Bilateral pupils non-reactive to light.' }, { c: 'COR', l: 'Bilateral corneal reflex absent.' },
     { c: 'ECG', l: 'No cardiac activity seen on ECG.' }
   ];
+  function certUp(c) {
+    var o = Object.assign({}, c || {});
+    ['name', 'mr', 'address', 'status', 'comments', 'doctor', 'paramedics', 'rName', 'rRel', 'rAddress'].forEach(function (k) { if (typeof o[k] === 'string') o[k] = o[k].toUpperCase(); });
+    return o;
+  }
   function deathCertPdf(c, st, logo) {
-    c = c || {}; st = st || DEFAULTS;
+    c = certUp(c); st = st || DEFAULTS;
     var P = PDFGen, d = new P.Doc(), L = 48, R = 533, W = R - L, V = 'H', VS = 9.5;
     d.title = 'Death certificate' + (c.name ? ' - ' + c.name : '');
     if (logo) d.setImage(logo.bytes, logo.w, logo.h);
@@ -1595,9 +1616,9 @@ var CEC = (function () {
     /* what is written on the lines */
     var mw = mid - vx - 2;
     function val(x, y, s, size, maxW) { s = P.clean(s || ''); if (!s) return; size = fitSize(s, 'H', size, maxW, 7.5); T(x, y, P.fit(s, 'H', size, maxW), 'H', size); }
-    val(vx, 70, e.mr, 10.5, mw);
+    val(vx, 70, UP(e.mr), 10.5, mw);
     val(rv, 70, dmy(dateYmd || ymd(new Date())), 10, R - rv);
-    val(vx, 87, e.name, 10.5, mw);
+    val(vx, 87, UP(e.name), 10.5, mw);
     val(rv, 87, (e.age !== '' && e.age != null ? e.age : '-') + ' / ' + (e.sex || '-'), 10.5, R - rv);
     var parts = slipVitals(e), vw = R - vx, gap = '   ';
     if (parts.length) {
@@ -1622,7 +1643,7 @@ var CEC = (function () {
   function slipPdfMany(list, logo, paper, dateYmd) {
     var P = PDFGen, d = new P.Doc(true), a5 = paper === 'a5';
     if (a5) d.W = SLIP_W;
-    d.title = list.length === 1 ? (String(list[0].tok || 'OPD').split(' ')[0] === 'ER' ? 'ER' : 'OPD') + ' slip ' + (list[0].tok || '') + ' - ' + (list[0].name || '') : list.length + ' OPD / ER slips';
+    d.title = list.length === 1 ? (String(list[0].tok || 'OPD').split(' ')[0] === 'ER' ? 'ER' : 'OPD') + ' slip ' + (list[0].tok || '') + ' - ' + UP(list[0].name || '') : list.length + ' OPD / ER slips';
     if (logo) d.setImage(logo.bytes, logo.w, logo.h);
     slipPages(list, paper).forEach(function (pg, pi) {
       if (pi) d.addPage();
@@ -1803,7 +1824,7 @@ var CEC = (function () {
     })) return false;
     if (!who.clin) return true;                                   // clinical filters only for doctors and nursing staff
     if (f.outs.length && f.outs.indexOf(e.out || '_') < 0) return false;
-    if (f.meds.length && !f.meds.some(function (m) { return m === '*' ? (e.meds || []).length > 0 : (e.meds || []).indexOf(m) >= 0; })) return false;
+    if (f.meds.length && !f.meds.some(function (m) { return m === '*' ? (e.meds || []).length > 0 : hasMed(e, UP(m)); })) return false;
     var terms = String(f.dx || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean);
     if (terms.length) {
       var dl = dxOf(e), low = dl.join(' | ').toLowerCase();
@@ -1874,7 +1895,7 @@ var CEC = (function () {
       lines.push('');
       if (!g.plain) lines.push('*' + g.h + ' (' + g.list.length + ')*');
       g.list.forEach(function (e, i) {
-        lines.push((i + 1) + '. ' + cols.map(function (c) { var v = c.t ? c.t(e, i) : c.f(e, i); return v == null ? '' : String(v); }).filter(function (v) { return v !== '' && v !== '-'; }).join(' \u00b7 '));
+        lines.push((i + 1) + '. ' + cols.map(function (c) { var v = c.t ? c.t(e, i) : c.f(e, i); return v == null ? '' : UP(String(v)); }).filter(function (v) { return v !== '' && v !== '-'; }).join(' \u00b7 '));
       });
     });
     return lines.join('\n');
@@ -1920,7 +1941,7 @@ var CEC = (function () {
       if (!g.plain) { y += 6; d.text(L, y + 8, g.h + ' (' + g.list.length + ')', 'HB', 10.5); y += 14; } else y += 4;
       draw(head, 'HB', 0.88);
       g.list.forEach(function (e, i) {
-        var l = lay(cols.map(function (c) { return c.f(e, i); }), 'H');
+        var l = lay(cols.map(function (c) { return UP(c.f(e, i)); }), 'H');
         if (y + l.h > BOTTOM) { d.addPage(); y = TOP; draw(head, 'HB', 0.88); }
         draw(l, 'H', null);
       });
@@ -1942,7 +1963,7 @@ var CEC = (function () {
     rows.push(head);
     spec.groups.forEach(function (g) {
       g.list.forEach(function (e, i) {
-        var r = []; cols.forEach(function (c) { r.push(c.f(e, i)); if (spec.day && c.h === 'Date') r.push(weekday(e._date)); });
+        var r = []; cols.forEach(function (c) { r.push(UP(c.f(e, i))); if (spec.day && c.h === 'Date') r.push(weekday(e._date)); });
         if (multi) r.unshift(g.h);
         rows.push(r);
       });
@@ -1997,7 +2018,7 @@ var CEC = (function () {
         var v = P.wrap(String(val == null || val === '' ? '-' : val), 'H', 9.5, w - lw)[0] || '';
         d.text(x + lw, y, v, 'H', 9.5); d.line(x + lw - 2, y + 3, x + w, y + 3, 0.4);
       }
-      f(L, 'MR No.:', a.mr, 230); f(half + 6, 'Name:', a.name, R - half - 6); y += 22;
+      f(L, 'MR No.:', UP(a.mr), 230); f(half + 6, 'Name:', UP(a.name), R - half - 6); y += 22;
       f(L, 'Age / Gender:', (a.age !== '' && a.age != null ? a.age + ' years' : '-') + ' / ' + (a.sex === 'M' ? 'Male' : a.sex === 'F' ? 'Female' : '-'), 230);
       f(half + 6, 'Contact no.:', a.phone, R - half - 6); y += 30;
       var ins = t.instr;
@@ -2020,7 +2041,7 @@ var CEC = (function () {
 
   /* ---------- Death certificate, view-only preview (HTML) ---------- */
   function certHtml(c, st, logoSrc) {
-    c = c || {}; st = st || DEFAULTS;
+    c = certUp(c); st = st || DEFAULTS;
     var v = function (x) { return '<span class="v">' + h(x || '') + '</span>'; };
     var sex = c.sex === 'M' ? 'Male' : c.sex === 'F' ? 'Female' : (c.sex || '');
     var row2 = function (a, av, b, bv) { return '<tr><td class="lbl">' + a + '</td><td>' + v(av) + '</td><td class="lbl">' + b + '</td><td>' + v(bv) + '</td></tr>'; };
@@ -2095,6 +2116,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
 
   /* ---------------- utilities ---------------- */
   function $(id) { return document.getElementById(id); }
+  /* Every entry is written in capitals (08-11-2026). */
+  function up(v) { return String(v == null ? '' : v).toUpperCase(); }
   var h = CEC.esc;
   function clone(o) { return o == null ? o : JSON.parse(JSON.stringify(o)); }
   var toastTimer;
@@ -2491,7 +2514,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var nav = $('nav'), ub = $('userbar'), v = $('view'), a = $('actions');
     a.classList.add('hidden'); a.innerHTML = '';
     if (!S.me) {
-      nav.classList.add('hidden'); $('menuBtn').classList.add('hidden'); ub.classList.add('hidden'); menu(false);
+      nav.classList.add('hidden'); nav.innerHTML = ''; $('menuBtn').classList.add('hidden'); ub.classList.add('hidden'); ub.innerHTML = ''; menu(false);
       v.innerHTML = hasGoogle() ? authHtml() : APP_BUILD ? setupHtml() : '<section class="card"><div class="ct">Open the census link</div><p>This page works only through the Google web app link of the CEC Daily Census.</p></section>';
       renderBanner();
       headerHeight(); return;
@@ -2552,15 +2575,15 @@ if (typeof module !== 'undefined') module.exports = CEC;
       var e = x.e, dx = CEC.dxOf(e).join(', '), st = stageOf(e), left = advLeft(e);
       var rd = vitalsText(e);
       var procs = (e.procs || []).filter(function (p) { return !(p === 'BP' && e.bp) && !(p === 'BSR' && e.rbs); }).map(function (p) { return CEC.label(CEC.PROCS, p); }).concat(canClin() ? e.meds || [] : []).join(', ');
-      if (rd) procs = rd + (procs ? ' \u00b7 ' + procs : '');
+      var procHtml = (rd ? h(rd) + (procs ? ' &middot; ' : '') : '') + (procs ? '<span class="up">' + h(procs) + '</span>' : '');
       var out = e.out ? CEC.short(CEC.OUTS, e.out) + (e.out === 'OBS' && e.obsH ? ' (' + e.obsH + ' h)' : '') : '';
       var stTag = e.signed ? (e.cat !== 'BD' && out ? '<span class="tag out">' + h(out) + '</span>' : '') + '<span class="tag ok">&#10003; ' + (canClin() ? 'Signed off' : 'Seen by doctor') + '</span>'
         : (left.length ? '<span class="tag adv">' + h(left.join(' + ')) + ' advised</span>' : '') + '<span class="tag wait">Awaiting doctor</span>';
       return '<button class="prow" data-act="edit-pt" data-src="' + (src || 'work') + '" data-id="' + h(e.id) + '"><div class="pr-l"><div class="pr-no">' + x.n + '</div><div class="pr-t">' + CEC.hm(e.t) +
         '</div></div><div class="pr-m"><div class="pr-name">' + (e.tok ? '<span class="tokb ' + (e.tok.indexOf('ER') === 0 ? 'er' : '') + '">' + h(e.tok) + '</span> ' : '') + h(e.name || '(no name)') + ' <span class="muted">&middot; ' + (e.mr ? 'MR ' + h(e.mr) : '</span><span class="mrp">MR pending</span><span>') + '</span></div>' +
         '<div class="pr-sub">' + (e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '') + (e.age !== '' && e.age != null ? ', ' + h(e.age) + ' y' : '') +
-        (canClin() ? ' &middot; ' + (dx ? h(dx) : '<i>Diagnosis pending</i>') : '') + '</div>' +
-        (procs ? '<div class="pr-proc">' + h(procs) + '</div>' : '') +
+        (canClin() ? ' &middot; ' + (dx ? '<span class="up">' + h(dx) + '</span>' : '<i>Diagnosis pending</i>') : '') + '</div>' +
+        (procHtml ? '<div class="pr-proc">' + procHtml + '</div>' : '') +
         '<div style="margin-top:4px"><span class="tag ' + h(e.cat) + '">' + h(CEC.label(CEC.CATS, e.cat)) + '</span>' +
         (e.queued ? '<span class="tag q">' + (e.qerr ? 'Not sent' : 'On this phone: waiting to send') + '</span>' : '') + stTag + '</div>' +
         (isAdmin() && e.by ? '<div class="pr-audit">Entered by ' + h(e.by) + (e.signedBy ? ' &middot; signed off by ' + h(e.signedBy) : '') + (e.updatedBy ? ' &middot; last edited by ' + h(e.updatedBy) : '') + '</div>' : '') +
@@ -2880,8 +2903,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
           '<button class="btn sm dan" data-act="cust-del" data-k="' + k + '" data-v="' + h(x.v) + '">Remove</button></div>';
       }).join('') : '<p class="muted small" style="margin:2px 0 0">None added yet.</p>');
     }).join('');
-    return '<section class="card"><div class="ct">Options added by users (' + n + ')</div><p class="muted small" style="margin:0">When a doctor adds a new medication, procedure or diagnosis on the patient form, ' +
-      'it is checked for spelling and then offered to everyone. Remove any wrong or unwanted one here; patients already saved keep what was written.</p>' + body + '</section>';
+    return '<section class="card"><div class="ct">Options added by users (' + n + ')</div><p class="muted small" style="margin:0">Medications, procedures and diagnoses typed by users (not in the ready-made lists). ' +
+      'They are checked for spelling and kept as history: when someone types in \u201cOther\u201d, matching ones are suggested, so they are not typed twice. They do not become buttons of the fixed lists. ' +
+      'Remove any wrong, duplicate or unwanted one here; patients already saved keep what was written.</p>' + body + '</section>';
   }
   function logRows(list) {
     if (!list.length) return '<div class="empty">No activity found.</div>';
@@ -2980,11 +3004,11 @@ if (typeof module !== 'undefined') module.exports = CEC;
       CEC.CATS.map(function (c) { return '<button type="button" data-act="f-cat" data-v="' + c.c + '">' + h(c.l) + '</button>'; }).join('') + '</div>' +
       (doctor ? '<div class="fsec">Checks and tests</div><div class="seg procs" id="fChk">' + procBtns('chk', e) + '</div>' + readings + advHtml(e) +
         '<div class="fsec">ER procedures</div><div class="seg procs" id="fEr">' + procBtns('er', e) + '</div>' +
-        '<div class="chips" id="procX" style="margin-top:8px"></div><div class="addrow"><input class="in" id="fProcX" enterkeyhint="done" placeholder="Other procedure, e.g. chest tube (Enter adds it)">' +
-        '<button type="button" class="btn" data-act="proc-add">Add</button></div>' +
+        '<div class="chips" id="procX" style="margin-top:8px"></div><div class="addrow"><input class="in" id="fProcX" enterkeyhint="done" autocomplete="off" placeholder="Other procedure, e.g. chest tube (Enter adds it)">' +
+        '<button type="button" class="btn" data-act="proc-add">Add</button></div><div class="sugg hidden" id="fProcXS"></div>' +
         '<div class="fsec">ER medications</div><div class="seg procs meds" id="fMed">' + medBtns() + '</div>' +
-        '<div class="chips" id="medX" style="margin-top:8px"></div><div class="addrow"><input class="in" id="fMedX" enterkeyhint="done" placeholder="Other medication, e.g. IV Furosemide (Enter adds it)">' +
-        '<button type="button" class="btn" data-act="med-add">Add</button></div>' +
+        '<div class="chips" id="medX" style="margin-top:8px"></div><div class="addrow"><input class="in" id="fMedX" enterkeyhint="done" autocomplete="off" placeholder="Other medication, e.g. IV Furosemide (Enter adds it)">' +
+        '<button type="button" class="btn" data-act="med-add">Add</button></div><div class="sugg hidden" id="fMedXS"></div>' +
         '<textarea class="in" id="fNote" rows="2" placeholder="e.g. referred to NICVD, BP 190/110 on arrival">' + h(e.note || '') + '</textarea>' +
         '<div class="fsec">Doctor\u2019s assessment</div>' + (e.signed ? '<div class="signed">&#10003; Signed off ' + h(fmtTime(e.signedAt)) + (isAdmin() && e.signedBy ? ' by ' + h(e.signedBy) : '') + '</div>' : '') +
         '<label class="lb" for="fDx">Working diagnosis <span class="muted">(add one or more)</span></label><div id="dxBox"></div>' +
@@ -3023,10 +3047,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var dx = CEC.dxOf(e), procs = (e.procs || []).filter(function (p) { return CEC.STAFF_PROCS.indexOf(p) < 0; }).map(function (p) { return CEC.label(CEC.PROCS, p); }), meds = e.meds || [];
     if (!dx.length && !e.out && !e.note && !procs.length && !meds.length) return '';
     return '<div class="fsec">Doctor\u2019s assessment</div><div class="kv" style="line-height:1.6">' +
-      (dx.length ? '<div><b>Diagnosis:</b> ' + h(dx.join(', ')) + '</div>' : '') + (procs.length ? '<div><b>Procedures:</b> ' + h(procs.join(', ')) + '</div>' : '') +
-      (meds.length ? '<div><b>Medications:</b> ' + h(meds.join(', ')) + '</div>' : '') +
+      (dx.length ? '<div><b>Diagnosis:</b> <span class="up">' + h(dx.join(', ')) + '</span></div>' : '') + (procs.length ? '<div><b>Procedures:</b> <span class="up">' + h(procs.join(', ')) + '</span></div>' : '') +
+      (meds.length ? '<div><b>Medications:</b> <span class="up">' + h(meds.join(', ')) + '</span></div>' : '') +
       (e.out ? '<div><b>Outcome:</b> ' + h(CEC.label(CEC.OUTS, e.out)) + (e.out === 'OBS' && e.obsH ? ' (' + h(e.obsH) + ' h)' : '') + '</div>' : '') +
-      (e.note ? '<div><b>Comments:</b> ' + h(e.note) + '</div>' : '') + (e.signed ? '<div class="signed">&#10003; Signed off ' + h(fmtTime(e.signedAt)) + '</div>' : '') + '</div>';
+      (e.note ? '<div><b>Comments:</b> <span class="up">' + h(e.note) + '</span></div>' : '') + (e.signed ? '<div class="signed">&#10003; Signed off ' + h(fmtTime(e.signedAt)) + '</div>' : '') + '</div>';
   }
   /* ---------- quick Vitals and ECG (home page buttons): choose a patient of this shift, then fill only that ---------- */
   /* ---------- Vitals, ECG and OPD / ER slip pages: lists like the patient dashboard ----------
@@ -3183,16 +3207,16 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (/^(q-|tmp)/.test(e.id)) return toast('Wait until this patient is saved.');
     var K = ER_KINDS[kind], cur = erItems(e, kind);
     S.er = { kind: kind, id: id, src: src, sel: cur.slice(), orig: cur.slice() };
-    var btns = kind === 'erp' ? CEC.PROCS.filter(function (p) { return p.g === 'er'; }).map(function (p) { return [p.c, p.l]; }).concat(S.custom.proc.map(function (x) { return [x, x]; }))
-      : CEC.MEDS.concat(S.custom.med).map(function (m) { return [m, m]; });
+    var btns = kind === 'erp' ? CEC.PROCS.filter(function (p) { return p.g === 'er'; }).map(function (p) { return [p.c, p.l]; })
+      : CEC.MEDS.map(function (m) { return [m, m]; });
     var el = $('sheet');
     el.innerHTML = '<div class="sh-head"><button data-act="er-close">Cancel</button><h3>' + h(K.title) + '</h3><span>' + (e.tok ? h(e.tok) : '') + '</span></div><div class="sh-body"><form id="erf" novalidate autocomplete="off">' +
       '<div class="kv" style="margin-top:12px"><b>' + h(e.name) + '</b> &middot; MR ' + h(e.mr) + '<div class="muted small">' + h(CEC.label(CEC.CATS, e.cat)) + ' &middot; ' +
       (e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '') + (e.age !== '' && e.age != null ? ', ' + h(e.age) + ' y' : '') + ' &middot; registered ' + CEC.hm(e.t) + '</div>' +
       (e.signed ? '<div class="small" style="margin-top:4px;color:var(--g7)">&#10003; Signed off by the doctor. ' + h(K.title) + ' can still be added.</div>' : '') + '</div>' +
       '<div class="fsec">' + h(K.title) + '</div><div class="seg procs' + (kind === 'erm' ? ' meds' : '') + '" id="erSel">' + btns.map(function (b) { return '<button type="button" data-act="er-tog" data-v="' + h(b[0]) + '">' + h(b[1]) + '</button>'; }).join('') + '</div>' +
-      '<div class="chips" id="erChips" style="margin-top:8px"></div><div class="addrow"><input class="in" id="erX" enterkeyhint="done" placeholder="' + (kind === 'erp' ? 'Other procedure, e.g. chest tube' : 'Other medication, e.g. IV Furosemide 40 mg') + '">' +
-      '<button type="button" class="btn" data-act="er-add">Add</button></div><p class="muted small" style="margin:4px 0 0">Type a new ' + K.one + ' and press Enter (or Add).</p>' +
+      '<div class="chips" id="erChips" style="margin-top:8px"></div><div class="addrow"><input class="in" id="erX" enterkeyhint="done" autocomplete="off" placeholder="' + (kind === 'erp' ? 'Other procedure, e.g. chest tube' : 'Other medication, e.g. IV Furosemide 40 mg') + '">' +
+      '<button type="button" class="btn" data-act="er-add">Add</button></div><div class="sugg hidden" id="erXS"></div><p class="muted small" style="margin:4px 0 0">Not in the list? Start typing: ' + K.what + ' written before are suggested. Or type a new one and press Enter (or Add).</p>' +
       '<div id="erErr"></div></form></div><div class="sh-foot"><button class="btn pri" data-act="er-save">Save</button></div>';
     el.classList.remove('hidden'); document.body.style.overflow = 'hidden'; overlayOpened();
     erSync();
@@ -3214,7 +3238,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       if (E.kind === 'erp') x = procCode(x);
       if (E.sel.indexOf(x) < 0) E.sel.push(x);
       if ($('erX')) { $('erX').value = ''; $('erX').focus(); }
-      erSync();
+      erSync(); suggPaint('erX');
     });
   }
   function closeEr() { S.er = null; $('sheet').classList.add('hidden'); $('sheet').innerHTML = ''; document.body.style.overflow = ''; overlayClosed(); }
@@ -3318,10 +3342,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var f = S.form;
     setOn('fAdv', f.adv || []);
     setOn('fSex', f.sex); setOn('fCat', f.cat); setOn('fProc', f.procs); setOn('fChk', f.procs); setOn('fEr', f.procs); setOn('fMed', f.meds); setOn('fOut', f.out);
-    if ($('procX')) $('procX').innerHTML = f.procs.filter(function (p) { return !isStdProc(p) && S.custom.proc.indexOf(p) < 0; }).map(function (p) {
+    if ($('procX')) $('procX').innerHTML = f.procs.filter(function (p) { return !isStdProc(p); }).map(function (p) {
       return '<span class="chip">' + h(p) + '<button type="button" data-act="proc-remove" data-v="' + h(p) + '" aria-label="Remove ' + h(p) + '">&times;</button></span>';
     }).join('');
-    if ($('medX')) $('medX').innerHTML = f.meds.filter(function (m) { return CEC.MEDS.indexOf(m) < 0 && S.custom.med.indexOf(m) < 0; }).map(function (m) {
+    if ($('medX')) $('medX').innerHTML = f.meds.filter(function (m) { return CEC.MEDS.indexOf(m) < 0; }).map(function (m) {
       return '<span class="chip">' + h(m) + '<button type="button" data-act="med-remove" data-v="' + h(m) + '" aria-label="Remove ' + h(m) + '">&times;</button></span>';
     }).join('');
     if ($('certWrap')) $('certWrap').classList.toggle('hidden', !(f.editId && (f.cat === 'BD' || f.out === 'EXP')));
@@ -3334,11 +3358,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function procBtns(g, e) {
     var std = CEC.PROCS.filter(function (p) { return p.g === g || (g === 'er' && p.g === 'old' && (e.procs || []).indexOf(p.c) >= 0); })
       .map(function (p) { return [p.c, p.l]; });
-    if (g === 'er') std = std.concat(S.custom.proc.map(function (x) { return [x, x]; }));
     return std.map(function (p) { return '<button type="button" data-act="f-proc" data-v="' + h(p[0]) + '">' + h(p[1]) + '</button>'; }).join('');
   }
   function medBtns() {
-    return CEC.MEDS.concat(S.custom.med).map(function (m) { return '<button type="button" data-act="f-med" data-v="' + h(m) + '">' + h(m) + '</button>'; }).join('');
+    return CEC.MEDS.map(function (m) { return '<button type="button" data-act="f-med" data-v="' + h(m) + '">' + h(m) + '</button>'; }).join('');
   }
   /* ---- checking a new option before it is added: the app's own lists first, then the internet ---- */
   function knownOpts(kind) {
@@ -3369,7 +3392,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function withTimeout(p, ms) { return Promise.race([p, new Promise(function (res, rej) { setTimeout(function () { rej(new Error('timeout')); }, ms); })]); }
   /* Resolves with the text to use, or null when the user cancels. */
   function checkNew(kind, raw) {
-    var text = cap(String(raw || '').replace(/;/g, ',')).replace(/\b(iv|im|sc|sl|po|ng|ecg|cpr|dc|o2|iu|prn|ett)\b/gi, function (w) { return w.toUpperCase(); });
+    var text = up(cap(String(raw || '').replace(/;/g, ',')));
     if (text.length < 2) return Promise.resolve(null);
     var known = sameOpt(kind, text);
     if (known) return Promise.resolve(known);
@@ -3393,7 +3416,45 @@ if (typeof module !== 'undefined') module.exports = CEC;
           : '<p class="small muted" style="margin:8px 0 0">The internet spelling check is not available right now, so only the app\u2019s own lists were checked.</p>');
       return modal('Check the spelling', body, cands.slice(0, 4).map(function (c) { return { label: 'Use: ' + c, cls: 'pri', value: c }; })
         .concat([{ label: 'Keep as typed', value: text }, { label: 'Cancel', value: null }]), true);
-    }).then(function (v) { return v ? (sameOpt(kind, v) || v) : null; });
+    }).then(function (v) { return v ? (sameOpt(kind, v) || up(v)) : null; });
+  }
+  /* "Other" procedure / medication: while typing, the ones written before (and the list's own) are suggested to tap, so the same one is not added twice.
+     What users add is kept as history for these suggestions; it does not become a button of the fixed lists. */
+  function suggKind(id) { return id === 'erX' ? (S.er && S.er.kind === 'erp' ? 'proc' : 'med') : id === 'fMedX' ? 'med' : 'proc'; }
+  function suggSel(id) { return id === 'erX' ? (S.er ? S.er.sel : []) : S.form ? (suggKind(id) === 'med' ? S.form.meds : S.form.procs) : []; }
+  function suggList(id, q) {
+    var kind = suggKind(id), nq = normOpt(q || '');
+    if (nq.length < 2) return [];
+    var items = kind === 'med' ? CEC.MEDS.concat(S.custom.med).map(function (m) { return [m, m]; })
+      : CEC.PROCS.filter(function (p) { return p.g === 'er'; }).map(function (p) { return [p.c, p.l]; }).concat(S.custom.proc.map(function (x) { return [x, x]; }));
+    var sel = suggSel(id), seen = {};
+    return items.filter(function (it) {
+      var k = normOpt(it[1]);
+      if (seen[k]) return false; seen[k] = 1;
+      return k.indexOf(nq) >= 0 && sel.indexOf(it[0]) < 0;
+    }).slice(0, 8);
+  }
+  function suggPaint(id) {
+    var box = $(id + 'S'), inp = $(id);
+    if (!box || !inp) return;
+    var list = suggList(id, inp.value);
+    box.innerHTML = list.length ? '<span class="muted small">Tap to add:</span>' + list.map(function (it) { return '<button type="button" data-act="sug-pick" data-id="' + id + '" data-v="' + h(it[0]) + '">' + h(it[1]) + '</button>'; }).join('') : '';
+    box.classList.toggle('hidden', !list.length);
+    if (list.length) try { box.scrollIntoView({ block: 'nearest' }); } catch (e) { }
+  }
+  function suggPick(id, v) {
+    if (id === 'erX') { if (S.er && S.er.sel.indexOf(v) < 0) S.er.sel.push(v); erSync(); }
+    else if (S.form) { var arr = suggKind(id) === 'med' ? S.form.meds : S.form.procs; if (arr.indexOf(v) < 0) arr.push(v); syncForm(); }
+    var inp = $(id); if (inp) { inp.value = ''; inp.focus(); }
+    suggPaint(id);
+  }
+  /* Enter: what was typed is exactly one written before (or in the list): take that one. */
+  function suggExact(id) {
+    var inp = $(id), q = inp ? normOpt(inp.value) : '';
+    if (!q) return false;
+    var hit = suggList(id, inp.value).filter(function (it) { return normOpt(it[1]) === q; })[0];
+    if (hit) { suggPick(id, hit[0]); return true; }
+    return false;
   }
   function procCode(label) { var p = CEC.PROCS.filter(function (k) { return normOpt(k.l) === normOpt(label); })[0]; return p ? p.c : label; }
   function freqDx() { return S.settings.freqDx && S.settings.freqDx.length ? S.settings.freqDx : CEC.FREQ_DX; }
@@ -3468,7 +3529,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
 
   function readForm(signing) {
     var f = S.form, err = [];
-    var mr = f.auto ? '' : $('fMr').value.trim(), name = $('fName').value.trim().replace(/\s+/g, ' '), age = $('fAge').value.trim(), note = $('fNote') ? $('fNote').value.trim() : '';
+    var mr = f.auto ? '' : up($('fMr').value.trim()), name = up($('fName').value.trim().replace(/\s+/g, ' ')), age = $('fAge').value.trim(), note = $('fNote') ? up($('fNote').value.trim()) : '';
     var obsH = $('fObs') ? $('fObs').value.trim() : '';
     var vit = readVitals(err), bp = vit.bp || '', rbs = vit.rbs || '';
     if (bp && f.procs.indexOf('BP') < 0) f.procs.push('BP');
@@ -3883,8 +3944,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     }, function (e) { $('ppPrev').innerHTML = '<div class="err">' + h(errText(e)) + '</div>'; });
   }
   function savePaper() {
-    var P = S.pp, err = [], d = { entryId: P.entryId, paperNo: $('ppNo').value.trim(), deathDate: $('ppDate').value };
-    if (!P.entryId) { d.mr = $('ppMr').value.trim(); d.name = $('ppName').value.trim().replace(/\s+/g, ' '); if (!d.mr) err.push('MR No.'); if (!d.name) err.push('name'); }
+    var P = S.pp, err = [], d = { entryId: P.entryId, paperNo: up($('ppNo').value.trim()), deathDate: $('ppDate').value };
+    if (!P.entryId) { d.mr = up($('ppMr').value.trim()); d.name = up($('ppName').value.trim().replace(/\s+/g, ' ')); if (!d.mr) err.push('MR No.'); if (!d.name) err.push('name'); }
     if (!P.photo) err.push('a photo of the certificate');
     if (err.length) { $('ppErr').innerHTML = '<div class="err">Please add: ' + h(err.join(', ')) + '.</div>'; return; }
     var b = document.querySelector('[data-act=pp-save]'); b.disabled = true; b.innerHTML = '<span class="spin"></span>Saving\u2026';
@@ -4343,7 +4404,17 @@ if (typeof module !== 'undefined') module.exports = CEC;
     c.exam = CEC.EXAMS.filter(function (x) { return $('cx_' + x.c).checked; }).map(function (x) { return x.c; });
     c.deathTime = v('cDTime'); c.deathDate = isoToDmy(v('cDDate')); c.doctor = v('cDoc'); c.paramedics = v('cPara');
     c.rName = v('cRName'); c.rCnic = v('cRCnic'); c.rRel = v('cRRel'); c.rCell = v('cRCell'); c.rAddress = v('cRAddr');
+    ['name', 'mr', 'address', 'status', 'comments', 'doctor', 'paramedics', 'rName', 'rRel', 'rAddress'].forEach(function (k) { c[k] = up(c[k]); });
     return c;
+  }
+  /* CNIC of the deceased, CNIC and contact number of the receiver: a reminder before the certificate is saved or printed without them. */
+  function certMissingOk(c) {
+    var miss = [];
+    if (!String(c.cnic || '').replace(/\D/g, '')) miss.push('CNIC of the deceased');
+    if (!String(c.rCnic || '').replace(/\D/g, '')) miss.push('CNIC of the receiver');
+    if (!String(c.rCell || '').replace(/\D/g, '')) miss.push('contact number of the receiver');
+    if (!miss.length) return Promise.resolve(true);
+    return confirmBox('Proceed without ' + (miss.length === 1 ? 'this' : 'these') + '?', 'Not written yet: <b>' + h(miss.join(', ')) + '</b>. These are normally needed on a death certificate. Go back to add ' + (miss.length === 1 ? 'it' : 'them') + ', or proceed without.', 'Proceed without', false);
   }
   function certPrint(c) { offerFile(certFileName(c), CEC.deathCertPdf(c, S.settings, logoBytes()), 'application/pdf', false); }
   function certTimesOk(c) {
@@ -4355,6 +4426,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var c = readCert();
     if (!c.name) { $('cErr').innerHTML = '<div class="err">Enter the name of the deceased.</div>'; return; }
     if (!certTimesOk(c)) return;
+    certMissingOk(c).then(function (ok) { if (ok) certSend(c, print); });
+  }
+  function certSend(c, print) {
     toast('Saving\u2026');
     api('apiSaveCert', JSON.stringify(c)).then(function (saved) {
       toast('Certificate ' + saved.no + ' saved'); closeCert();
@@ -4885,7 +4959,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function readAppt() {
     var F = S.af, err = [], v = function (id) { return $(id).value.trim(); };
-    var a = { id: F.id, type: F.type, date: F.date, time: v('aTime'), mr: v('aMr'), name: v('aName').replace(/\s+/g, ' '), age: v('aAge'), sex: F.sex,
+    var a = { id: F.id, type: F.type, date: F.date, time: v('aTime'), mr: up(v('aMr')), name: up(v('aName').replace(/\s+/g, ' ')), age: v('aAge'), sex: F.sex,
       phone: v('aPhone'), status: F.status, entryId: F.entryId };
     if (!a.date) err.push('date');
     if (!a.name) err.push('patient name');
@@ -5002,7 +5076,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'er-open': openEr(v, id, el.getAttribute('data-src')); break;
       case 'er-tog': { var es = S.er.sel, ei = es.indexOf(v); if (ei >= 0) es.splice(ei, 1); else es.push(v); erSync(); break; }
       case 'er-rm': S.er.sel = S.er.sel.filter(function (x) { return x !== v; }); erSync(); break;
-      case 'er-add': erAdd(); break;
+      case 'er-add': if (!suggExact('erX')) erAdd(); break;
+      case 'sug-pick': suggPick(id, v); break;
       case 'er-save': saveEr(); break;
       case 'er-close': closeEr(); break;
       case 'q-ecg': openQueue('ecgq'); break;
@@ -5149,12 +5224,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
         setOn('fMed', S.form.meds); break;
       }
       case 'med-add': {
+        if (suggExact('fMedX')) break;
         var mx = $('fMedX').value.trim();
         if (!mx) { toast('Type the medicine with its route, e.g. IV Paracetamol 1 g'); break; }
         checkNew('med', mx).then(function (m) {
           if (!m || !S.form) return;
           if (S.form.meds.indexOf(m) < 0) S.form.meds.push(m);
-          if ($('fMedX')) $('fMedX').value = ''; syncForm();
+          if ($('fMedX')) $('fMedX').value = ''; syncForm(); suggPaint('fMedX');
         });
         break;
       }
@@ -5234,13 +5310,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
       }
       case 'save-settings': saveSettings(); break;
       case 'proc-add': {
+        if (suggExact('fProcX')) break;
         var px0 = $('fProcX').value.trim();
         if (!px0) { toast('Type the procedure first'); break; }
         checkNew('proc', px0).then(function (px) {
           if (!px || !S.form) return;
           px = procCode(px);
           if (S.form.procs.indexOf(px) < 0) S.form.procs.push(px);
-          if ($('fProcX')) $('fProcX').value = ''; syncForm();
+          if ($('fProcX')) $('fProcX').value = ''; syncForm(); suggPaint('fProcX');
         });
         break;
       }
@@ -5302,7 +5379,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'lst-csv': downloadList('csv'); break;
       case 'cert-close': closeCert(); break;
       case 'c-sex': S.cert.sex = v; setOn('cSex', v); break;
-      case 'cert-print': { var cp = readCert(); if (certTimesOk(cp)) certPrint(cp); break; }
+      case 'cert-print': { var cp = readCert(); if (certTimesOk(cp)) certMissingOk(cp).then(function (ok) { if (ok) certPrint(cp); }); break; }
       case 'cert-save': certSave(false); break;
       case 'cert-saveprint': certSave(true); break;
       case 'cert-del': {
@@ -5385,6 +5462,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     }
     if (t.id === 'fDx') { S.form.dxq = t.value; renderDxList(); }
     else if (t.id === 'apQ') { S.ap.q = t.value; $('apRes').innerHTML = apSearchHtml(); }
+    else if (t.id === 'fMedX' || t.id === 'fProcX' || t.id === 'erX') suggPaint(t.id);
     else if (t.id === 'ecgQ') { S.ecgQ = t.value; $('ecgRes').innerHTML = ecgSearchHtml(); }
     else if (t.id === 'erQ') { S.erQ = t.value; $('erRes').innerHTML = erListHtml(S.view); }
     else if (t.id === 'q') { S.q = t.value; $('plist').innerHTML = rowsHtml(S.work.entries, S.q, S.filter, 'work', S.dashCat); }
@@ -5437,13 +5515,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (ev.key !== 'Enter' || ev.target.tagName !== 'INPUT') return;
     if (!S.me) { ev.preventDefault(); if (ev.target.id === 'lId') $('lPw').focus(); else if (ev.target.id === 'lPw') doLogin(); return; }
     if (S.cert || S.af) { ev.preventDefault(); ev.target.blur(); return; }
-    if (S.er) { ev.preventDefault(); if (ev.target.id === 'erX') erAdd(); else ev.target.blur(); return; }
+    if (S.er) { ev.preventDefault(); if (ev.target.id === 'erX') { if (!suggExact('erX')) erAdd(); } else ev.target.blur(); return; }
     if (S.qe) { ev.preventDefault(); ev.target.blur(); return; }
     if (ev.target.id === 'ecgQ' || ev.target.id === 'erQ') { ev.preventDefault(); ev.target.blur(); return; }
     if (!S.form) return;
     ev.preventDefault();
-    if (ev.target.id === 'fProcX') { var pa = document.querySelector('[data-act=proc-add]'); if (pa) pa.click(); return; }
-    if (ev.target.id === 'fMedX') { var ma = document.querySelector('[data-act=med-add]'); if (ma) ma.click(); return; }
+    if (ev.target.id === 'fProcX') { if (suggExact('fProcX')) return; var pa = document.querySelector('[data-act=proc-add]'); if (pa) pa.click(); return; }
+    if (ev.target.id === 'fMedX') { if (suggExact('fMedX')) return; var ma = document.querySelector('[data-act=med-add]'); if (ma) ma.click(); return; }
     if (ev.target.id === 'fDx') {                          // Enter: the matching diagnosis, or a new one as typed (checked for spelling first)
       if (!S.form.dxq || !S.form.dxq.trim()) return;
       var pick = document.querySelector('#dxList > button[data-act=dx-pick]:first-child'), nw = document.querySelector('#dxList button[data-act=dx-new]');
