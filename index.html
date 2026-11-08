@@ -515,11 +515,16 @@ body{overflow-x:clip}
 .banner .demo .lnk{color:#fff;text-decoration:underline;font-size:13px;font-weight:600;padding:0 0 0 4px}
 body.demo .top{border-bottom-color:#e8740c}
 .pill.demo{background:#fdeedd;color:#9a4307;border:1px solid #f3c99f}
-.paper .page .dmark{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;z-index:3;color:rgba(217,84,10,.2);font-family:Helvetica,Arial,sans-serif;font-weight:700;transform:rotate(-38deg);text-align:center}
-.paper .page .dmark b{font-size:92px;letter-spacing:.02em;line-height:1}
-.paper .page .dmark span{font-size:25px;margin-top:10px}
+.paper .page .dmark{position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;z-index:3;overflow:hidden;font-family:Helvetica,Arial,sans-serif;font-weight:700;text-align:center}
+.paper .page .dmark .dtile{position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22300%22%20height%3D%22150%22%3E%3Cg%20transform%3D%22rotate%28-38%20150%2075%29%22%20font-family%3D%22Helvetica%2CArial%2Csans-serif%22%20font-weight%3D%22700%22%20font-size%3D%2215%22%20fill%3D%22%238c0d0d%22%20fill-opacity%3D%22.16%22%3E%3Ctext%20x%3D%22-60%22%20y%3D%2240%22%3EDEMONSTRATION%20-%20NOT%20VALID%3C/text%3E%3Ctext%20x%3D%2290%22%20y%3D%22115%22%3EDEMONSTRATION%20-%20NOT%20VALID%3C/text%3E%3C/g%3E%3C/svg%3E");background-repeat:repeat}
+.paper .page .dmark .dbig{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-38deg);color:rgba(153,10,10,.4)}
+.paper .page .dmark .dbig b{font-size:96px;letter-spacing:.02em;line-height:1}
+.paper .page .dmark .dbig span{font-size:26px;margin-top:10px}
+.paper .page .dmark .dband{position:absolute;left:30px;right:30px;bottom:16px;background:#800f0f;color:#fff;font-size:12.5px;padding:5px 8px;letter-spacing:.03em}
 .democ .dline{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:13.5px}
 .democ .dline:first-of-type{border-top:0}
+.paper .dc .box{position:relative}.paper .dc .box .dnv{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(153,10,10,.6);font:700 10px Helvetica,Arial,sans-serif;letter-spacing:.02em}
+.paper .dc .box .dnv b{font-size:22px;line-height:1.1}
 
 </style>
 </head>
@@ -616,19 +621,46 @@ var PDFGen = (function () {
     s += (fill != null && stroke != null) ? 'B' : (fill != null ? 'f' : 'S');
     this.op(s);
   };
-  /* Practice data of a demonstration ID (PDFGen.demo): a see-through DEMONSTRATION mark across the box (top-left x, y, width, height). */
-  var MARK1 = 'DEMONSTRATION', MARK2 = 'NOT A VALID DOCUMENT - PRACTICE DATA ONLY';
-  Doc.prototype.mark = function (x, y, w, h) {
-    var a = Math.atan2(h, w), c = Math.cos(a), s = Math.sin(a), diag = Math.sqrt(w * w + h * h), self = this;
-    var z1 = 0.7 * diag / width(MARK1, 'HB', 1), z2 = Math.min(z1 * 0.34, 0.86 * diag / width(MARK2, 'HB', 1));
-    var cx = x + w / 2, cy = this.H - (y + h / 2), r4 = function (v) { return (Math.round(v * 10000) / 10000).toString(); };
-    function line(t, z, off) {                             // off: how far below the middle line the baseline is
-      var tw = width(t, 'HB', z), px = cx - c * tw / 2 + s * off, py = cy - s * tw / 2 - c * off;
-      self.op('q /GW gs 0.85 0.33 0.04 rg BT /HB ' + n2(z) + ' Tf ' + r4(c) + ' ' + r4(s) + ' ' + r4(-s) + ' ' + r4(c) + ' ' + n2(px) + ' ' + n2(py) + ' Tm (' + esc(t) + ') Tj ET Q');
-    }
-    line(MARK1, z1, 0.12 * z1);
-    line(MARK2, z2, 0.12 * z1 + 0.3 * z1 + 0.8 * z2);
+  /* Practice data of a demonstration ID (PDFGen.demo). Strong enough to stay plain on a black-and-white laser printer and on a photocopy:
+     a large dark diagonal DEMONSTRATION, the same words repeated small over the whole box (it cannot be cut off), and solid bands
+     "DEMONSTRATION ONLY - NOT A VALID DOCUMENT". Box: top-left x, y, width, height; bands: band positions from the top of the box. */
+  var MARK1 = 'DEMONSTRATION', MARK2 = 'NOT A VALID DOCUMENT - PRACTICE DATA ONLY', MARK3 = 'DEMONSTRATION - NOT VALID',
+    BAND = 'DEMONSTRATION ONLY   -   NOT A VALID DOCUMENT   -   PRACTICE DATA FOR TEACHING';
+  function r4(v) { return (Math.round(v * 10000) / 10000).toString(); }
+  /* Geometry shared with the SVG slips used for printing (report.js), so both look the same. */
+  function markPlan(x, y, w, h, bands) {
+    var a = Math.atan2(h, w), diag = Math.sqrt(w * w + h * h), z1 = 0.66 * diag / width(MARK1, 'HB', 1);
+    var z2 = Math.min(z1 * 0.34, 0.84 * diag / width(MARK2, 'HB', 1)), z3 = Math.max(6.5, Math.min(w, h) / 48), tw = width(MARK3, 'HB', z3);
+    var tiles = [], sx = tw + z3 * 2.5, sy = z3 * 3.6, rr = diag / 2 + sx, k = 0;
+    for (var ly = -rr; ly <= rr; ly += sy, k++) for (var lx = -rr - (k % 2) * sx / 2; lx <= rr; lx += sx) tiles.push([lx, ly]);
+    var bw = w - 60, bz = Math.min(9.5, 0.94 * (bw - 16) / width(BAND, 'HB', 1));
+    return { a: a, c: Math.cos(a), s: Math.sin(a), cx: x + w / 2, cy: y + h / 2, z1: z1, z2: z2, z3: z3, tiles: tiles, x: x, y: y, w: w, h: h,
+      bands: (bands || [h - 34]).map(function (by) { return { x: x + 30, y: y + by, w: bw, h: bz + 9, z: bz }; }) };
+  }
+  Doc.prototype.mark = function (x, y, w, h, bands) {
+    var m = markPlan(x, y, w, h, bands), self = this, H = this.H, c = m.c, s = m.s;
+    /* turned frame: lx along the rising diagonal, ly downwards from it; returns PDF points (y goes up) */
+    var at = function (lx, ly) { return [m.cx + c * lx + s * ly, H - m.cy + s * lx - c * ly]; };
+    var tm = function (p) { return r4(c) + ' ' + r4(s) + ' ' + r4(-s) + ' ' + r4(c) + ' ' + n2(p[0]) + ' ' + n2(p[1]) + ' Tm '; };
+    var ops = ['q ' + n2(x) + ' ' + n2(H - y - h) + ' ' + n2(w) + ' ' + n2(h) + ' re W n'];      // stay inside the box (two slips on one sheet)
+    ops.push('/GT gs 0.55 0.05 0.05 rg BT /HB ' + n2(m.z3) + ' Tf');
+    m.tiles.forEach(function (t) { ops.push(tm(at(t[0], t[1])) + '(' + esc(MARK3) + ') Tj'); });
+    ops.push('ET');
+    var big = function (t, z, off) { var tw = width(t, 'HB', z); return 'BT /HB ' + n2(z) + ' Tf ' + tm(at(-tw / 2, off)) + '(' + esc(t) + ') Tj ET'; };
+    ops.push('/GW gs 0.6 0.04 0.04 rg ' + big(MARK1, m.z1, 0.12 * m.z1) + ' ' + big(MARK2, m.z2, 0.12 * m.z1 + 0.3 * m.z1 + 0.8 * m.z2));
+    ops.push('Q');
+    m.bands.forEach(function (b) {
+      ops.push('q 0.5 0.06 0.06 rg ' + n2(b.x) + ' ' + n2(H - b.y - b.h) + ' ' + n2(b.w) + ' ' + n2(b.h) + ' re f 1 g BT /HB ' + n2(b.z) + ' Tf ' +
+        n2(b.x + b.w / 2 - width(BAND, 'HB', b.z) / 2) + ' ' + n2(H - b.y - b.h + 4.6) + ' Td (' + esc(BAND) + ') Tj ET Q');
+    });
+    ops.forEach(function (o) { self.op(o); });
     this.cur.marked = true;
+  };
+  /* A see-through stamp inside a box (signature boxes of a demonstration death certificate). */
+  Doc.prototype.stamp = function (x, y, w, h, t1, t2) {
+    var z1 = Math.min(h * 0.42, 0.9 * w / width(t1, 'HB', 1)), z2 = Math.min(z1 * 0.5, 0.9 * w / width(t2, 'HB', 1));
+    this.op('q /GS gs 0.6 0.04 0.04 rg BT /HB ' + n2(z1) + ' Tf ' + n2(x + w / 2 - width(t1, 'HB', z1) / 2) + ' ' + n2(this.H - y - h / 2 + z1 * 0.1) + ' Td (' + esc(t1) + ') Tj ET' +
+      ' BT /HB ' + n2(z2) + ' Tf ' + n2(x + w / 2 - width(t2, 'HB', z2) / 2) + ' ' + n2(this.H - y - h / 2 - z2 * 1.25) + ' Td (' + esc(t2) + ') Tj ET Q');
   };
   Doc.prototype.setImage = function (bytes, w, h) { this.img = { bytes: bytes, w: w, h: h }; };
   Doc.prototype.image = function (x, y, w, h) {
@@ -666,7 +698,7 @@ var PDFGen = (function () {
       if (demo && !ops.marked) { var keep = self.cur; self.cur = ops; self.mark(0, 0, self.W, self.H); self.cur = keep; }
       var content = ops.join('\n');
       write(pageObjs[i], '<< /Type /Page /Parent ' + pagesObj + ' 0 R /MediaBox [0 0 ' + self.W + ' ' + self.H + '] /Resources << /Font << ' + fontRes + ' >>' +
-        (imgObj ? ' /XObject << /Im1 ' + imgObj + ' 0 R >>' : '') + (demo ? ' /ExtGState << /GW << /Type /ExtGState /ca 0.2 /CA 0.2 >> >>' : '') + ' >> /Contents ' + contentObjs[i] + ' 0 R >>');
+        (imgObj ? ' /XObject << /Im1 ' + imgObj + ' 0 R >>' : '') + (demo ? ' /ExtGState << /GW << /Type /ExtGState /ca 0.4 /CA 0.4 >> /GT << /Type /ExtGState /ca 0.16 /CA 0.16 >> /GS << /Type /ExtGState /ca 0.55 /CA 0.55 >> >>' : '') + ' >> /Contents ' + contentObjs[i] + ' 0 R >>');
       write(contentObjs[i], '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream');
     });
     write(infoObj, '<< /Title (' + esc(self.title || '') + ') /Producer (CEC Daily Census - SGHL) >>');
@@ -679,7 +711,7 @@ var PDFGen = (function () {
     return out;
   };
 
-  return { Doc: Doc, width: width, wrap: wrap, fit: fit, clean: clean, demo: false, MARK1: MARK1, MARK2: MARK2 };
+  return { Doc: Doc, width: width, wrap: wrap, fit: fit, clean: clean, demo: false, MARK1: MARK1, MARK2: MARK2, MARK3: MARK3, BAND: BAND, markPlan: markPlan };
 })();
 if (typeof module !== 'undefined') module.exports = PDFGen;
 
@@ -731,13 +763,27 @@ var CEC = (function () {
   var DEMO = { on: false };
   function setDemo(on) { DEMO.on = !!on; if (typeof PDFGen !== 'undefined') PDFGen.demo = !!on; }
   var DEMO_LINE = 'DEMONSTRATION - PRACTICE DATA, NOT REAL PATIENTS';
-  function demoHtml() { return DEMO.on ? '<div class="dmark" aria-hidden="true"><b>DEMONSTRATION</b><span>NOT A VALID DOCUMENT - PRACTICE DATA ONLY</span></div>' : ''; }
-  function demoSvg(x, y, w, hh) {
+  function demoHtml() {
+    if (!DEMO.on) return '';
+    return '<div class="dmark" aria-hidden="true"><div class="dtile"></div><div class="dbig"><b>DEMONSTRATION</b><span>NOT A VALID DOCUMENT - PRACTICE DATA ONLY</span></div>' +
+      '<div class="dband">DEMONSTRATION ONLY &nbsp;&middot;&nbsp; NOT A VALID DOCUMENT &nbsp;&middot;&nbsp; PRACTICE DATA FOR TEACHING</div></div>';
+  }
+  var demoClip = 0;
+  /* The same mark as the PDF (PDFGen.mark) for the slips printed from the browser. */
+  function demoSvg(x, y, w, hh, bands) {
     if (!DEMO.on || typeof PDFGen === 'undefined') return '';
-    var a = Math.atan2(hh, w), diag = Math.sqrt(w * w + hh * hh), z1 = 0.7 * diag / PDFGen.width(PDFGen.MARK1, 'HB', 1);
-    var z2 = Math.min(z1 * 0.34, 0.86 * diag / PDFGen.width(PDFGen.MARK2, 'HB', 1)), r = function (v) { return Math.round(v * 100) / 100; };
-    return '<g transform="translate(' + r(x + w / 2) + ' ' + r(y + hh / 2) + ') rotate(' + r(-a * 180 / Math.PI) + ')" fill="#d9540a" fill-opacity="0.2" font-family="Helvetica,Arial,sans-serif" font-weight="700" text-anchor="middle">' +
-      '<text y="' + r(0.12 * z1) + '" font-size="' + r(z1) + '">' + PDFGen.MARK1 + '</text><text y="' + r(0.12 * z1 + 0.3 * z1 + 0.8 * z2) + '" font-size="' + r(z2) + '">' + PDFGen.MARK2 + '</text></g>';
+    var m = PDFGen.markPlan(x, y, w, hh, bands), r = function (v) { return Math.round(v * 100) / 100; }, id = 'dmc' + (++demoClip), deg = r(-m.a * 180 / Math.PI);
+    var out = '<clipPath id="' + id + '"><rect x="' + r(x) + '" y="' + r(y) + '" width="' + r(w) + '" height="' + r(hh) + '"/></clipPath><g clip-path="url(#' + id + ')">' +
+      '<g transform="translate(' + r(m.cx) + ' ' + r(m.cy) + ') rotate(' + deg + ')" font-family="Helvetica,Arial,sans-serif" font-weight="700">' +
+      '<g fill="#8c0d0d" fill-opacity="0.16" font-size="' + r(m.z3) + '">';
+    m.tiles.forEach(function (t) { out += '<text x="' + r(t[0]) + '" y="' + r(t[1]) + '">' + PDFGen.MARK3 + '</text>'; });
+    out += '</g><g fill="#990a0a" fill-opacity="0.4" text-anchor="middle"><text y="' + r(0.12 * m.z1) + '" font-size="' + r(m.z1) + '">' + PDFGen.MARK1 + '</text>' +
+      '<text y="' + r(0.12 * m.z1 + 0.3 * m.z1 + 0.8 * m.z2) + '" font-size="' + r(m.z2) + '">' + PDFGen.MARK2 + '</text></g></g></g>';
+    m.bands.forEach(function (b) {
+      out += '<rect x="' + r(b.x) + '" y="' + r(b.y) + '" width="' + r(b.w) + '" height="' + r(b.h) + '" fill="#800f0f"/><text x="' + r(b.x + b.w / 2) + '" y="' + r(b.y + b.h - 4.6) +
+        '" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="' + r(b.z) + '" fill="#fff" text-anchor="middle" textLength="' + r(PDFGen.width(PDFGen.BAND, 'HB', b.z)) + '" lengthAdjust="spacingAndGlyphs" xml:space="preserve">' + PDFGen.BAND + '</text>';
+    });
+    return out;
   }
   function label(list, c) { for (var i = 0; i < list.length; i++) if (list[i].c === c) return list[i].l; return c || ''; }
   function short(list, c) { for (var i = 0; i < list.length; i++) if (list[i].c === c) return list[i].s || list[i].l; return c || ''; }
@@ -1575,7 +1621,9 @@ var CEC = (function () {
     [[49, ['Signature & Stamp', 'of Doctor']], [331, ['Signature / Thumb Impression', 'of Receiver']]].forEach(function (b) {
       d.rect(b[0], 702, 199, 78, null, 0, 0.7); d.line(b[0], 748, b[0] + 199, 748, 0.6);
       d.text(b[0] + 99.5, 761, b[1][0], V, 8, 'center'); d.text(b[0] + 99.5, 772, b[1][1], V, 8, 'center');
+      if (DEMO.on) d.stamp(b[0], 702, 199, 46, 'NOT VALID', 'DEMONSTRATION - PRACTICE ONLY');     // nobody can sign or stamp it as real
     });
+    if (DEMO.on) d.mark(0, 0, d.W, d.H, [786]);                     // the band sits inside the certificate's border
     return d.output();
   }
   function opdSlipPdf(st, logo) {
@@ -1692,7 +1740,7 @@ var CEC = (function () {
           else if (o.k === 'rr') d.rrect(o.x, o.y, o.w, o.h, o.r, o.lw);
           else if (o.k === 'img' && logo) d.image(o.x, o.y, o.w, o.h);
         });
-        if (DEMO.on) d.mark(k ? SLIP_W : 0, 0, SLIP_W, SLIP_H);     // each slip has its own mark (they are cut apart)
+        if (DEMO.on) d.mark(k ? SLIP_W : 0, 0, SLIP_W, SLIP_H, [SLIP_TOP + 8, SLIP_H - 34]);     // each slip has its own mark (they are cut apart)
       });
     });
     return d.output();
@@ -1713,7 +1761,7 @@ var CEC = (function () {
         else if (o.k === 'r' || o.k === 'rr') out += '<rect x="' + x(o.x) + '" y="' + x(o.y) + '" width="' + x(o.w) + '" height="' + x(o.h) + '"' + (o.r ? ' rx="' + o.r + '"' : '') + ' fill="none" stroke="#000" stroke-width="' + o.lw + '"/>';
         else if (o.k === 'img' && logoUrl) out += '<image x="' + x(o.x) + '" y="' + x(o.y) + '" width="' + x(o.w) + '" height="' + x(o.h) + '" preserveAspectRatio="none" href="' + logoUrl + '" xlink:href="' + logoUrl + '"/>';
       });
-      out += demoSvg(k ? SLIP_W : 0, 0, SLIP_W, SLIP_H);
+      out += demoSvg(k ? SLIP_W : 0, 0, SLIP_W, SLIP_H, [SLIP_TOP + 8, SLIP_H - 34]);
     });
     return out + '</svg>';
   }
@@ -2086,6 +2134,7 @@ var CEC = (function () {
     var sex = c.sex === 'M' ? 'Male' : c.sex === 'F' ? 'Female' : (c.sex || '');
     var row2 = function (a, av, b, bv) { return '<tr><td class="lbl">' + a + '</td><td>' + v(av) + '</td><td class="lbl">' + b + '</td><td>' + v(bv) + '</td></tr>'; };
     var row1 = function (a, av) { return '<tr><td class="lbl">' + a + '</td><td colspan="3">' + v(av) + '</td></tr>'; };
+    var nv = DEMO.on ? '<span class="dnv"><b>NOT VALID</b>DEMONSTRATION - PRACTICE ONLY</span>' : '';
     return '<div class="page dc">' + demoHtml() + '<div class="dch"><img src="' + logoSrc + '" alt="Government of Sindh"><div><div class="d1">SINDH GOVERNMENT HOSPITAL LIAQUATABAD</div>' +
       '<div class="d2">KARACHI</div><div class="d1">CARDIAC EMERGENCY CENTRE</div><div class="d3">Phone No. ' + h(st.phone || '') + ' &nbsp;|&nbsp; Email: ' + h(st.email || '') + '</div></div></div>' +
       '<div class="rule"></div><div class="dcmeta"><span>' + (c.no ? 'Certificate No.: ' + h(c.no) : '') + '</span><span><b>Date of Issue:</b> ' + v(c.issueDate) + '</span></div>' +
@@ -2098,7 +2147,7 @@ var CEC = (function () {
       '<table class="dt"><tr><th colspan="4">DEATH CONFIRMATION</th></tr>' + row2('Death Confirmed At', c.deathTime ? c.deathTime + ' hrs' : '', 'Date', c.deathDate) +
       row2('Doctor on Duty', c.doctor, 'Paramedic(s)', c.paramedics) + '</table>' +
       '<table class="dt"><tr><th colspan="4">RECEIVER’S DETAILS</th></tr>' + row2('Name', c.rName, 'CNIC No.', c.rCnic) + row2('Relation', c.rRel, 'Cell No.', c.rCell) + row1('Address', c.rAddress) + '</table>' +
-      '<div class="dcs"><div><div class="box"></div>Signature &amp; Stamp<br>of Doctor</div><div><div class="box"></div>Signature / Thumb Impression<br>of Receiver</div></div></div>';
+      '<div class="dcs"><div><div class="box">' + nv + '</div>Signature &amp; Stamp<br>of Doctor</div><div><div class="box">' + nv + '</div>Signature / Thumb Impression<br>of Receiver</div></div></div>';
   }
 
   /* ---------- WhatsApp summary ---------- */
