@@ -527,6 +527,7 @@ body.demo .top{border-bottom-color:#e8740c}
 .paper .dc .box .dnv b{font-size:22px;line-height:1.1}
 .vdone{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:#f7faf8}
 .vdone b{font-weight:600;color:var(--muted,#5b6b63);margin-right:2px}
+.pr-proc .upd{color:#9a4307;background:#fdeedd;border-radius:6px;padding:1px 6px}
 
 </style>
 </head>
@@ -1664,6 +1665,7 @@ var CEC = (function () {
     if (e.rbs) p.push('RBS: ' + e.rbs);
     if (e.wt) p.push('Wt: ' + e.wt + ' kg');
     if (e.ht) p.push('Ht: ' + e.ht + ' cm');
+    if ((e.procs || []).indexOf('ECG') >= 0) p.push('ECG: Done');      // 09-11-2026: the slip shows the ECG too
     return p;
   }
   /* The slip (the CEC's own design, made compact): everything printed stays in the top 30% of the slip (to 161 pt of 595 pt),
@@ -2218,7 +2220,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function errText(e) {
     var m = (e && (e.message || e.code)) || String(e);
-    return String(m).replace(/^(ScriptError|Exception|Error):\s*/i, '').replace(/^AUTH:\s*/, '');
+    return String(m).replace(/^(ScriptError|Exception|Error):\s*/i, '').replace(/^(AUTH|BUSY):\s*/, '');
   }
   function isAuthErr(e) { return /AUTH:/.test((e && e.message) || String(e)); }
   function modal(title, bodyHtml, buttons, stack) {
@@ -2330,6 +2332,27 @@ if (typeof module !== 'undefined') module.exports = CEC;
     return call(fn, args).then(function (v) { if (S.offline) { S.offline = false; renderBanner(); } return v; },
       function (e) { if (e && e.offline) { if (!S.offline) { S.offline = true; renderBanner(); } } else if (isAuthErr(e)) signOut(errText(e)); throw e; });
   }
+  /* A temporary failure (the census busy with many saves at once, Google's lock wait, a slow or lost connection): worth trying again,
+     and the data must be kept, never thrown away (09-11-2026). */
+  function transient(e) {
+    if (!e) return false;
+    if (e.offline || e.retry) return true;
+    var t = errText(e);
+    if (isAuthErr(e) || /changed this patient a moment ago/.test(t)) return false;
+    return /^BUSY:|census is busy|lock timeout|could not obtain lock|timed out|timeout|unavailable|server error|internal error|wait a bit|try again later|invoked too many|too many simultaneous|exceeded maximum|failed to fetch|networkerror|connection failure|load failed|did not answer|\b50[0-9]\b|\b429\b/i.test(t);
+  }
+  /* Like api(), but a temporary failure is tried again by itself (after about 1.5, 3 and 6 seconds). Only for saves that are safe to repeat:
+     a repeated registration is recognised by its client ID, vitals by the version check, ECG / slip printed by their own state. */
+  function apiRetry() {
+    var args = arguments, tries = 0;
+    var go = function () {
+      return api.apply(null, args).then(null, function (e) {
+        if ((e && e.offline) || ++tries > 3 || !transient(e)) throw e;
+        return new Promise(function (r) { setTimeout(r, 1500 * Math.pow(2, tries - 1) + Math.floor(Math.random() * 700)); }).then(go);
+      });
+    };
+    return go();
+  }
   function isAdmin() { return !!(S.me && S.me.admin); }
   function canEdit() { return !!(S.me && (S.me.canEdit || S.me.admin)); }
   function canEnter() { return !!(S.me && (S.me.canEnter || S.me.canEdit || S.me.admin)); }
@@ -2356,13 +2379,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
       var o = S.opt[id], sh = [S.work, S.prevShift, S.open].filter(function (x) { return x && x.id === o.sh; })[0];
       if (sh) putEntry(sh, o.e);
     });
+    vqShow();
   }
   function loadState() {
     return api('apiState').then(function (st) {
       applyState(st); S.stale = false;
       if (APP_BUILD && st.newToken) { S.token = st.newToken; store_('cec_token', st.newToken); var of = store_('cec_off'); if (of && of.uid === st.me.id) { of.token = st.newToken; store_('cec_off', of); } }
       delete st.newToken; saveCache(st);
-      if (APP_BUILD) setTimeout(flushQueue, 0);
+      setTimeout(flushQueue, 0); setTimeout(vqFlush, 0);
     });
   }
   /* The last state is kept on the device, so the census opens at once next time (then it is brought up to date in the background). */
@@ -2691,7 +2715,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     }).join('');
   }
   function workShiftHtml() {
-    var s = APP_BUILD ? Object.assign({}, S.work, { entries: S.work.entries.filter(function (x) { return !/^q-/.test(x.id); }).concat(queuedEntries(S.work.id)) }) : S.work, name = CEC.shiftName(s.shift), c = counts(s.entries), isCur = S.open && s.id === S.open.id;
+    var s = queueAll().length ? Object.assign({}, S.work, { entries: S.work.entries.filter(function (x) { return !/^q-/.test(x.id); }).concat(queuedEntries(S.work.id)) }) : S.work, name = CEC.shiftName(s.shift), c = counts(s.entries), isCur = S.open && s.id === S.open.id;
     var next = CEC.shiftName({ M: 'E', E: 'N', N: 'M' }[s.shift]);
     var html = '<div class="dash"><div class="dl"><section class="card"><div class="sc-top"><div><div class="eyebrow">Patient dashboard &middot; ' + (isCur ? 'running now' : 'admin: another shift') + '</div><h2>' + h(name) + ' shift</h2>' +
       '<div class="muted small">Census day ' + CEC.dmy(s.censusDate) + ' &middot; ' + h(CEC.shiftTimes(S.settings, s.shift)) + '</div></div>' +
@@ -3199,18 +3223,22 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (S.prevShift && S.open && S.work && S.work.id === S.open.id) a.push({ sh: S.prevShift, src: 'prev' });
     return a;
   }
+  /* A slip printed before the vitals or ECG were added: the new slip (same number) is waiting to be printed. */
+  function slipNewer(e) { return !!(e.tokPr && e.slipUpd && e.slipUpd > e.tokPr); }
+  function slipWaiting(e) { return !!e.tok && !e.signed && (!e.tokPr || slipNewer(e)); }
   function qItems(test) {
     var out = [];
     qShifts().forEach(function (x) { (x.sh.entries || []).forEach(function (e) { if (!/^(q-|tmp)/.test(e.id) && test(e)) out.push({ e: e, sh: x.sh, src: x.src }); }); });
     return out.sort(function (a, b) { return (a.e.t || '') < (b.e.t || '') ? -1 : 1; });   // waiting the longest first
   }
   var Q_KINDS = {
-    vit: { title: 'Vitals', sub: 'Tap a patient to enter the vitals. After Save the patient leaves this list at once; the OPD / ER slip is then ready on the OPD / ER slip page.',
+    vit: { title: 'Vitals', sub: 'Tap a patient to enter the vitals. After Save the patient leaves this list at once, and the OPD / ER slip is updated with the vitals.',
       lists: [['Waiting for vitals', function (e) { return !e.signed && e.cat !== 'BD' && !hasVitals(e); }],
         ['RBS advised by the doctor', function (e) { return hasVitals(e) && advLeft(e).indexOf('RBS') >= 0; }]], empty: 'No patient is waiting for vitals.' },
-    slipq: { title: 'OPD / ER slips', sub: 'Slips are ready as soon as the vitals are saved. Tap Print, or Print all.',
-      lists: [['Ready to print', function (e) { return !!e.tok && !e.tokPr && !e.signed; }], ['Printed (shown for 5 minutes)', function (e) { return !!e.tok && !!e.tokPr && recent(e.tokPr); }]],
-      empty: 'No slip is waiting. Slips appear here after the vitals are saved.' },
+    slipq: { title: 'OPD / ER slips', sub: 'An OPD or Emergency patient\u2019s slip is ready as soon as the patient is registered (vitals are not needed). ' +
+      'When vitals or the ECG are added after the slip was printed, it comes back here as Updated: print the new slip (same number). Tap Print, or Print all.',
+      lists: [['Ready to print', slipWaiting], ['Printed (shown for 5 minutes)', function (e) { return !!e.tok && !!e.tokPr && recent(e.tokPr) && !slipNewer(e); }]],
+      empty: 'No slip is waiting. Slips appear here as soon as patients are registered.' },
     ecgq: { title: 'ECG', sub: 'Every patient registered in the last hour, and every patient the doctor advised ECG. Tick when the ECG is done. Search to find any other patient of this shift.',
       empty: 'No patient was registered in the last hour.' }
   };
@@ -3248,7 +3276,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function qRow(x, kind, done) {
     var e = x.e, vt = vitalsText(e), left = advLeft(e);
     var info = kind === 'vit' ? (done ? '<b class="advt">RBS advised</b> &middot; ' + (vt ? h(vt) : '') : h(CEC.label(CEC.CATS, e.cat)) + ' &middot; registered ' + CEC.hm(e.t))
-      : (vt ? h(vt) : '<span class="muted">no vitals</span>') + (done ? ' &middot; printed ' + CEC.hm(e.tokPr) : '');
+      : (slipNewer(e) ? '<b class="upd">Updated: new ' + (vt ? 'vitals' : '') + (vt && ecgDone(e) ? ' / ' : '') + (ecgDone(e) ? 'ECG' : '') + ' &middot; print the new slip</b> &middot; ' : '') +
+        (vt ? h(vt) : '<span class="muted">no vitals yet</span>') + (ecgDone(e) ? ' &middot; ECG done' : '') + (done ? ' &middot; printed ' + CEC.hm(e.tokPr) : '');
     var main = '<div class="pr-m"><div class="pr-name">' + (e.tok ? '<span class="tokb ' + (e.tok.indexOf('ER') === 0 ? 'er' : '') + '">' + h(e.tok) + '</span> ' : '') + h(e.name || '(no name)') +
       ' <span class="muted">&middot; MR ' + h(e.mr) + '</span></div><div class="pr-sub">' + (e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '') + (e.age !== '' && e.age != null ? ', ' + h(e.age) + ' y' : '') +
       (x.src === 'prev' ? ' &middot; ' + h(CEC.shiftName(x.sh.shift)) + ' shift' : '') + '</div><div class="pr-proc">' + info + '</div></div>';
@@ -3292,13 +3321,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var want = !ecgDone(e), was = (e.procs || []).slice(), wasDone = e.advDone;
     e.procs = want ? was.concat(['ECG']) : was.filter(function (p) { return p !== 'ECG'; });
     if (want && ecgAdvised(e) && !advLeft(e).length) e.advDone = new Date().toISOString();
+    var wasUpd = e.slipUpd; if (e.tok) e.slipUpd = new Date().toISOString();
     S.ecgBusy = S.ecgBusy || {}; S.ecgBusy[id] = 1; S.pending++; S.opt[id] = { sh: sh.id, e: e };
     ecgPaint();
-    api('apiEcgDone', sh.id, id, want).then(function (saved) {
+    apiRetry('apiEcgDone', sh.id, id, want).then(function (saved) {
       S.pending--; delete S.ecgBusy[id]; delete S.opt[id]; putEntry(sh, saved); ecgPaint();
     }, function (x) {
-      S.pending--; delete S.ecgBusy[id]; delete S.opt[id]; e.procs = was; e.advDone = wasDone; ecgPaint();
-      toast('ECG not saved for ' + e.name + ': ' + errText(x));
+      S.pending--; delete S.ecgBusy[id]; delete S.opt[id]; e.procs = was; e.advDone = wasDone; e.slipUpd = wasUpd; ecgPaint();
+      toast('ECG not saved for ' + e.name + ': ' + errText(x) + '. Tick it again.');
     });
   }
   function ecgPaint() { if (S.view !== 'ecgq') return; var r = $('ecgRes'); if (r) r.innerHTML = ecgSearchHtml(); else render(); }
@@ -3433,7 +3463,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<div class="kv" style="margin-top:12px"><b>' + h(e.name) + '</b> &middot; MR ' + h(e.mr) + '<div class="muted small">' + h(CEC.label(CEC.CATS, e.cat)) + ' &middot; ' +
       (e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '') + (e.age !== '' && e.age != null ? ', ' + h(e.age) + ' y' : '') + ' &middot; registered ' + CEC.hm(e.t) + '</div>' +
       ((e.adv || []).length ? '<div class="small" style="margin-top:4px"><b class="advt">Doctor advised: ' + h(e.adv.join(' + ')) + '</b></div>' : '') + '</div>' +
-      vitalsHtml(e) + (e.tok ? '<div class="slipln"><span>Slip <b>' + h(e.tok) + '</b> is ready</span></div>'
+      vitalsHtml(Object.assign({}, e, (S.vdraft || {})[e.id] || {})) + (e.tok ? '<div class="slipln"><span>Slip <b>' + h(e.tok) + '</b>: the vitals are added to it when you save' + (e.tokPr ? ' (it comes back on the OPD / ER slip page to print again)' : '') + '</span></div>'
         : '<div class="fsec">OPD / ER slip</div><div class="seg" id="qSlip"><button type="button" data-act="qe-slipk" data-v="OPD">OPD</button><button type="button" data-act="qe-slipk" data-v="ER">ER</button></div>' +
           '<p class="muted small" style="margin:4px 0 0">The slip number is given when you save, so the slip is ready on the OPD / ER slip page. ' + (e.cat === 'ETT' || e.cat === 'ECHO' ? 'ETT / Echo: tap OPD or ER only if a slip is needed.' : 'Choosing the other one also changes the category.') + '</p>') +
       '<div id="qErr"></div></form></div><div class="sh-foot"><button class="btn pri" data-act="qe-save">Save</button></div>';
@@ -3452,16 +3482,21 @@ if (typeof module !== 'undefined') module.exports = CEC;
     Q.vit = vit;
     var shown = Object.assign({}, e);                    // shown at once: the patient leaves the waiting list
     VIT.forEach(function (x) { shown[x[0]] = vit[x[0]] || ''; });
+    if (shown.tok) shown.slipUpd = new Date().toISOString();   // the slip page shows the new slip at once
     putEntry(sh, shown); S.opt[e.id] = { sh: sh.id, e: shown };
     closeQuick();
     S.pending++; S.saving = (S.saving || 0) + 1;
     render();
     var fin = function () { S.pending--; S.saving = Math.max(0, S.saving - 1); delete S.opt[e.id]; };
     sendVitals(Q, sh, e, false).then(function (saved) {
-      fin(); putEntry(sh, saved);
+      fin(); putEntry(sh, saved); if (S.vdraft) delete S.vdraft[e.id];
       toast('Vitals saved: ' + saved.name + (saved.tok ? '. Slip ' + saved.tok + ' is ready.' : '.'));
       if (!typing() || S.qe) render();
-    }, function (x) { fin(); failVitals(sh, e, x); });
+    }, function (x) {
+      fin();
+      if (transient(x)) { vqAdd(Q, sh, e); putEntry(sh, shown); toast('The census is busy: the vitals of ' + e.name + ' are kept on this device and sent automatically.'); if (!typing() || S.qe) render(); return; }
+      failVitals(sh, e, x, vit);
+    });
   }
   function sendVitals(Q, sh, e, retried) {
     var vit = Q.vit, d = Object.assign({}, e);           // the latest details of the patient, with only the vitals changed
@@ -3471,19 +3506,64 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (d.rbs && d.procs.indexOf('BSR') < 0) d.procs.push('BSR');
     if (!e.tok) d.slip = Q.slip || 'none';
     d.v = e.v; d.dxs = CEC.dxOf(e); delete d.queued;
-    return api('apiUpdateEntry', sh.id, JSON.stringify(d)).then(null, function (x) {
-      if (retried || !/changed this patient a moment ago/.test(errText(x))) throw x;
-      return api('apiGetShift', sh.id).then(function (fresh) {      // someone saved the patient meanwhile: take the latest details and save again
+    return apiRetry('apiUpdateEntry', sh.id, JSON.stringify(d)).then(null, function (x) {
+      var tries = +retried || 0;
+      if (tries >= 4 || !/changed this patient a moment ago/.test(errText(x))) throw x;
+      return apiRetry('apiGetShift', sh.id).then(function (fresh) {      // someone saved the patient meanwhile: take the latest details and save again
         var latest = fresh && (fresh.entries || []).filter(function (y) { return y.id === e.id; })[0];
         if (!latest) throw x;
-        return sendVitals(Q, sh, latest, true);
+        if (VIT.every(function (k) { return String(latest[k[0]] || '') === String(vit[k[0]] || ''); })) return latest;   // already saved (the answer was lost on the way)
+        return sendVitals(Q, sh, latest, tries + 1);
       }, function () { throw x; });
     });
   }
-  function failVitals(sh, e, x) {
+  function failVitals(sh, e, x, vit) {
     putEntry(sh, e);                                     // back on the waiting list
+    if (vit) { S.vdraft = S.vdraft || {}; S.vdraft[e.id] = vit; }   // what was typed is filled in again when the patient is opened
     if (!typing() || S.qe) render();
-    modal('Vitals not saved', '<p>The vitals of <b>' + h(e.name) + '</b> (MR ' + h(e.mr) + ') were <b>not saved</b>: ' + h(errText(x)) + '</p><p class="small">The patient is back on the Vitals list. Open the patient and save the vitals again.</p>', [{ label: 'OK', cls: 'pri', value: true }]);
+    modal('Vitals not saved', '<p>The vitals of <b>' + h(e.name) + '</b> (MR ' + h(e.mr) + ') were <b>not saved</b>: ' + h(errText(x)) + '</p><p class="small">The patient is back on the Vitals list. Open the patient: the vitals you typed are filled in; check them and save again.</p>', [{ label: 'OK', cls: 'pri', value: true }]);
+  }
+  /* ---------- vitals kept on this device until the census takes them (busy census or lost connection) ---------- */
+  function vqAll() { return store_('cec_vq') || []; }
+  function vqMine() { return S.me ? vqAll().filter(function (x) { return x.uid === S.me.id; }) : []; }
+  function vqAdd(Q, sh, e) {
+    var q = vqAll().filter(function (x) { return x.id !== e.id; });
+    q.push({ id: e.id, sh: sh.id, vit: Q.vit, slip: Q.slip || '', uid: S.me.id, t: new Date().toISOString(), name: e.name, mr: e.mr });
+    store_('cec_vq', q); renderBanner();
+  }
+  function vqDrop(id) { store_('cec_vq', vqAll().filter(function (x) { return x.id !== id; })); }
+  /* Waiting vitals stay on screen (the patient does not come back on the Vitals list, the slip shows them). */
+  function vqShow() {
+    vqMine().forEach(function (it) {
+      var fe = findEntry(it.id); if (!fe) return;
+      var cur = Object.assign({}, fe.e); VIT.forEach(function (x) { if (it.vit[x[0]]) cur[x[0]] = it.vit[x[0]]; });
+      if (cur.tok) cur.slipUpd = it.t;
+      putEntry(fe.sh, cur);
+    });
+  }
+  function vqFlush() {
+    if (S.vqBusy || !S.token || !S.me || (APP_BUILD && navigator.onLine === false) || !vqMine().length) return Promise.resolve();
+    S.vqBusy = true; renderBanner();
+    var sent = 0;
+    var next = function () {
+      var it = vqMine()[0];
+      if (!it) return Promise.resolve();
+      var fe = findEntry(it.id);
+      var got = fe ? Promise.resolve(fe) : apiRetry('apiGetShift', it.sh).then(function (s) {
+        var e = s && (s.entries || []).filter(function (y) { return y.id === it.id; })[0]; return e ? { sh: s, e: e } : null;
+      });
+      return got.then(function (x) {
+        if (!x) { vqDrop(it.id); return next(); }        // the patient was deleted meanwhile
+        return sendVitals({ vit: it.vit, slip: it.slip }, x.sh, x.e, false).then(function (saved) {
+          vqDrop(it.id); sent++; putEntry(x.sh, saved); return next();
+        }, function (err) {
+          if (transient(err) || isAuthErr(err)) throw err;     // try again later; nothing is lost
+          vqDrop(it.id); failVitals(x.sh, x.e, err, it.vit); return next();
+        });
+      });
+    };
+    var done = function () { S.vqBusy = false; renderBanner(); if (sent) { toast(sent + ' kept vital' + (sent === 1 ? ' was' : 's were') + ' sent to the census.'); if (!typing() && !anyOverlay()) render(); } };
+    return next().then(done, done);
   }
   function closeQuick() { S.qe = null; $('sheet').classList.add('hidden'); $('sheet').innerHTML = ''; document.body.style.overflow = ''; overlayClosed(); }
   function closeForm() { S.form = null; $('sheet').classList.add('hidden'); $('sheet').innerHTML = ''; document.body.style.overflow = ''; overlayClosed(); }
@@ -3722,22 +3802,24 @@ if (typeof module !== 'undefined') module.exports = CEC;
       box.scrollIntoView({ block: 'nearest' }); return;
     }
     var e = r.entry, isNew = !e.id, target = f.target, temp = null, orig = f.orig;
+    if (isNew && !e.clientId) e.clientId = 'q-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);   // a repeated send is not added twice
     if (isNew) { temp = Object.assign({}, e, { id: 'tmp' + Date.now(), t: new Date().toISOString(), signed: false, mr: e.autoMr ? (S.mr ? S.mr.next : 'Auto') : e.mr }); sh.entries.push(temp); }
     if (e.autoMr && S.mr) S.mr = { last: S.mr.next, next: nextMr(S.mr.next), at: new Date().toISOString() };   // the next form shows the following number
     var i0 = isNew ? -1 : sh.entries.map(function (x) { return x.id; }).indexOf(e.id), before = i0 >= 0 ? sh.entries[i0] : {};
     var wasDead = before.cat === 'BD' || before.out === 'EXP', nowDead = e.cat === 'BD' || e.out === 'EXP';
     if (!isNew && i0 >= 0) sh.entries[i0] = Object.assign({}, sh.entries[i0], e);
     if (!isNew) e.v = f.v;
-    var keepOnPhone = function () {                       // phone app without internet: keep it and send it later
+    var keepOnPhone = function (busy) {                   // no internet, or the census cannot take it now: keep it on this device and send it later
       sh.entries = sh.entries.filter(function (x) { return x.id !== temp.id; });
       var qe = Object.assign({}, e); delete qe.id; delete qe.slip;
-      queueAdd(qe, temp.t);
-      toast('No internet: ' + e.name + ' is saved on this phone and will be sent automatically.');
+      queueAdd(qe, temp.t, e.clientId);
+      toast(busy ? 'The census is busy: ' + e.name + ' is kept on this device and will be sent automatically. No need to enter it again.'
+        : 'No internet: ' + e.name + ' is saved on this phone and will be sent automatically.');
       if (!S.form) render();
     };
     if (APP_BUILD && isNew && isOff()) { keepOnPhone(); if (mode === 'next') openForm(target, null); else closeForm(); render(); if (mode === 'vitals') toast('Saved on this phone. Vitals can be added after it is sent.'); return; }
     S.pending++;
-    api(isNew ? 'apiAddEntry' : 'apiUpdateEntry', sh.id, JSON.stringify(e)).then(function (saved) {
+    apiRetry(isNew ? 'apiAddEntry' : 'apiUpdateEntry', sh.id, JSON.stringify(e)).then(function (saved) {
       S.pending--;
       if (saved.mrState) S.mr = saved.mrState;
       if (nowDead && !wasDead) { S.pendCerts = (S.pendCerts || 0) + 1; toast((e.cat === 'BD' ? 'Brought dead' : 'Expired') + ': ' + saved.name + ' added to the pending death certificates.'); }
@@ -3756,13 +3838,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
       else if (!S.form) render();
     }, function (err) {
       S.pending--;
-      if (APP_BUILD && isNew && err && err.offline) { keepOnPhone(); return; }
+      if (isNew && err && (err.offline || transient(err))) { keepOnPhone(!err.offline); return; }
       if (isNew) sh.entries = sh.entries.filter(function (x) { return x.id !== temp.id; });
       if (!isNew && orig && /changed this patient a moment ago/.test(errText(err))) {   // someone else saved meanwhile (e.g. ECG done): keep both changes
         S.pending++;
         return loadState().then(function () {
           var fe = findEntry(e.id); if (!fe) throw err;
-          return api('apiUpdateEntry', fe.sh.id, JSON.stringify(mergeEdit(fe.e, e, orig))).then(function (saved) {
+          return apiRetry('apiUpdateEntry', fe.sh.id, JSON.stringify(mergeEdit(fe.e, e, orig))).then(function (saved) {
             S.pending--; putEntry(fe.sh, saved); if (!S.form && !S.qe) render();
           });
         }).then(null, function (x) {
@@ -3808,7 +3890,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function stageOf(e) {
     if (e.signed) return 'done';
     if ((e.adv || []).length) return advLeft(e).length ? 'adv' : 'back';
-    if (e.tok || hasVitals(e) || e.cat === 'BD') return 'doc';
+    if (hasVitals(e) || e.cat === 'BD') return 'doc';              // every OPD / ER patient has a slip from registration (09-11-2026)
     return 'vit';
   }
   function stageLabel(k) { for (var i = 0; i < STAGES.length; i++) if (STAGES[i][0] === k) return STAGES[i][1]; return ''; }
@@ -3877,8 +3959,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     real.forEach(function (x) { var cur = (x.sh.entries || []).filter(function (y) { return y.id === x.e.id; })[0]; if (cur) cur.tokPr = now; });
     if (S.view === 'slipq') setTimeout(render, 0);
     var after = function (saved) { (saved || []).forEach(function (en) { real.forEach(function (x) { if (x.e.id === en.id) putEntry(x.sh, en); }); }); if (S.view === 'slipq' && !typing() && !S.qe) render(); };
-    if (real.length === 1) api('apiSlipPrinted', real[0].sh.id, real[0].e.id).then(function (en) { after([en]); }, function () { });
-    else api('apiSlipsPrinted', JSON.stringify(real.map(function (x) { return { shiftId: x.sh.id, id: x.e.id }; }))).then(after, function () { });
+    if (real.length === 1) apiRetry('apiSlipPrinted', real[0].sh.id, real[0].e.id).then(function (en) { after([en]); }, function () { });
+    else apiRetry('apiSlipsPrinted', JSON.stringify(real.map(function (x) { return { shiftId: x.sh.id, id: x.e.id }; }))).then(after, function () { });
   }
   function kindFor(e) { return e.tok ? e.tok.split(' ')[0] : (e.cat === 'EMR' || e.cat === 'BD') ? 'ER' : 'OPD'; }
   /* Asks OPD or ER (the answer decides the number). Resolves to 'OPD', 'ER' or null. */
@@ -5256,7 +5338,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'do-login': doLogin(); break;
       case 'app-link': connectApp(); break;
       case 'app-relink': confirmBox('Change the census link?', 'You will be signed out and asked for the new link.', 'Change link', false).then(function (ok) { if (ok) { store_('cec_api', ''); signOut('', true); } }); break;
-      case 'q-send': { var qq = store_('cec_q') || []; qq.forEach(function (x) { x.err = ''; }); store_('cec_q', qq); if (S.token) { S.offline = false; flushQueue(); } else toast('Sign in to send them.'); break; }
+      case 'q-send': { var qq = store_('cec_q') || []; qq.forEach(function (x) { x.err = ''; }); store_('cec_q', qq); if (S.token) { S.offline = false; flushQueue(); vqFlush(); } else toast('Sign in to send them.'); break; }
       case 'do-register': doRegister(); break;
       case 'sign-out': {
         menu(false);
@@ -5737,8 +5819,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var d = new Date(Date.parse(iso) + (new Date().getTimezoneOffset() + 300) * 60000);
     return CEC.censusDateFor(d, S.settings) + '_' + CEC.suggestShift(d, S.settings);
   }
-  function queueAdd(e, t) {
-    var it = { qid: 'q-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), uid: S.me.id, uname: S.me.name, t: t, e: e, err: '' };
+  function queueAdd(e, t, qid) {
+    var it = { qid: qid || 'q-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), uid: S.me.id, uname: S.me.name, t: t, e: e, err: '' };
     var q = queueAll(); q.push(it); store_('cec_q', q); renderBanner();
     return it;
   }
@@ -5748,17 +5830,17 @@ if (typeof module !== 'undefined') module.exports = CEC;
     });
   }
   function flushQueue() {
-    if (!APP_BUILD || S.flushing || !S.token || !S.me || navigator.onLine === false) return Promise.resolve();
+    if (S.flushing || !S.token || !S.me || navigator.onLine === false) return Promise.resolve();   // phone app and website (09-11-2026)
     if (!queueMine().filter(function (x) { return !x.err; }).length) return Promise.resolve();
     S.flushing = true; renderBanner();
     var sent = 0, failed = 0;
     var next = function () {
       var it = queueMine().filter(function (x) { return !x.err; })[0];
       if (!it) return Promise.resolve();
-      return api('apiAddEntry', '', JSON.stringify(Object.assign({}, it.e, { clientId: it.qid, offlineAt: it.t }))).then(function () {
+      return apiRetry('apiAddEntry', '', JSON.stringify(Object.assign({}, it.e, { clientId: it.qid, offlineAt: it.t }))).then(function () {
         store_('cec_q', queueAll().filter(function (x) { return x.qid !== it.qid; })); sent++; return next();
       }, function (err) {
-        if (err && (err.offline || isAuthErr(err))) throw err;
+        if (err && (err.offline || isAuthErr(err) || transient(err))) throw err;      // try again later
         store_('cec_q', queueAll().map(function (x) { if (x.qid === it.qid) x.err = errText(err); return x; })); failed++; return next();
       });
     };
@@ -5777,8 +5859,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function renderBanner() {
     var b = $('banner');
     if (!b) return;
-    if (!APP_BUILD) { var dm = demoBarHtml(); b.innerHTML = dm; b.classList.toggle('hidden', !dm); return; }
-    var q = queueAll(), mine = queueMine(), errs = mine.filter(function (x) { return x.err; }), html = demoBarHtml();
+    var q = queueAll(), mine = queueMine(), errs = mine.filter(function (x) { return x.err; }), html = demoBarHtml(), vq = vqMine();
     if (isOff()) html += '<div class="off"><b>No internet.</b> You can keep adding new patients; they are kept on this phone and sent automatically when the internet is back.</div>';
     if (q.length) {
       html += '<div class="qbar"><b>' + q.length + '</b> patient' + (q.length === 1 ? '' : 's') + ' waiting to be sent' + (S.flushing ? ' &middot; sending\u2026' : '') +
@@ -5787,11 +5868,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
         (S.me && !S.token && mine.length ? ' &middot; sign in with internet to send them' : '') + '</div>';
       errs.forEach(function (x) { html += '<div class="qerr">Not sent: ' + h(x.e.name) + ' (MR ' + h(x.e.mr) + '): ' + h(x.err) + '</div>'; });
     }
+    if (vq.length) html += '<div class="qbar"><b>' + vq.length + '</b> patient' + (vq.length === 1 ? '\u2019s vitals' : 's\u2019 vitals') + ' waiting to be sent' + (S.vqBusy ? ' &middot; sending\u2026' : '') +
+      (!S.vqBusy && !isOff() && S.token ? ' <button class="lnk" data-act="q-send">Send now</button>' : '') + '</div>';
     b.innerHTML = html; b.classList.toggle('hidden', !html);
   }
   window.addEventListener('online', function () { S.offline = false; renderBanner(); if (S.me && S.token) loadState().then(function () { if (!S.form && !S.cert && !S.af) render(); }, function () { }); });
   window.addEventListener('offline', function () { if (APP_BUILD) { S.offline = true; renderBanner(); } });
-  setInterval(function () { if (APP_BUILD && queueAll().length && navigator.onLine !== false) flushQueue(); }, 30000);
+  setInterval(function () { if (navigator.onLine !== false) { if (queueAll().length) flushQueue(); if (vqAll().length) vqFlush(); } }, 30000);
 
   /* ---------------- browser / phone Back button ----------------
      Each page is recorded in the browser history, so Back goes to the previous page of the census instead of leaving it.
