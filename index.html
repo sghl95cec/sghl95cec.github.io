@@ -141,8 +141,8 @@ input.in:focus,select.in:focus,textarea.in:focus{border-color:var(--g6);box-shad
 .paper .subj span{text-decoration:underline}
 .paper p{margin:6px 0}.paper .ind{text-indent:38px}
 .paper .sh{font-weight:700;margin:16px 0 6px}
-.paper table.lt{width:100%;border-collapse:collapse;font-size:14px}
-.paper .lt th,.paper .lt td{border:1px solid #000;padding:3px 6px}
+.paper table.lt{width:100%;border-collapse:collapse;font-size:13px}
+.paper .lt th,.paper .lt td{border:1px solid #000;padding:2px 6px}
 .paper .lt th{background:#dbdbdb;text-align:left}
 .paper .lt .c{text-align:center}.paper .lt .r{text-align:right}
 .paper .lt tr.tot td{font-weight:700;background:#f0f0f0}
@@ -592,6 +592,40 @@ textarea.in.pbubble:focus{border-style:solid;border-color:var(--g7);background:#
 .prh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between;padding:6px 2px}
 .prh .prt{font-weight:600;text-align:left;flex:1 1 220px;text-decoration:none}
 .prh .btn.sm{white-space:nowrap}
+/* 12-11-2026: compact patient list in the census (two patients a line) */
+.paper .annex .lt.tight{font-size:10.5px}.paper .annex .lt.tight th,.paper .annex .lt.tight td{padding:1px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.paper .lt.tight td:nth-child(6),.paper .lt.tight th:nth-child(6){border-top:0;border-bottom:0;background:#fff}
+/* 12-11-2026: MR register and the petty waiting list */
+.mrsum{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px;margin:4px 0}
+ol.mrlist{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#fff}
+ol.mrlist li{display:flex;gap:10px;align-items:baseline;padding:9px 12px;border-top:1px solid var(--line)}
+ol.mrlist li:first-child{border-top:0}
+ol.mrlist .mrn{font-weight:700;min-width:64px;font-variant-numeric:tabular-nums}
+ol.mrlist .mrb{display:flex;flex-direction:column;gap:2px}
+ol.ptq li .lnk{margin-left:auto}
+/* 12-11-2026: big petty lists and the daily limit */
+.ptbig{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:4px}
+.ptbig b{font-size:34px;line-height:1.1;color:var(--g9);font-variant-numeric:tabular-nums}
+.ptbig span{color:var(--mute);font-size:14px}
+.ptlim{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.ptlim .lb{margin:0}
+.ptlim .seg{flex:0 0 auto}.ptlim .seg button{min-width:64px;min-height:40px;font-weight:700}
+.ptlim .ptlimv{font-size:18px;color:var(--g9)}
+.ptlim .muted{flex:1 1 220px}
+.ptfile{margin-top:10px;padding:12px 14px;border:2px dashed #9fc4ad;border-radius:12px;background:#fbfdfc;font-size:14px}
+.ptprog{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.ptbar{height:10px;border-radius:6px;background:var(--g1);overflow:hidden}
+.ptbar i{display:block;height:100%;background:var(--g7);transition:width .3s}
+.ptfind{display:flex;gap:8px;margin:12px 0 8px}
+.ptfind .in{flex:1 1 auto;min-width:0}
+ul.ptlists{list-style:none;margin:0;padding:0}
+ul.ptlists li{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:9px 0;border-top:1px solid var(--line)}
+ul.ptlists li:first-child{border-top:0}
+ul.ptlists .lnk{flex:0 0 auto;text-align:right;max-width:45%}
+.dan{color:var(--red)}
+/* 12-11-2026: Show password tick */
+label.check.pwshow{display:flex;align-items:center;gap:8px;margin:6px 0 2px;font-size:14px;color:var(--mute);cursor:pointer}
+label.check.pwshow input{width:18px;height:18px;margin:0}
 
 </style>
 </head>
@@ -1272,32 +1306,38 @@ var CEC = (function () {
     total.push(list.length);
     return total;
   }
-  /* Patient list, one table per category; categories with no patients are left out. */
-  function annexGroups(entries, withShift) {
+  /* Patient list, one table per category; categories with no patients are left out. 12-11-2026: compact, to keep the census short on
+     A4: only MR No., name, age and gender, two patients side by side on each line (the diagnoses are summed up in the tables above). */
+  var ANNEX_COLS = (function () {
+    var one = [{ h: 'No.', w: 0.046, a: 'c' }, { h: 'MR No.', w: 0.082, a: 'l' }, { h: 'Patient name', w: 0.24, a: 'l' }, { h: 'Age', w: 0.048, a: 'c' }, { h: 'Gender', w: 0.078, a: 'c' }];
+    return one.concat([{ h: '', w: 0.012, a: 'c', gap: true }], one.map(function (c) { return { h: c.h, w: c.w, a: c.a }; }));
+  })();
+  function annexGroups(entries) {
     var g = groupBy(entries, function (e) { return e.cat; }), out = [];
+    function cells(e, n) { return [n, UP(e.mr) || '-', UP(e.name), e.age !== '' && e.age != null ? e.age : '-', e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '-']; }
     CATS.forEach(function (k) {
       var list = (g[k.c] || []).slice().sort(function (a, b) { return (a.t || '') < (b.t || '') ? -1 : 1; });
       if (!list.length) return;
-      out.push({
-        h: k.l + ' (' + list.length + ')',
-        t: {
-          wrap: true, total: null,
-          cols: [{ h: 'No.', w: 0.05, a: 'c' }, { h: withShift ? 'Shift/Time' : 'Time', w: withShift ? 0.09 : 0.07, a: 'c' }, { h: 'MR No.', w: 0.1, a: 'l' },
-            { h: 'Patient name', w: withShift ? 0.16 : 0.18, a: 'l' }, { h: 'Age/Sex', w: 0.08, a: 'c' }, { h: 'Diagnosis', w: 0.22, a: 'l' },
-            { h: 'Procedures', w: 0.16, a: 'l' }, { h: 'Outcome', w: 0.14, a: 'l' }],
-          rows: list.map(function (e, i) {
-            var o = e.out ? short(OUTS, e.out) + outExtra(e) : 'Awaiting doctor';
-            return [i + 1, (withShift ? e._shift + ' ' : '') + hm(e.t), UP(e.mr), UP(e.name), (e.age !== '' && e.age != null ? e.age : '-') + '/' + (e.sex || '-'),
-              UP(mainDx(e).join(', ')) || '-', UP((e.procs || []).map(function (p) { return label(PROCS, p); }).join(', ')) || '-', o];
-          })
-        }
-      });
+      var half = Math.ceil(list.length / 2), rows = [];
+      for (var i = 0; i < half; i++) rows.push(cells(list[i], i + 1).concat([''], list[i + half] ? cells(list[i + half], i + half + 1) : ['', '', '', '', '']));
+      out.push({ h: k.l + ' (' + list.length + ')', t: { wrap: false, tight: true, total: null, cols: ANNEX_COLS, rows: rows } });
     });
     return out;
   }
   function unsignedNote(entries) {
     var n = entries.filter(function (e) { return !e.signed; }).length;
     return n ? [n + ' patient' + (n === 1 ? ' was' : 's were') + ' not yet signed off by a doctor when this report was generated.'] : [];
+  }
+  /* a table drawn at half width, next to the next half table (12-11-2026); long names wrap */
+  function half(t, on) {
+    if (!on) return t;
+    t.half = true; t.wrap = true;
+    var n = t.cols.length;
+    if (n >= 4 && t.cols.slice(1).every(function (c) { return c.a === 'c' || c.a === 'r'; })) {      // a name, then numbers: the name gets half
+      var ab = { Morning: 'Morn.', Evening: 'Eve.' };
+      t.cols = t.cols.map(function (c, i) { return Object.assign({}, c, { w: i === 0 ? 0.48 : 0.52 / (n - 1), h: n > 4 && ab[c.h] ? ab[c.h] : c.h }); });
+    }
+    return t;
   }
   function letterSections(list) { return list.map(function (s, i) { return { h: String.fromCharCode(65 + i) + '.  ' + s[0], t: s[1] }; }); }
   function nowStamp() { var d = new Date(); return dmy(ymd(d)) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ' hrs'; }
@@ -1321,12 +1361,12 @@ var CEC = (function () {
       body: ['The census of patients attended at the Cardiac Emergency Centre during the ' + name + ' Shift on ' + dmy(shift.censusDate) +
         ' (' + period + ') is submitted as under. A total of ' + c.T + ' patient' + (c.T === 1 ? '' : 's') + ' (Male ' + c.M + ', Female ' + c.F + ') were attended.'],
       sections: letterSections([['Patient census', catTable(entries)], ['Diagnosis-wise distribution', dxTable(entries)],
-        ['Procedures and interventions', procTable(entries)]].concat(hasMeds(entries) ? [['Medications given in the CEC', medTable(entries)]] : [], [['Outcome of patients', outTable(entries)]])),
+        ['Procedures and interventions', half(procTable(entries), hasMeds(entries))]].concat(hasMeds(entries) ? [['Medications given in the CEC', half(medTable(entries), true)]] : [], [['Outcome of patients', outTable(entries)]])),
       notes: (shift.status === 'open' ? ['This shift was still running when this report was generated.'] : []).concat(unsignedNote(entries)),
       closing: 'Submitted for your kind information, please.',
       signs: hodSign(st), copyTo: ['Office copy.'],
       footer: 'Generated by CEC Daily Census, SGHL on ' + nowStamp(),
-      annex: opt.annex && entries.length ? { h: 'ANNEXURE: PATIENT LIST, ' + name.toUpperCase() + ' SHIFT, ' + dmy(shift.censusDate), groups: annexGroups(entries, false), legend: LEGEND } : null
+      annex: opt.annex && entries.length ? { h: 'ANNEXURE: PATIENT LIST, ' + name.toUpperCase() + ' SHIFT, ' + dmy(shift.censusDate), groups: annexGroups(entries), legend: '' } : null
     };
   }
 
@@ -1359,14 +1399,14 @@ var CEC = (function () {
       subject: 'DAILY CENSUS REPORT, CARDIAC EMERGENCY CENTRE (24 HOURS) FROM ' + dmy(date) + ' TO ' + dmy(next),
       body: ['The census of patients attended at the Cardiac Emergency Centre for the 24 hours from ' + t0 + ' hrs on ' + dmy(date) + ' to ' + t0 +
         ' hrs on ' + dmy(next) + ' is submitted as under. A total of ' + c.T + ' patient' + (c.T === 1 ? '' : 's') + ' (Male ' + c.M + ', Female ' + c.F + ') were attended.'],
-      sections: letterSections([['Shift-wise census', shiftTab], ['Category-wise census', catTab], ['Diagnosis-wise distribution', dxTable(entries)],
-        ['Procedures and interventions', procTab]].concat(hasMeds(entries) ? [['Medications given in the CEC', byShift(entries, medItems(entries), function (e, k) { return hasMed(e, k); }, 'Medication', false)]] : [],
+      sections: letterSections([['Shift-wise census', half(shiftTab, true)], ['Category-wise census', half(catTab, true)], ['Diagnosis-wise distribution', dxTable(entries)],
+        ['Procedures and interventions', half(procTab, hasMeds(entries))]].concat(hasMeds(entries) ? [['Medications given in the CEC', half(byShift(entries, medItems(entries), function (e, k) { return hasMed(e, k); }, 'Medication', false), true)]] : [],
         [['Outcome of patients', outTab]])),
       notes: notes.concat(unsignedNote(entries)),
       closing: 'Submitted for your kind information, please.',
       signs: hodSign(st), copyTo: ['Office copy.'],
       footer: 'Generated by CEC Daily Census, SGHL on ' + nowStamp(),
-      annex: opt.annex && entries.length ? { h: 'ANNEXURE: PATIENT LIST, 24 HOURS FROM ' + dmy(date), groups: annexGroups(entries, true), legend: LEGEND } : null
+      annex: opt.annex && entries.length ? { h: 'ANNEXURE: PATIENT LIST, 24 HOURS FROM ' + dmy(date), groups: annexGroups(entries), legend: '' } : null
     };
   }
 
@@ -1456,7 +1496,7 @@ var CEC = (function () {
   /* ---------- HTML preview ---------- */
   function h(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]; }); }
   function tableHtml(t) {
-    var s = '<table class="lt"><colgroup>' + t.cols.map(function (c) { return '<col style="width:' + (c.w * 100) + '%">'; }).join('') + '</colgroup><thead><tr>' +
+    var s = '<table class="lt' + (t.tight ? ' tight' : '') + '"><colgroup>' + t.cols.map(function (c) { return '<col style="width:' + (c.w * 100) + '%">'; }).join('') + '</colgroup><thead><tr>' +
       t.cols.map(function (c) { return '<th class="' + c.a + '">' + h(c.h) + '</th>'; }).join('') + '</tr></thead><tbody>';
     if (!t.rows.length) s += '<tr><td colspan="' + t.cols.length + '" class="c"><i>' + h(t.empty || 'Nil') + '</i></td></tr>';
     t.rows.forEach(function (r) { s += '<tr>' + r.map(function (v, i) { return '<td class="' + t.cols[i].a + '">' + h(v) + '</td>'; }).join('') + '</tr>'; });
@@ -1481,7 +1521,7 @@ var CEC = (function () {
     if (m.annex) {
       s += '<div class="page annex"><div class="ah">' + h(m.annex.h) + '</div><div class="aref">Ref: ' + h(m.refNo) + '</div>';
       m.annex.groups.forEach(function (g, i) { s += '<div class="sh">' + (i + 1) + '.  ' + h(g.h) + '</div>' + tableHtml(g.t); });
-      s += '<div class="legend">' + h(m.annex.legend) + '</div><div class="foot">' + h(m.footer) + '</div></div>';
+      s += (m.annex.legend ? '<div class="legend">' + h(m.annex.legend) + '</div>' : '') + '<div class="foot">' + h(m.footer) + '</div></div>';
     }
     return s;
   }
@@ -1491,7 +1531,7 @@ var CEC = (function () {
     var P = PDFGen, d = new P.Doc();
     d.title = m.title;
     if (logo) d.setImage(logo.bytes, logo.w, logo.h);
-    var L = 56, R = d.W - 56, CW = R - L, BOTTOM = d.H - 64, TOP = 56, y = 0, LH = 15, FS = 11.5;
+    var L = 56, R = d.W - 56, CW = R - L, BOTTOM = d.H - 64, TOP = 56, y = 0, LH = 14, FS = 11;
     function ensure(hh) { if (y + hh > BOTTOM) { d.addPage(); y = TOP; } }
     var lh = 70, lw = logo ? lh * logo.w / logo.h : 0;
     if (logo) d.image(L, 30, lw, lh);
@@ -1501,41 +1541,48 @@ var CEC = (function () {
     d.text(cx, 70, 'SINDH GOVERNMENT HOSPITAL LIAQUATABAD, KARACHI', 'B', size2, 'center');
     d.text(cx, 89, 'CARDIAC EMERGENCY CENTRE', 'B', 12.5, 'center');
     d.line(L, 108, R, 108, 1.8); d.line(L, 111.5, R, 111.5, 0.5);
-    y = 134;
+    y = 130;
     d.text(L, y, m.refNo, 'R', FS); d.text(R, y, 'Dated: ' + m.dated, 'R', FS, 'right');
-    y += 28; d.text(L, y, 'To,', 'R', FS);
+    y += 22; d.text(L, y, 'To,', 'R', FS);
     m.addressee.forEach(function (a) { y += LH; d.text(L + 28, y, a, 'R', FS); });
-    y += 26;
+    y += 20;
     d.text(L, y, 'Subject:', 'B', FS);
     var sx = L + 52, sl = P.wrap(m.subject, 'B', FS, R - sx);
     sl.forEach(function (line, i) { var w = d.text(sx, y, line, 'B', FS); d.line(sx, y + 2, sx + w, y + 2, 0.6); if (i < sl.length - 1) y += LH; });
-    y += 24; d.text(L, y, 'Respected Sir/Madam,', 'R', FS);
+    y += 20; d.text(L, y, 'Respected Sir/Madam,', 'R', FS);
     m.body.forEach(function (p) {
       y += 8;
       P.wrap(p, 'R', FS, CW - 28).forEach(function (line, i) { y += LH; d.text(i === 0 ? L + 28 : L, y, line, 'R', FS); });
     });
     y += 14;
 
-    function layoutRow(t, vals, f, size) {
+    function layoutRow(t, vals, f, size, W) {
+      W = W || CW;
       var lines = vals.map(function (v, i) {
-        var cw = t.cols[i].w * CW - 8, s = v == null ? '' : String(v);
+        var cw = t.cols[i].w * W - 8, s = v == null ? '' : String(v);
+        if (t.cols[i].gap || s === '') return [''];
         return t.wrap ? P.wrap(s, f, size, cw).slice(0, 4) : [P.fit(s, f, size, cw)];
       });
       var n = Math.max.apply(null, lines.map(function (l) { return l.length; }));
-      return { lines: lines, h: n > 1 ? n * (size + 2.5) + 7 : size + 8 };
+      return { lines: lines, one: n <= 1, h: n > 1 ? n * (size + 2) + 5 : size + (t.tight ? 4.5 : 5) };   // 12-11-2026: tighter rows (census on fewer pages)
     }
-    function table(t, size) {
-      size = size || 10.5;
-      var xs = [], x = L;
-      t.cols.forEach(function (c) { xs.push(x); x += c.w * CW; });
+    function table(t, size, X, W) {
+      size = size || 9; X = X == null ? L : X; W = W || CW;
+      var xs = [], x = X;
+      t.cols.forEach(function (c) { xs.push(x); x += c.w * W; });
       function draw(lay, f, fill) {
-        var rowH = lay.h;
-        d.rect(L, y, CW, rowH, fill, 0, 0.6);
-        for (var i = 1; i < xs.length; i++) d.line(xs[i], y, xs[i], y + rowH, 0.6);
+        var rowH = lay.h, gap = -1;
+        t.cols.forEach(function (c, i) { if (c.gap) gap = i; });
+        if (gap < 0) d.rect(X, y, W, rowH, fill, 0, 0.6);
+        else {                                   // two lists side by side: two boxes, nothing drawn in the gap between them
+          var gx = xs[gap], gw = t.cols[gap].w * W;
+          d.rect(X, y, gx - X, rowH, fill, 0, 0.6); d.rect(gx + gw, y, X + W - gx - gw, rowH, fill, 0, 0.6);
+        }
+        for (var i = 1; i < xs.length; i++) if (i !== gap && i !== gap + 1) d.line(xs[i], y, xs[i], y + rowH, 0.6);
         lay.lines.forEach(function (ls, i) {
-          var c = t.cols[i], cw = c.w * CW;
+          var c = t.cols[i], cw = c.w * W;
           ls.forEach(function (txt, j) {
-            var by = ls.length === 1 && lay.h === size + 8 ? y + rowH / 2 + size * 0.34 : y + 4 + size * 0.85 + j * (size + 2.5);
+            var by = ls.length === 1 && lay.one ? y + rowH / 2 + size * 0.34 : y + 3 + size * 0.85 + j * (size + 2);
             if (c.a === 'c') d.text(xs[i] + cw / 2, by, txt, f, size, 'center');
             else if (c.a === 'r') d.text(xs[i] + cw - 4, by, txt, f, size, 'right');
             else d.text(xs[i] + 4, by, txt, f, size);
@@ -1543,55 +1590,83 @@ var CEC = (function () {
         });
         y += rowH;
       }
-      var head = layoutRow(t, t.cols.map(function (c) { return c.h; }), 'B', size);
-      var rows = t.rows.map(function (r) { return layoutRow(t, r, 'R', size); });
-      var tot = t.total ? layoutRow(t, t.total, 'B', size) : null;
+      var head = layoutRow(t, t.cols.map(function (c) { return c.h; }), 'B', size, W);
+      var rows = t.rows.map(function (r) { return layoutRow(t, r, 'R', size, W); });
+      var tot = t.total ? layoutRow(t, t.total, 'B', size, W) : null;
       var full = head.h + rows.reduce(function (a, r) { return a + r.h; }, 0) + (tot ? tot.h : 0) + (rows.length ? 0 : size + 8);
-      if (full <= BOTTOM - TOP && y + full > BOTTOM) { d.addPage(); y = TOP; } else ensure(head.h + (rows[0] ? rows[0].h : size + 8) * 2);
+      /* a short table (8 rows or fewer) is kept on one page; a longer one may go on over the page (its heading is repeated) when 4 rows fit here */
+      if (rows.length <= 8 && full <= BOTTOM - TOP && y + full > BOTTOM) { d.addPage(); y = TOP; } else ensure(head.h + (rows[0] ? rows[0].h : size + 6) * Math.min(4, Math.max(1, rows.length)));
       draw(head, 'B', 0.86);
       if (!rows.length) {
-        d.rect(L, y, CW, size + 8, null, 0, 0.6);
-        d.text(L + CW / 2, y + (size + 8) / 2 + size * 0.34, t.empty || 'Nil', 'I', size, 'center');
-        y += size + 8;
+        d.rect(X, y, W, size + 6, null, 0, 0.6);
+        d.text(X + W / 2, y + (size + 6) / 2 + size * 0.34, t.empty || 'Nil', 'I', size, 'center');
+        y += size + 6;
       }
-      rows.forEach(function (r) { if (y + r.h > BOTTOM) { d.addPage(); y = TOP; draw(head, 'B', 0.86); } draw(r, 'R', null); });
-      if (tot) { if (y + tot.h > BOTTOM) { d.addPage(); y = TOP; draw(head, 'B', 0.86); } draw(tot, 'B', 0.94); }
-      if (t.note) { y += 11; d.text(L, y, t.note, 'I', 9.5); y += 2; }
-      y += 14;
+      rows.forEach(function (r, i) {
+        var need = r.h + (tot && i === rows.length - 1 ? tot.h : 0);      // the total line never stands alone on a new page
+        if (y + need > BOTTOM) { d.addPage(); y = TOP; draw(head, 'B', 0.86); }
+        draw(r, 'R', null);
+      });
+      if (tot) { if (y + tot.h > BOTTOM) { d.addPage(); y = TOP; draw(head, 'B', 0.86); } draw(tot, 'B', 0.94); }   // (the last rows keep the total with them: see below)
+      if (t.note) { y += 9; d.text(X, y, t.note, 'I', 8); y += 2; }
+      y += 8;
     }
-    function section(title, t, size) {
-      var est = (t.rows.length + 2 + (t.total ? 1 : 0)) * ((size || 10.5) + 8) + 22;
-      if (est <= BOTTOM - TOP && y + est > BOTTOM) { d.addPage(); y = TOP; } else ensure(70);
-      y += 4; d.text(L, y, title, 'B', size ? 11 : FS); y += 7;
-      table(t, size);
+    function section(title, t, size, X, W) {
+      var rh = (size || 9) + (t.tight ? 4.5 : 5), est = (t.rows.length + 2 + (t.total ? 1 : 0)) * rh + 18;
+      if (t.rows.length <= 8 && est <= BOTTOM - TOP && y + est > BOTTOM) { d.addPage(); y = TOP; } else ensure(18 + rh * (2 + Math.min(4, Math.max(1, t.rows.length))));
+      y += 2; d.text(X == null ? L : X, y, title, 'B', 10); y += 5;
+      table(t, size, X, W);
     }
-    m.sections.forEach(function (sec) { section(sec.h, sec.t); });
+    /* the height of a section drawn at width W (to place two side by side) */
+    function sectionH(t, W) {
+      var rs = [layoutRow(t, t.cols.map(function (c) { return c.h; }), 'B', 9, W)].concat(t.rows.map(function (r) { return layoutRow(t, r, 'R', 9, W); }), t.total ? [layoutRow(t, t.total, 'B', 9, W)] : []);
+      return 7 + rs.reduce(function (a, r) { return a + r.h; }, 0) + (t.rows.length ? 0 : 15) + (t.note ? 11 : 0) + 8;
+    }
+    for (var si = 0; si < m.sections.length; si++) {
+      var sec = m.sections[si], nx = m.sections[si + 1];
+      if (sec.t.half && nx && nx.t.half) {                 // two short tables side by side (12-11-2026)
+        var GAP = 16, W2 = (CW - GAP) / 2, need = Math.max(sectionH(sec.t, W2), sectionH(nx.t, W2));
+        if (need <= BOTTOM - TOP) {
+          if (y + need > BOTTOM) { d.addPage(); y = TOP; }
+          var y0 = y; section(sec.h, sec.t, null, L, W2); var y1 = y; y = y0; section(nx.h, nx.t, null, L + W2 + GAP, W2); y = Math.max(y, y1);
+          si++; continue;
+        }
+      }
+      section(sec.h, sec.t);
+    }
     if (m.notes.length) {
       var nl = P.wrap('Note: ' + m.notes.join(' '), 'I', 10.5, CW);
       ensure(nl.length * 14 + 6);
       nl.forEach(function (line) { y += 13; d.text(L, y, line, 'I', 10.5); });
       y += 10;
     }
-    ensure(150);
+    ensure(125);
     y += 6; d.text(L + 28, y, m.closing, 'R', FS);
-    y += 22;
+    y += 14;
     var sw = 200, sy = y;
     m.signs.forEach(function (g, i) {
       var x0 = m.signs.length === 1 ? R - sw : (i === 0 ? L : R - sw), yy = sy;
-      yy += 40; d.line(x0, yy, x0 + 170, yy, 0.6);
+      yy += 32; d.line(x0, yy, x0 + 170, yy, 0.6);
       yy += 15; d.text(x0, yy, '(' + g.name + ')', 'B', FS);
       g.lines.forEach(function (l) { yy += 14; d.text(x0, yy, l, 'R', 10.5); });
       y = Math.max(y, yy);
     });
-    y += 26; ensure(20 + m.copyTo.length * 14);
-    d.text(L, y, 'Copy to:', 'B', 10.5);
-    m.copyTo.forEach(function (c, i) { y += 14; d.text(L + 18, y, (i + 1) + '.  ' + c, 'R', 10.5); });
+    if (m.signs.length === 1 && m.copyTo.length <= 3) {     // one signature on the right: "Copy to" on the left, on the same lines (12-11-2026)
+      var cy = sy + 47;
+      d.text(L, cy, 'Copy to:', 'B', 10.5);
+      m.copyTo.forEach(function (c, i) { cy += 14; d.text(L + 18, cy, (i + 1) + '.  ' + c, 'R', 10.5); });
+      y = Math.max(y, cy);
+    } else {
+      y += 16; ensure(20 + m.copyTo.length * 14);
+      d.text(L, y, 'Copy to:', 'B', 10.5);
+      m.copyTo.forEach(function (c, i) { y += 14; d.text(L + 18, y, (i + 1) + '.  ' + c, 'R', 10.5); });
+    }
     if (m.annex) {
       d.addPage(); y = TOP;
       d.text(d.W / 2, y, m.annex.h, 'B', 12, 'center'); y += 16;
       d.text(d.W / 2, y, 'Ref: ' + m.refNo, 'R', 10, 'center'); y += 14;
-      m.annex.groups.forEach(function (g, i) { section((i + 1) + '.  ' + g.h, g.t, 8.5); });
-      ensure(14); d.text(L, y, m.annex.legend, 'I', 9);
+      m.annex.groups.forEach(function (g, i) { section((i + 1) + '.  ' + g.h, g.t, g.t.tight ? 8 : 8.5); });
+      if (m.annex.legend) { ensure(14); d.text(L, y, m.annex.legend, 'I', 9); }
     }
     var nP = d.pages.length;
     for (var i = 0; i < nP; i++) {
@@ -2277,7 +2352,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     work: null, prevShift: null, prevUntil: null, openEnds: null, lst: null, lastAct: Date.now(),
     wel: null, welAt: 0, imgCache: {}, cen: { mode: null }, mr: null, autoMr: false, formOrder: [], lstOpen: false, rosterShift: 'M', menuOpen: false, wedit: null,
     pendingResets: 0, fg: null, qer: null, opt: {}, saving: 0, er: null, ecgQ: '', erQ: '',
-    auto: null, slipSel: {}, paperNow: null, apNext: 0, claiming: {}, petty: { kind: 'REG', where: 'cur', text: '', result: null }
+    auto: null, slipSel: {}, paperNow: null, apNext: 0, claiming: {}, petty: { kind: 'REG', text: '', result: null }
   };
 
   /* ---------------- utilities ---------------- */
@@ -2293,7 +2368,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function errText(e) {
     var m = (e && (e.message || e.code)) || String(e);
-    return String(m).replace(/^(ScriptError|Exception|Error):\s*/i, '').replace(/^(AUTH|BUSY):\s*/, '');
+    return String(m).replace(/^(ScriptError|Exception|Error):\s*/i, '').replace(/^(AUTH|BUSY|OFFHOURS):\s*/, '');
   }
   function isAuthErr(e) { return /AUTH:/.test((e && e.message) || String(e)); }
   function modal(title, bodyHtml, buttons, stack) {
@@ -2411,7 +2486,11 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function api(fn) {
     var args = [S.token].concat(Array.prototype.slice.call(arguments, 1));
     return call(fn, args).then(function (v) { if (S.offline) { S.offline = false; renderBanner(); } return v; },
-      function (e) { if (e && e.offline) { if (!S.offline) { S.offline = true; renderBanner(); } } else if (isAuthErr(e)) signOut(errText(e)); throw e; });
+      function (e) {
+        if (e && e.offline) { if (!S.offline) { S.offline = true; renderBanner(); } } else if (isAuthErr(e)) signOut(errText(e));
+        else if (/OFFHOURS:/.test((e && e.message) || String(e)) && !S.offHours && fn !== 'apiState') setTimeout(function () { loadState().then(function () { if (S.offHours) { S.form = null; closeModal(); render(); } }, function () { }); }, 300);
+        throw e;
+      });
   }
   /* A temporary failure (the census busy with many saves at once, Google's lock wait, a slow or lost connection): worth trying again,
      and the data must be kept, never thrown away (09-11-2026). */
@@ -2449,6 +2528,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function applyDemo() { var on = isDemo(); CEC.setDemo(on); document.body.classList.toggle('demo', on); }
 
   function applyState(st) {
+    if (st.off) { S.me = st.me; S.settings = mergeSettings(st.settings); S.offHours = st.off; S.synced = new Date(); return; }   // a student after the morning shift
+    S.offHours = null;
     var oldOpen = S.open ? S.open.id : null;
     S.me = st.me; S.settings = mergeSettings(st.settings); S.open = st.open; S.openEnds = st.openEnds; S.prevShift = st.prev; S.prevUntil = st.prevUntil;
     S.handover = st.handover; S.pendingUsers = st.pendingUsers || 0; S.pendingResets = st.pendingResets || 0; S.synced = new Date(); S.mr = st.mr || null; S.pendCerts = st.pendingCerts || 0;
@@ -2465,13 +2546,31 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function loadState() {
     return api('apiState').then(function (st) {
-      applyState(st); S.stale = false;
+      reloadCheck(st); applyState(st); S.stale = false;
       if (st.newToken) { S.token = st.newToken; store_('cec_token', st.newToken); var of = APP_BUILD && store_('cec_off'); if (of && of.uid === st.me.id) { of.token = st.newToken; store_('cec_off', of); } }   // renewed while in use (website too: 11-11-2026)
       delete st.newToken; saveCache(st);
       setTimeout(flushQueue, 0); setTimeout(vqFlush, 0); setTimeout(prqFlush, 0);
     });
   }
   /* The last state is kept on the device, so the census opens at once next time (then it is brought up to date in the background). */
+  /* 12-11-2026: the admin can make every open census page and phone app reload (to load a new version); nobody is signed out. A page
+     reloads only when nothing is being typed or saved (patients kept on the device and autoprint rounds stay on the device). */
+  function reloadCheck(st) {
+    var at = (st && st.reloadAt) || '';
+    if (S.reloadSeen == null) { S.reloadSeen = at; return; }
+    if (at && at !== S.reloadSeen) S.reloadWant = at;
+  }
+  function reloadTry() {
+    if (!S.reloadWant) return;
+    if (S.form || S.cert || S.af || S.pending > 0 || $('modal').innerHTML || typing() || (S.petty && S.petty.busy) || S.loggingIn) return;
+    try { if (localStorage.getItem('cec_apclaim')) return; } catch (e) { }
+    S.reloadSeen = S.reloadWant; S.reloadWant = null; location.reload();
+  }
+  setInterval(reloadTry, 3000);
+  setInterval(function () {                                // pages that do not refresh by themselves ask every 2 minutes
+    if (!S.me || !S.token || isOff() || S.reloadWant || Date.now() - (S.synced ? +S.synced : 0) < 110000) return;
+    api('apiReloadAt').then(function (r) { reloadCheck({ reloadAt: r.at }); reloadTry(); }, function () { });
+  }, 120000);
   function saveCache(st) { store_('cec_cache', { uid: st.me.id, view: st.me.demoView ? 'd' : '', st: st, at: Date.now() }); }
   function tokenParts(tok) {
     try { var p = String(tok).split('.')[0].replace(/-/g, '+').replace(/_/g, '/'); while (p.length % 4) p += '='; return atob(p).split('|'); } catch (e) { return []; }
@@ -2528,7 +2627,30 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function fromB64(s) { var bin = atob(s), a = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a; }
 
   /* ---------------- sign in ---------------- */
+  /* Show password (12-11-2026): a tick under the password boxes; while it stays ticked the password can be read (fewer typing
+     mistakes, fewer locked IDs). The choice is remembered on this device. Added to every password box by itself. */
+  function pwTicks() {
+    var on = !!store_('cec_showpw'), boxes = [];
+    Array.prototype.forEach.call(document.querySelectorAll('input[type=password], input[data-pw]'), function (inp) {
+      if (!inp.hasAttribute('data-pw')) { inp.setAttribute('data-pw', '1'); inp.type = on ? 'text' : 'password'; inp.setAttribute('autocapitalize', 'off'); inp.setAttribute('spellcheck', 'false'); }
+      var box = inp.closest('form, .mbox, .card, section, #sheet') || inp.parentNode;
+      if (boxes.indexOf(box) < 0) boxes.push(box);
+    });
+    boxes.forEach(function (box) {
+      if (box.querySelector('.pwshow')) return;
+      var ins = box.querySelectorAll('input[data-pw]'), last = ins[ins.length - 1];
+      if (!last) return;
+      var lab = document.createElement('label'); lab.className = 'check pwshow';
+      lab.innerHTML = '<input type="checkbox" data-act="pw-show"' + (on ? ' checked' : '') + '> Show password';
+      last.parentNode.insertBefore(lab, last.nextSibling);
+    });
+  }
+  (function () {
+    var due = false;
+    try { new MutationObserver(function () { if (due) return; due = true; requestAnimationFrame(function () { due = false; pwTicks(); }); }).observe(document.body, { childList: true, subtree: true }); } catch (e) { }
+  })();
   function signOut(msg, byUser) {
+    if (byUser && S.token && S.me && !S.me.demo) { try { call('apiSignOut', [S.token]).then(null, function () { }); } catch (e) { } }   // frees this device's place (one ID: at most 2 devices)
     if (APP_BUILD && byUser) { store_('cec_cache', ''); var off = store_('cec_off'); if (off) { off.token = ''; store_('cec_off', off); } }
     if (!APP_BUILD) store_('cec_cache', '');              // website: nothing of the census stays on the PC after signing out
     S.token = null; S.me = null; S.form = null; S.cert = null; S.view = 'home'; S.users = null; S.log = null; S.docs = null; S.certs = null;
@@ -2592,7 +2714,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       S.token = r.token; store_('cec_token', r.token); touch(); S.offline = false;
       var st = r.state ? Promise.resolve(r.state) : null;
       S.defaultPw = !!(r.me && r.me.defaultPw);
-      return st ? st.then(function (x) { applyState(x); S.stale = false; delete x.newToken; saveCache(x); }) : loadState();
+      return st ? st.then(function (x) { reloadCheck(x); applyState(x); S.stale = false; delete x.newToken; saveCache(x); }) : loadState();
     }).then(function () {
       loginBusy(false); S.view = 'home'; S.prev = 'home'; render(); toast('Welcome, ' + S.me.name);
       if (APP_BUILD) setTimeout(function () { rememberLogin(id, pw, S.token); }, 300);   // the offline copy of the password is made after the home page shows
@@ -2658,6 +2780,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function setView(v) {
     if (v !== 'letter' && v !== 'detail') S.prev = v;
     S.view = v; menu(false); render(); window.scrollTo(0, 0);
+    if (v === 'petty') pettyLoad(); else if (v === 'mrreg') mrRegLoad();
     if (v === 'settings' && isAdmin()) api('apiState').then(function (st) { applyCustom(st.custom); if (S.view === 'settings' && !typing()) render(); }, function () { });   // latest options added by users
   }
   /* ---------- main menu: a drop-down on phones, a bar with a census submenu on computers ---------- */
@@ -2673,6 +2796,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     settings: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/>',
     bulk: '<path d="M3 6h11M3 12h8M3 18h6"/><path d="M14 15l3 3 5-6"/>',
     petty: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h3M8 12h3M8 16h3M13 8h3M13 12h3M13 16h3"/>',
+    mrreg: '<path d="M5 4h11l3 3v13H5z"/><path d="M8 9h2M8 13h2M8 17h2M12 9h4M12 13h4M12 17h4"/>',
     about: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5h.01" stroke-width="2.6" stroke-linecap="round"/>',
     signout: '<path d="M14 4h5v16h-5"/><path d="M10 8l-4 4 4 4"/><path d="M6 12h10"/>'
   };
@@ -2685,7 +2809,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (canCert()) a.push({ v: 'certs', l: 'Death certificate', badge: S.pendCerts || 0, blink: true });
     if (canClin()) a.push({ v: 'forms', l: 'Download forms' });              // not for students
     if (canClin()) a.push({ v: 'lists', l: 'Registers' });
-    if (canEdit()) a.push({ v: 'petty', l: 'Petty OPD register' });
+    if (isAdmin()) a.push({ v: 'petty', l: 'Petty OPD register' });       // 12-11-2026: the admin only
+    a.push({ v: 'mrreg', l: 'MR register' });
     if (canClin()) a.push({ v: 'census', l: 'Patient census', sub: CEN_MODES });
     if (isAdmin()) a.push({ v: 'bulk', l: 'Bulk sign-off' });
     a.push({ v: 'about', l: 'About' });
@@ -2734,9 +2859,19 @@ if (typeof module !== 'undefined') module.exports = CEC;
     a.classList.add('hidden'); a.innerHTML = '';
     if (!S.me) {
       nav.classList.add('hidden'); nav.innerHTML = ''; $('menuBtn').classList.add('hidden'); ub.classList.add('hidden'); ub.innerHTML = ''; menu(false);
-      v.innerHTML = hasGoogle() ? authHtml() : APP_BUILD ? setupHtml() : '<section class="card"><div class="ct">Open the census link</div><p>This page works only through the Google web app link of the CEC Daily Census.</p></section>';
+      v.innerHTML = S.token && S.startErr ? '<div class="narrow"><section class="card center"><div class="ct">Connecting to the census</div><p class="small">You are still signed in. The census could not be reached just now (' + h(S.startErr) + '); it is tried again by itself every few seconds.</p>' +
+        '<div class="sbtns"><button class="btn pri" data-act="start-retry">Try again now</button><button class="btn" data-act="start-other">Sign in with another ID</button></div></section></div>' : hasGoogle() ? authHtml() : APP_BUILD ? setupHtml() : '<section class="card"><div class="ct">Open the census link</div><p>This page works only through the Google web app link of the CEC Daily Census.</p></section>';
       renderBanner();
       headerHeight(); return;
+    }
+    if (S.offHours) {                                     // 12-11-2026: students see nothing after the morning shift (they stay signed in)
+      var oh = S.offHours, od = new Date(Date.parse(oh.opens) + 5 * 3600000).toISOString().slice(0, 10), td = new Date(Date.now() + 5 * 3600000).toISOString().slice(0, 10);
+      nav.classList.add('hidden'); nav.innerHTML = ''; $('menuBtn').classList.add('hidden'); menu(false); ub.classList.remove('hidden');
+      ub.innerHTML = '<span>Signed in as <b>' + h(S.me.name) + '</b> &middot; ' + h(S.me.roleLabel) + '</span>';
+      v.innerHTML = '<div class="narrow"><section class="card center"><div class="ct">Closed for students now</div><p>Students can use the census in the morning shift only, <b>' + h(oh.from) + ' to ' + h(oh.to) + '</b>.</p>' +
+        '<p class="small muted">It opens again at <b>' + h(oh.from) + '</b>' + (od !== td ? ' tomorrow' : '') + '. You stay signed in: this page opens by itself then.</p>' +
+        '<div class="sbtns" style="justify-content:center"><button class="btn" data-act="sign-out">Sign out</button></div></section></div>';
+      renderBanner(); headerHeight(); return;
     }
     nav.classList.remove('hidden'); $('menuBtn').classList.remove('hidden'); ub.classList.remove('hidden');
     nav.innerHTML = navHtml(); nav.classList.toggle('many', navItems().length > 9); headerHeight(); renderBanner();
@@ -2772,7 +2907,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     else if (S.view === 'wedit') v.innerHTML = weditHtml();
     else if (S.view === 'appt') v.innerHTML = canAppt() ? apptHtml() : '<section class="card">You do not have the right to give appointments.</section>';
     else if (S.view === 'bulk') v.innerHTML = bulkHtml();
-    else if (S.view === 'petty') v.innerHTML = canEdit() ? pettyHtml() : '<section class="card">The petty OPD register is for doctors.</section>';
+    else if (S.view === 'petty') v.innerHTML = isAdmin() ? pettyHtml() : '<section class="card">The petty OPD register is for the admin.</section>';
+    else if (S.view === 'mrreg') v.innerHTML = mrRegHtml();
     else if (Q_KINDS[S.view]) v.innerHTML = canEnter() ? queueHtml(S.view) : '<section class="card">You do not have the right to add patients.</section>';
     else if (ER_KINDS[S.view]) {
       v.innerHTML = canClin() ? erHtml() : '<section class="card">This is for doctors and nursing staff only.</section>';
@@ -3109,7 +3245,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     return '<section class="card"><div class="ct">Data protection</div>' +
       (warn.length ? '<div class="warn" style="margin:0 0 10px">' + warn.join('<br>') + '</div>' : '<p class="small" style="margin:0 0 8px">&#10003; Tabs protected &middot; nightly backup on &middot; sign-in lock after 5 wrong passwords.</p>') +
       '<div class="kv small" style="margin:0 0 8px">Last backup copy: <b>' + (b.lastBackup ? h(fmtTime(b.lastBackup)) : 'none yet') + '</b> (Drive folder \u201cCEC Census Backups\u201d)</div>' +
-      '<div class="sbtns"><button class="btn sm" data-act="sec-backup">Back up now</button><button class="btn sm dan" data-act="sec-all">Sign out everybody</button><button class="btn sm" data-act="sec-load">&#8635; Refresh</button></div>' +
+      '<div class="sbtns"><button class="btn sm" data-act="sec-backup">Back up now</button><button class="btn sm" data-act="sec-reload">Reload everybody (new version)</button><button class="btn sm dan" data-act="sec-all">Sign out everybody</button><button class="btn sm" data-act="sec-load">&#8635; Refresh</button></div>' +
       '<div class="gh">Recycle bin (' + items.length + ')</div><p class="muted small" style="margin:0 0 6px">Deleted patients, certificates, photos, appointments and documents are kept encrypted for ' + b.days +
       ' days and then removed for ever; nobody can remove them sooner. ' + (b.versions ? b.versions + ' earlier version' + (b.versions === 1 ? '' : 's') + ' of changed patient entries are also kept (open a patient and tap Earlier versions).' : '') + '</p>' +
       (items.length ? '<div class="plist">' + items.slice(0, 200).map(function (x) {
@@ -4202,7 +4338,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         var again = items.filter(function (x) { return fresh.indexOf(x) < 0; }), list = [];
         items.forEach(function (x) { if (byId[x.e.id]) list.push({ e: byId[x.e.id], sh: x.sh }); else if (again.indexOf(x) >= 0) list.push(x); });
         var gone = fresh.length - got.length;
-        if (gone) toast(gone + ' slip' + (gone === 1 ? ' was' : 's were') + ' printed on another device a moment ago, so ' + (gone === 1 ? 'it is' : 'they are') + ' not printed again.');
+        if (gone) toast(gone + ' slip' + (gone === 1 ? ' was' : 's were') + ' printed on another device (or signed off by the doctor) a moment ago, so ' + (gone === 1 ? 'it is' : 'they are') + ' not printed here.');
         if (!list.length) { if (S.view === 'slipq') render(); return; }
         if (again.length) noteReprint(again);               // ticked printed slips: printed again, same numbers and time
         printSlips(list, paper, { claimed: true });
@@ -4283,7 +4419,15 @@ if (typeof module !== 'undefined') module.exports = CEC;
      "Without vitals": a slip is ready as soon as the patient is registered (short-staffed shifts). "With vitals": once the vitals are saved
      (a patient whose vitals are never entered stays on the slip page to print by hand). A4: two slips a sheet; a slip left alone waits up to
      10 minutes in all for a partner, then prints alone. */
-  var AP_MS = 5 * 60000, AP_PAIR_MS = 10 * 60000;
+  var AP_MS = 5 * 60000, AP_PAIR_MS = 10 * 60000, AP_POLL = 10000;
+  /* 12-11-2026: the timer is chosen (off, 30 s, 1, 2, 3 or 5 min). Off: each slip prints as soon as it is ready (with vitals: once the
+     vitals are in); the printing device looks for ready slips every 10 seconds. Emergency / Resus slips print at once whatever the timer
+     (looked for every 10 seconds too), never wait for vitals and never wait for an A4 partner. */
+  var AP_EVERY = [[0, 'Off', 'each slip at once'], [30, '30 sec', ''], [60, '1 min', ''], [120, '2 min', ''], [180, '3 min', ''], [300, '5 min', '']];
+  function apEvery() { var n = S.auto && S.auto.every; return n == null || isNaN(n) ? AP_MS : n * 1000; }
+  function apInstant() { return apEvery() === 0; }
+  function apEveryText(n) { n = n == null ? 300 : n; return n === 0 ? 'each slip as soon as it is ready' : n < 60 ? 'every ' + n + ' seconds' : 'every ' + (n / 60) + ' minute' + (n === 60 ? '' : 's'); }
+  function apIsEr(e) { return e && e.cat === 'EMR'; }
   function claimId() { return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 9); }   // a request sent again gets the same slips back
   function myDev() {
     var d = store_('cec_dev');
@@ -4298,12 +4442,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function apReady(sh) {
     sh = sh || S.open; if (!apOn() || !sh) return [];
     var vit = S.auto.mode !== 'now';
-    return (sh.entries || []).filter(function (e) { return !/^(q-|tmp)/.test(e.id) && slipWaiting(e) && (!vit || hasVitals(e)); })
+    return (sh.entries || []).filter(function (e) { return !/^(q-|tmp)/.test(e.id) && slipWaiting(e) && (!vit || hasVitals(e) || apIsEr(e)); })
       .map(function (e) { return { e: e, sh: S.open }; }).sort(function (a, b) { return apReadyAt(a.e) - apReadyAt(b.e); });
   }
   /* When a slip became ready: without vitals, when its number was given; with vitals, when this device first saw the vitals. */
   function apReadyAt(e) {
-    if (S.auto && S.auto.mode === 'now') return Date.parse(e.tokAt || e.t) || Date.now();
+    if (S.auto && (S.auto.mode === 'now' || apIsEr(e))) return Date.parse(e.tokAt || e.t) || Date.now();
     var m = apSeen(); return m[e.id] || Date.now();
   }
   function apSeen() {
@@ -4318,21 +4462,22 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function apSaveNext() { store_('cec_apnext', S.apNext && S.open ? { shift: S.open.id, at: S.apNext } : ''); }
   function apRowNote(e) {
     if (!apOn()) return '';
+    if (apIsEr(e)) return ' &middot; <span class="apw ok">autoprint at once (ER)</span>';
     if (S.auto.mode !== 'now' && !hasVitals(e)) return ' &middot; <span class="apw">autoprint waits for the vitals (or print it by hand)</span>';
     return ' &middot; <span class="apw ok">autoprint</span>';
   }
   function mmss(ms) { ms = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(ms / 60) + ':' + ('0' + ms % 60).slice(-2); }
   /* The autoprint card of the slip page. */
   function apCardHtml() {
-    if (!apOn()) return '<section class="card apc off"><div class="apt"><div><b>Autoprint is off</b><div class="muted small">For short-staffed shifts: slips print by themselves every 5 minutes on one device.</div></div>' +
+    if (!apOn()) return '<section class="card apc off"><div class="apt"><div><b>Autoprint is off</b><div class="muted small">For short-staffed shifts: slips print by themselves on one device (as soon as they are ready, or every 30 seconds to 5 minutes).</div></div>' +
       '<button class="btn pri" data-act="ap-set">Switch on</button></div></section>';
     var A = S.auto, here = apHere();
-    return '<section class="card apc"><div class="apt"><div><b>Autoprint is on</b> <span class="pill open">' + h(apModeText(A.mode)) + '</span> <span class="pill open">' + (A.paper === 'a4' ? 'A4' : 'A5') + '</span>' +
-      '<div class="muted small">' + (here ? 'Printing on <b>this device</b>. Keep the census open here; every 5 minutes the print window opens with the ready slips, also when the screen is asleep: press Print.' + (S.wake ? ' The screen is kept awake.' : '')
+    return '<section class="card apc"><div class="apt"><div><b>Autoprint is on</b> <span class="pill open">' + h(apModeText(A.mode)) + '</span> <span class="pill open">' + (A.paper === 'a4' ? 'A4' : 'A5') + '</span> <span class="pill open">' + (apInstant() ? 'timer off' : h(AP_EVERY.filter(function (x) { return x[0] * 1000 === apEvery(); }).map(function (x) { return x[1]; })[0] || '5 min')) + '</span>' +
+      '<div class="muted small">' + (here ? 'Printing on <b>this device</b>. Keep the census open here; the ready slips print ' + h(apEveryText(A.every)) + '. Emergency / Resus slips print at once.' + (S.wake ? ' The screen is kept awake.' : '')
         : 'Printing on another device (switched on there by ' + h(A.devBy || A.by || 'someone') + '). This device does not print by itself, so no slip prints twice.') +
       ' Paper: ' + h(apPaperText(A.paper)) + '. Changed last by ' + h(A.by || '-') + (A.at ? ' at ' + CEC.hm(A.at) : '') + '. The next shift starts with autoprint off.</div></div>' +
       '<div class="apb"><button class="btn sm" data-act="ap-set">Change</button><button class="btn sm dan" data-act="ap-off">Switch off</button></div></div>' +
-      (here ? '<div class="apcd"><span>Next print in <b class="apcdt">' + mmss((S.apNext || Date.now() + AP_MS) - Date.now()) + '</b> &middot; <span class="apcnt">' + apCountText() + '</span></span>' +
+      (here ? '<div class="apcd"><span>' + (apInstant() ? 'Prints each slip as soon as it is ready' : 'Next print in <b class="apcdt">' + mmss((S.apNext || Date.now() + apEvery()) - Date.now()) + '</b>') + ' &middot; <span class="apcnt">' + apCountText() + '</span></span>' +
         '<button class="btn pri sm" data-act="ap-now">Print now</button></div>' : '') + '</section>';
   }
   function apCountText() {
@@ -4345,8 +4490,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* The registration page: one line with the setting. */
   function apLineHtml() {
     if (!apOn()) return '<div class="apline"><span>Autoprint of slips: <b>off</b></span><button type="button" class="lnk" data-act="ap-set">Switch on</button></div>';
-    return '<div class="apline on"><span>Autoprint: <b>on</b>, ' + h(apModeText(S.auto.mode)) + ', ' + (S.auto.paper === 'a4' ? 'A4' : 'A5') + ' &middot; ' + (apHere() ? 'this device, next in <b class="apcdt">' +
-      mmss((S.apNext || Date.now() + AP_MS) - Date.now()) + '</b>' : 'another device') + '</span><span>' + (apHere() ? '<button type="button" class="lnk" data-act="ap-now">Print now</button> &middot; ' : '') +
+    return '<div class="apline on"><span>Autoprint: <b>on</b>, ' + h(apModeText(S.auto.mode)) + ', ' + (S.auto.paper === 'a4' ? 'A4' : 'A5') + ' &middot; ' + (apHere() ? (apInstant() ? 'this device, each slip at once' : 'this device, next in <b class="apcdt">' +
+      mmss((S.apNext || Date.now() + apEvery()) - Date.now()) + '</b>') : 'another device') + '</span><span>' + (apHere() ? '<button type="button" class="lnk" data-act="ap-now">Print now</button> &middot; ' : '') +
       '<button type="button" class="lnk" data-act="ap-set">Change</button></span></div>';
   }
   function apPaintLine() { var l = $('apLine'); if (l) l.innerHTML = apLineHtml(); }
@@ -4354,17 +4499,19 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function apDialog() {
     if (isOff()) return toast('Autoprint needs internet.');
     var A = apOn() ? S.auto : null, other = A && !apHere();
-    S.apd = { mode: A ? A.mode : '', paper: A ? A.paper : 'a5' };
+    S.apd = { mode: A ? A.mode : '', paper: A ? A.paper : 'a5', every: A && A.every != null ? String(A.every) : '300' };
     var seg = function (k, list) { return '<div class="seg" id="apd-' + k + '">' + list.map(function (x) { return '<button type="button" data-act="apd" data-k="' + k + '" data-v="' + x[0] + '" class="' + (S.apd[k] === x[0] ? 'on' : '') + '">' + x[1] + '<small>' + x[2] + '</small></button>'; }).join('') + '</div>'; };
     var body = '<p class="small" style="margin:0 0 6px">For this shift, for everyone. The next shift starts with it off.</p>' +
       '<label class="lb">Print each slip</label>' + seg('mode', [['vit', 'With vitals', 'prints once the vitals are saved'], ['now', 'Without vitals', 'prints as soon as the patient is registered']]) +
       '<p class="muted small" style="margin:4px 0 0">Short-staffed: without vitals. Enough staff: with vitals.</p>' +
       '<label class="lb">Paper in the printer</label>' + seg('paper', [['a5', 'A5', '1 slip a page (normal)'], ['a4', 'A4', '2 slips a sheet, only when A5 runs short']]) +
+      '<label class="lb">Timer: print the ready slips</label>' + seg('every', AP_EVERY.map(function (x) { return [String(x[0]), x[1], x[2]]; })) +
+      '<p class="muted small" style="margin:4px 0 0">Off: each slip prints by itself as soon as it is ready (with vitals: once the vitals are saved). Emergency / Resus slips always print at once, without vitals.</p>' +
       (other ? '<label class="check" style="margin-top:12px"><input type="checkbox" id="apHereCk"> Print on this device from now on (instead of the other device)</label>'
-        : '<p class="muted small" style="margin:10px 0 0">' + (A ? 'Printing stays on this device.' : 'Slips print on <b>this device</b> only. Keep the census open here: every 5 minutes the ready slips are sent to the printer. On the slip Chromebook set up for printing without a click they print by themselves; elsewhere the print window opens: press Print. A countdown and a Print now button show on the slip page.') + '</p>');
+        : '<p class="muted small" style="margin:10px 0 0">' + (A ? 'Printing stays on this device.' : 'Slips print on <b>this device</b> only. Keep the census open here: the ready slips are sent to the printer by the timer chosen above. On the slip Chromebook set up for printing without a click they print by themselves; elsewhere the print window opens: press Print. A countdown and a Print now button show on the slip page.') + '</p>');
     modal(A ? 'Change autoprint' : 'Switch on autoprint', body, [{ label: 'Cancel', value: null }, { label: A ? 'Save' : 'Switch on', cls: 'pri', value: 'form' }]).then(function (v) {
       if (!v) return;
-      var d = { on: true, mode: S.apd.mode, paper: S.apd.paper, dev: myDev(), here: !!v.apHereCk };
+      var d = { on: true, mode: S.apd.mode, paper: S.apd.paper, every: +(S.apd.every || 300), dev: myDev(), here: !!v.apHereCk };
       if (!d.mode) { toast('Choose: with vitals or without vitals.'); return apDialog(); }
       apSend(d);
     });
@@ -4373,9 +4520,11 @@ if (typeof module !== 'undefined') module.exports = CEC;
     toast(d.on ? 'Saving autoprint…' : 'Switching autoprint off…');
     api('apiAutoprint', JSON.stringify(d)).then(function (a) {
       var wasHere = apHere();
+      var oldEvery = S.apKeepEvery;
       S.auto = a || null; S.apNext = 0; S.apSeen = null;
-      if (apHere()) { S.apNext = wasHere && S.apKeep ? S.apKeep : Date.now() + AP_MS; apSaveNext(); }
-      toast(!a ? 'Autoprint is off.' : apHere() ? 'Autoprint on: this device prints the ready slips every 5 minutes.' : 'Autoprint saved. It prints on the other device.');
+      var keep = wasHere && S.apKeep && oldEvery === apEvery();          // the countdown goes on only when the timer was not changed
+      if (apHere()) { S.apNext = keep ? S.apKeep : Date.now() + (apInstant() ? AP_POLL : apEvery()); apSaveNext(); }
+      toast(!a ? 'Autoprint is off.' : apHere() ? 'Autoprint on: this device prints the ready slips ' + apEveryText(a.every) + '.' : 'Autoprint saved. It prints on the other device.');
       if (!S.form) render(); else apPaintLine();
     }, function (x) { toast('Autoprint not changed: ' + errText(x)); });
   }
@@ -4394,22 +4543,29 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function apTick() {
     try { apWake(); } catch (x) { }
     if (!S.me || !apHere()) { if (S.apNext) { S.apNext = 0; apSaveNext(); } apPaintCd(); return; }
-    var now = Date.now();
+    var now = Date.now(), every = apEvery(), instant = every === 0;
     if (!S.apNext) {
       var sv = store_('cec_apnext'), pg = store_('cec_apclaim');
-      S.apNext = sv && sv.shift === S.open.id && sv.at > now - AP_MS ? Math.max(sv.at, now + 15000) : now + AP_MS;
+      S.apNext = instant ? now + 3000 : sv && sv.shift === S.open.id && sv.at > now - every && sv.at <= now + every ? Math.max(sv.at, now + 15000) : now + every;
       if (pg && pg.got && pg.shift === S.open.id) S.apNext = now + 5000;     // a round was claimed but its print never went out (page closed, Chromebook stopped): print it now
       apSaveNext();
     }
-    S.apKeep = S.apNext;
-    apNote(apReady());
+    S.apKeep = S.apNext; S.apKeepEvery = every;
+    var ready = apReady();
+    apNote(ready);
     apPaintCd();
     if (S.apBusy && performance.now() - S.apBusy > 180000) S.apBusy = false;   // a round that never answered (3 minutes): start again
-    if (S.apBusy || now < S.apNext) return;                            // also with the screen asleep: the print window opens on time and waits for Print
-    if (isOff()) { S.apNext = now + 60000; apSaveNext(); return; }
-    if (typing() && now - S.lastAct < 6000 && now - S.apNext < 60000) return;   // let the person finish typing (up to a minute)
-    if ($('modal') && !$('modal').classList.contains('hidden') && now - S.apNext < 60000) return;
-    apRun(false);
+    if (S.apBusy) return;
+    if (isOff()) { if (now >= S.apNext) { S.apNext = now + 60000; apSaveNext(); } return; }
+    var wait = (typing() && now - S.lastAct < 6000) || ($('modal') && !$('modal').classList.contains('hidden'));
+    /* Emergency / Resus: at once. Timer off: every 10 seconds the device looks for ready slips. Both also when the screen is asleep. */
+    if (!instant && now < S.apNext) {
+      if (now >= (S.apCheck || 0)) { S.apCheck = now + AP_POLL; if (!wait || ready.some(function (x) { return apIsEr(x.e); })) apRun(false, 'check'); }
+      return;
+    }
+    if (now < S.apNext) return;
+    if (wait && now - S.apNext < 60000) return;                        // let the person finish typing (up to a minute)
+    apRun(false, instant ? 'check' : 'timer');
   }
   function apPaintCd() {
     var left = S.apNext ? mmss(S.apNext - Date.now()) : '';
@@ -4418,10 +4574,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var bb = $('apBar'); if (bb) bb.textContent = left;
   }
   /* Takes the latest list from the census, claims the slips on the server (only those nobody printed yet) and opens the print window. */
-  function apRun(force) {
+  /* why: 'timer' (the timer is due), 'check' (every 10 seconds: Emergency / Resus slips, and all slips when the timer is off) or 'now' (Print now). */
+  function apRun(force, why) {
     if (!apHere() || S.apBusy) return;
-    var A = S.auto, sh = S.open;
-    var round = S.apBusy = performance.now(); S.apNext = Date.now() + AP_MS; apSaveNext();
+    var A = S.auto, sh = S.open, every = apEvery(), instant = every === 0;
+    why = force ? 'now' : why || 'timer';
+    var round = S.apBusy = performance.now();
+    if (instant || why !== 'check') { S.apNext = Date.now() + (instant ? AP_POLL : every); apSaveNext(); }
     var mine = function () { return S.apBusy === round; };          // an old round that answers late does nothing
     var fresh = api('apiState').then(function (st) {             // the latest patients of the shift (also those registered on other devices)
       var s = st && st.open;
@@ -4433,9 +4592,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
     return fresh.then(function () {
       if (!mine()) return;
       if (!apHere()) { S.apBusy = false; return; }                   // switched off or moved meanwhile
-      var list = apReady(), now = Date.now();
+      var list = apReady(), now = Date.now(), er = list.some(function (x) { return apIsEr(x.e); });
       apNote(list);
-      if (!force && A.paper === 'a4' && list.length % 2 === 1 && now - apReadyAt(list[list.length - 1].e) + AP_MS <= AP_PAIR_MS) list = list.slice(0, -1);   // the newest waits for a partner
+      var pend00 = store_('cec_apclaim'), owed = pend00 && pend00.got && pend00.shift === sh.id;
+      if (why === 'check' && !instant && !er && !owed) { S.apBusy = false; return; }   // looked: no Emergency / Resus slip, the timer prints the rest
+      var nextIn = instant ? AP_POLL : every;
+      if (!force && !er && A.paper === 'a4' && list.length % 2 === 1 && now - apReadyAt(list[list.length - 1].e) + nextIn <= AP_PAIR_MS) list = list.slice(0, -1);   // the newest waits for a partner (not with an ER slip)
       var pend0 = store_('cec_apclaim');
       if (!list.length && !(pend0 && pend0.shift === sh.id && (pend0.list || []).length)) { S.apBusy = false; if (force) toast('No slip is ready to print.'); apPaintCd(); return; }
       /* A claim whose answer never came (busy census, lost connection) is kept: the next round asks again with the same ID and its slips,
@@ -4458,7 +4620,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         printSlips(got.map(function (en) { return { e: en, sh: sh }; }), A.paper, { auto: true, claimed: true, sent: function () {
           var p0 = store_('cec_apclaim'); if (p0 && p0.cid === cidNow) store_('cec_apclaim', '');
         } });
-        S.apNext = Date.now() + AP_MS; apSaveNext();               // the next 5 minutes start when the print window is closed
+        if (instant || why !== 'check') { S.apNext = Date.now() + (instant ? AP_POLL : every); apSaveNext(); }   // the timer starts again when the print was sent
         if (S.view === 'slipq' && !typing() && !anyOverlay()) render();
       }, function (x) { if (!mine()) return; S.apBusy = false; S.apNext = Date.now() + 60000; apSaveNext(); toast('Autoprint could not reach the census (' + errText(x) + '). It tries again in a minute.'); });
     }).then(null, function () { if (mine()) { S.apBusy = false; S.apNext = Date.now() + 60000; apSaveNext(); } });   // never left stuck
@@ -4578,19 +4740,24 @@ if (typeof module !== 'undefined') module.exports = CEC;
     return '';
   }
   function pettyParse(text) {
-    var lines = String(text || '').split(/\r?\n/).map(function (l) { return l.replace(/[ \s]+/g, ' ').trim(); }).filter(function (l) { return /[A-Za-z]{2}/.test(l); });
+    /* 12-11-2026: text copied from a chat or a document can carry marks such as "45 M\" or "i\." (Markdown escapes) or **bold**: taken off */
+    var lines = String(text || '').split(/\r?\n/).map(function (l) { return l.replace(/[\\*_`~]+/g, ' ').replace(/[,;\t]+/g, ' ').replace(/[ \s]+/g, ' ').trim(); }).filter(function (l) { return /[A-Za-z]{2}/.test(l); });
+    /* 12-11-2026 (files): CSV or Excel columns (comma, semicolon, tab) are read like spaces; a serial number (up to 6 digits) or a date at the
+       start of a line is taken off */
+    var DATE0 = /^(\d{1,4}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\s+)+/;
     /* numbering without a dot or bracket ("i Aslam", "ii Bano") is taken off only when every line starts with the next Roman number */
     var plainRoman = lines.length > 0 && lines.every(function (l, i) { var f = l.split(' ')[0]; return romanVal(f) === i + 1 && l.split(' ').length > 1; });
     return lines.map(function (l, i) {
-      var num = '', m;
-      if ((m = /^[\(\[]?\s*(\d{1,4})\s*[\)\]\.:\-]*\s*(.+)$/.exec(l)) && /^[A-Za-z]/.test(m[2].replace(/^[\-•*\s]+/, ''))) { num = m[1]; l = m[2]; }
+      var num = '', m, line = l;
+      l = l.replace(DATE0, '');
+      if ((m = /^[\(\[]?\s*(\d{1,6})\s*[\)\]\.:\-]*\s*(.+)$/.exec(l)) && /^[A-Za-z]/.test(m[2].replace(/^[\-•*\s]+/, ''))) { num = m[1]; l = m[2]; }
       else if ((m = /^[\(\[]?\s*([ivxlcdm]{1,8})\s*[\)\]\.:\-]+\s*(.+)$/i.exec(l)) && romanVal(m[1])) { num = m[1].toLowerCase(); l = m[2]; }
       else if (plainRoman) { num = l.split(' ')[0].toLowerCase(); l = l.slice(num.length).trim(); }
-      l = l.replace(/^[\-•*·\s]+/, '');
+      l = l.replace(/^[\-•*·\s]+/, '').replace(DATE0, '');
       l = l.replace(/(\d)\s*\/\s*(male|female|m|f)\b/ig, '$1 $2').replace(/\b(male|female|m|f)\s*\/\s*(\d)/ig, '$1 $2').replace(/[,;|\t]+/g, ' ');
       var tk = l.split(' ').filter(Boolean), age = '', sex = '';
       while (tk.length > 1) {
-        var w = tk[tk.length - 1].replace(/[()\[\].:]+/g, '').toLowerCase(), a;
+        var w = tk[tk.length - 1].replace(/[()\[\].:'"\\]+/g, '').replace(/\/+$/, '').toLowerCase(), a;
         if (!w || w === '-' || w === '/') { tk.pop(); continue; }
         if (!sex && /^(male|female|m|f)$/.test(w)) { sex = w.charAt(0).toUpperCase(); tk.pop(); continue; }
         if (/^(y|yr|yrs|year|years|yo|y\/o)$/.test(w)) { tk.pop(); continue; }
@@ -4600,68 +4767,122 @@ if (typeof module !== 'undefined') module.exports = CEC;
       }
       var name = up(tk.join(' ').replace(/[\s,.:\-\/]+$/, '').trim()), g = sex ? '' : guessSex(name);
       if (age !== '' && age > 130) age = '';
-      return { num: num || String(i + 1), name: name, age: age, sex: sex || g, guessed: !sex && !!g, inc: true };
+      return { num: num || String(i + 1), name: name, age: age, sex: sex || g, guessed: !sex && !!g, inc: true, line: line };
     });
   }
-  function pettyTarget() {
-    var P = S.petty;
-    if (P.where === 'prev' && S.prevShift) return S.prevShift;
-    if (P.where === 'other') return P.other || null;
-    return S.open;
+  /* 12-11-2026: the names wait in the census. Each morning shift, Monday to Saturday, up to the daily limit (100, 150 or 200) get MR numbers,
+     spread evenly over the shift; the rest wait for the next morning shift. Any number of names: a long list (the old register, 100,000 or more)
+     is pasted or chosen as a text / CSV file and sent in parts of 2,000; a part that was sent already is never added twice (see the server). */
+  var PT_PART = 2000, PT_BIG = 200000;
+  function fmtN(n) { return String(n == null ? 0 : n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  var WDAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  function dayName(d) { return d ? WDAY[new Date(d + 'T12:00:00Z').getUTCDay()] + ' ' + CEC.dmy(d) : ''; }
+  function dmyAt(iso) { return iso ? CEC.dmy(new Date(Date.parse(iso) + 5 * 3600000).toISOString().slice(0, 10)) + ' ' + CEC.hm(iso) : ''; }
+  function ptDesc(r) { return r.name + (r.age !== '' && r.age != null ? ', ' + r.age : '') + (r.sex ? ', ' + r.sex : ''); }
+  function ptItem(x, rm) {
+    return '<li><span class="ptno">' + fmtN(x.pos) + '.</span><b>' + h(x.name) + '</b><span class="muted small">' + h(x.sex || '-') + (x.age ? ', ' + h(x.age) : '') + ' &middot; ' + h(PETTY_L[x.kind] || '') +
+      (x.day ? ' &middot; MR about ' + h(dayName(x.day)) : '') + '</span>' + (rm ? '<button class="lnk small" data-act="pt-rm" data-v="' + h(x.ref) + '">Remove</button>' : '') + '</li>';
+  }
+  function pettyStatusHtml(Q) {
+    if (!Q) return '<section class="card"><p class="muted small" style="margin:0"><span class="spin"></span>Loading&hellip;</p></section>';
+    var now = Date.parse(Q.now || '') || Date.now(), w = Q.win, ws = w ? Date.parse(w.start) : 0, isToday = !!(w && w.day === Q.today), line;      // the census's clock (a phone's clock may be wrong)
+    if (!Q.waiting && !Q.given) line = 'Nobody is waiting. Names added now get MR numbers in the next morning shift (Monday to Saturday).';
+    else if (Q.sunday) line = 'Sunday: no petty names today. Next: <b>' + h(dayName(w && w.day)) + '</b> from ' + CEC.hm(w.start) + '.';
+    else if (isToday && now < ws) line = 'Today from <b>' + CEC.hm(w.start) + '</b>: up to <b>' + fmtN(Q.quota) + '</b> names, one by one until ' + CEC.hm(w.end) + '.';
+    else if (isToday) line = 'Today: <b>' + fmtN(Q.given) + '</b> of <b>' + fmtN(Q.quota) + '</b> given' + (Q.given < Q.quota && Q.next ? ', next about <b>' + CEC.hm(Q.next) + '</b>' : '') + ' (until ' + CEC.hm(w.end) + ').';
+    else line = (Q.given ? 'Today: <b>' + fmtN(Q.given) + '</b> given. ' : 'Today’s morning shift is over. ') + (Q.waiting && w ? 'Next: <b>' + h(dayName(w.day)) + '</b> from ' + CEC.hm(w.start) + '.' : '');
+    return '<section class="card ptstat"><div class="ct">Petty OPD waiting list</div>' +
+      '<div class="ptbig"><b>' + fmtN(Q.waiting) + '</b><span>name' + (Q.waiting === 1 ? '' : 's') + ' waiting for MR numbers</span></div>' +
+      '<p class="small" style="margin:6px 0 0">' + line + '</p>' +
+      '<div class="ptlim"><span class="lb">Daily limit</span>' + (Q.canLimit ? '<div class="seg" id="ptLim">' + Q.limits.map(function (n) {
+        return '<button type="button" data-act="pt-lim" data-v="' + n + '" class="' + (n === Q.limit ? 'on' : '') + '">' + n + '</button>'; }).join('') + '</div>' : '<b class="ptlimv">' + Q.limit + '</b>') +
+      '<span class="muted small">names each morning shift, Monday to Saturday, spread over the shift' + (Q.canLimit ? '' : ' (a doctor or the admin can change it)') + '. Names not reached wait for the next morning.</span></div>' +
+      (Q.waiting && Q.est ? '<p class="small" style="margin:8px 0 0">At ' + Q.limit + ' a day, the last name now waiting gets its MR about <b>' + h(dayName(Q.est)) + '</b>.</p>' : '') + '</section>';
   }
   function pettyHtml() {
-    var P = S.petty;
-    var html = '<div class="narrow"><section class="card"><div class="ct">Petty OPD register</div><p class="muted small" style="margin:0">Paste the names from the petty OPD register, one patient on each line, in the order of the register, and tap <b>Add to shift list</b>. ' +
-      'Each patient gets the next automatic MR number in that order and goes straight into the patient list of the shift as an OPD patient, already closed (discharged home): nothing is left for the doctor. ' +
-      'Numbers like <b>1.</b> or <b>i)</b> are taken off; age and gender written after the name are read (for example <i>Aslam Khan 45 M</i>, <i>Rukhsana Bibi, 50/F</i>); otherwise the gender is taken from the name.</p>';
-    var opts = [['cur', S.open ? CEC.shiftName(S.open.shift) + ' shift (running)' : 'Running shift']];
-    if (S.prevShift) opts.push(['prev', CEC.shiftName(S.prevShift.shift) + ' shift, ' + CEC.dmy(S.prevShift.censusDate) + ' (until ' + CEC.hm(S.prevUntil) + ')']);
-    if (isAdmin()) opts.push(['other', 'Another shift (admin)']);
-    if (opts.length > 1) html += '<label class="lb">Shift</label><div class="seg" id="ptWhere">' + opts.map(function (o) { return '<button type="button" data-act="pt-where" data-v="' + o[0] + '" class="' + ((P.where || 'cur') === o[0] ? 'on' : '') + '">' + h(o[1]) + '</button>'; }).join('') + '</div>';
-    else html += '<p class="small" style="margin:10px 0 0">Shift: <b>' + h(opts[0][1]) + '</b></p>';
-    if (P.where === 'other') html += '<div class="row2" style="margin-top:8px"><div><label class="lb" for="ptDate">Census day</label><input class="in" type="date" id="ptDate" value="' + h(P.date || pkToday()) + '"></div>' +
-      '<div><label class="lb">Shift</label><div class="seg" id="ptCode">' + CEC.SHIFTS.map(function (x) { return '<button type="button" data-act="pt-code" data-v="' + x.c + '" class="' + ((P.code || 'M') === x.c ? 'on' : '') + '">' + x.l + '</button>'; }).join('') + '</div></div></div>' +
-      '<button type="button" class="btn sm" data-act="pt-load" style="margin-top:8px">Open this shift</button>' + (P.other ? ' <span class="small muted">Open: ' + h(CEC.shiftName(P.other.shift)) + ' shift, ' + CEC.dmy(P.other.censusDate) + ' (' + (P.other.entries || []).length + ' patients)</span>' : '');
-    html += '<label class="lb">Category</label><div class="seg pkind" id="ptKind">' + PETTY_K.map(function (k) { return '<button type="button" data-act="pt-kind" data-v="' + k[0] + '" class="' + ((P.kind || 'REG') === k[0] ? 'on' : '') + '">' + h(k[1]) + '</button>'; }).join('') + '</div>' +
-      '<label class="lb" for="ptText">Names from the register</label><textarea class="in pbubble" id="ptText" rows="12" spellcheck="false" placeholder="i. Muhammad Aslam 45 M&#10;ii. Rukhsana Bibi 50 F&#10;iii. Abdul Qadir 62&#10;iv. Saima Khan, 38/F">' + h(P.text || '') + '</textarea>' +
-      (S.mr ? '' : '<div class="warn" style="margin-top:8px">Automatic MR is not set yet. <button class="lnk" data-act="mr-set">Enter the last MR No. of the manual register</button></div>') +
-      '<button class="btn pri block" data-act="pt-add" style="margin-top:10px"' + (P.busy ? ' disabled' : '') + '>' + (P.busy ? '<span class="spin"></span>Adding&hellip;' : 'Add to shift list') + '</button></section>';
-    if (P.result) html += pettyResultHtml();
+    var P = S.petty, Q = S.pq, html = '<div class="narrow">' + pettyStatusHtml(Q), txt = P.text || '';
+    html += '<section class="card"><div class="ct">Add names</div><p class="muted small" style="margin:0">One patient on each line, in the order of the register. Paste the names, or choose a text or CSV file ' +
+      '(the old register: in Excel, <i>File &gt; Save As &gt; CSV</i>). Any number of names: each morning shift takes the next ones, up to the daily limit, as closed OPD patients of that day. ' +
+      'The record keeper sees each MR on the <b>MR register</b> page.</p>' +
+      '<p class="muted small" style="margin:6px 0 0">Numbers like <b>1.</b> or <b>i)</b> are taken off; age and gender after the name are read (for example <i>Aslam Khan 45 M</i>, <i>Rukhsana Bibi, 50/F</i>); otherwise the gender is taken from the name.</p>' +
+      '<label class="lb">Category</label><div class="seg pkind" id="ptKind">' + PETTY_K.map(function (k) { return '<button type="button" data-act="pt-kind" data-v="' + k[0] + '" class="' + ((P.kind || 'REG') === k[0] ? 'on' : '') + '">' + h(k[1]) + '</button>'; }).join('') + '</div>';
+    if (P.file) html += '<div class="ptfile">File <b>' + h(P.file.name) + '</b>: ' + fmtN(P.file.n) + ' line' + (P.file.n === 1 ? '' : 's') + '. Tap <b>Add to the waiting list</b>.</div>';
+    else if (txt.length > PT_BIG) html += '<div class="ptfile">A long list is pasted: <b>' + fmtN((txt.match(/\n/g) || []).length + 1) + '</b> lines. Tap <b>Add to the waiting list</b>.</div>';
+    else html += '<label class="lb" for="ptText">Names</label><textarea class="in pbubble" id="ptText" rows="10" spellcheck="false" placeholder="i. Muhammad Aslam 45 M&#10;ii. Rukhsana Bibi 50 F&#10;iii. Abdul Qadir 62&#10;iv. Saima Khan, 38/F">' + h(txt) + '</textarea>';
+    html += '<input type="file" id="ptFile" accept=".txt,.csv,text/plain,text/csv" class="hidden"><div class="sbtns" style="margin-top:8px">' +
+      (P.busy ? '' : '<button class="btn" data-act="pt-file">Choose a file (.txt or .csv)</button>' + (P.file || txt ? '<button class="btn" data-act="pt-clear">Clear</button>' : '')) + '</div>' +
+      (S.mr ? '' : '<div class="warn" style="margin-top:8px">Automatic MR is not set yet. <button class="lnk" data-act="mr-set">Enter the last MR No. of the manual register</button></div>');
+    if (P.busy && P.prog) html += '<div class="ptprog" id="ptProg"><div class="ptbar"><i style="width:' + Math.round(100 * P.prog.sent / Math.max(1, P.prog.total)) + '%"></i></div><span class="small">Sending ' +
+      fmtN(P.prog.sent) + ' of ' + fmtN(P.prog.total) + '&hellip; keep this page open.</span></div>';
+    else html += '<button class="btn pri block" data-act="pt-add" style="margin-top:10px"' + (P.busy ? ' disabled' : '') + '>' + (P.busy ? '<span class="spin"></span>Adding&hellip;' : 'Add to the waiting list') + '</button>';
+    html += '</section>';
+    if (P.stopped) html += '<section class="card"><div class="warn" style="margin:0">Sending stopped at <b>' + fmtN(P.stopped.sent) + '</b> of ' + fmtN(P.stopped.total) + ' names: ' + h(P.stopped.err) +
+      '<br>Tap <b>Add to the waiting list</b> again: it carries on where it stopped (nothing is added twice). If this page was closed, paste or choose the same list again.</div></section>';
+    if (P.result) {
+      var R = P.result;
+      html += '<section class="card ptres"><div class="ct">' + (R.added ? 'Added to the waiting list: ' + fmtN(R.added) + ' name' + (R.added === 1 ? '' : 's') : 'Nothing new added') + '</div><p class="small" style="margin:0">' +
+        (R.again ? fmtN(R.again) + ' had been added before (not added twice). ' : '') + (R.waiting != null ? 'Now <b>' + fmtN(R.waiting) + '</b> waiting' + (R.est ? '; the last one gets its MR about <b>' + h(dayName(R.est)) + '</b>' : '') + '.' : '') + '</p>' +
+        (R.left && R.left.length ? '<p class="small" style="margin:8px 0 4px"><b>' + fmtN(R.left.length) + '</b> line' + (R.left.length === 1 ? ' was' : 's were') + ' not added (no M or F, and the gender could not be told from the name). Copy, add M or F, and add again:</p>' +
+          '<textarea class="in" rows="5" readonly style="font-size:13px">' + h(R.left.slice(0, 5000).join('\n')) + '</textarea>' : '') +
+        '<div class="sbtns"><button class="btn" data-act="pt-new">Add more names</button><button class="btn" data-act="q-mrreg">Open the MR register</button></div></section>';
+    }
+    html += '<section class="card"><div class="listhead"><div class="ct" style="margin:0">Next in line</div><button class="btn sm" data-act="pt-reload" aria-label="Refresh">&#8635;</button></div>';
+    if (Q) {
+      if (!Q.head.length) html += '<p class="muted small" style="margin:6px 0 0">Nobody is waiting.</p>';
+      else html += '<ol class="ptmr ptq">' + Q.head.map(function (x) { return ptItem(x, true); }).join('') + '</ol>' + (Q.waiting > Q.head.length ? '<p class="muted small" style="margin:0">&hellip; and ' + fmtN(Q.waiting - Q.head.length) + ' more after them.</p>' : '');
+      var F = P.find;
+      html += '<div class="ptfind"><input class="in" id="ptFind" placeholder="Find a waiting name" autocomplete="off" value="' + h(P.findQ || '') + '"><button class="btn" data-act="pt-find">Find</button></div>';
+      if (F && F.busy) html += '<p class="muted small"><span class="spin"></span>Looking&hellip;</p>';
+      else if (F) html += !F.hits.length ? '<p class="muted small">No waiting name with “' + h(F.q) + '”.</p>' : '<ol class="ptmr ptq">' + F.hits.map(function (x) { return ptItem(x, true); }).join('') + '</ol>' +
+        (F.more ? '<p class="muted small" style="margin:0">' + fmtN(F.more) + ' more: type more of the name.</p>' : '');
+    }
+    html += '</section>';
+    if (Q && Q.pastes.length) html += '<section class="card"><div class="ct">Lists added</div><ul class="ptlists">' + Q.pastes.map(function (p) {
+      var st = p.gone ? 'taken off the waiting list ' + h(dmyAt(p.gone)) : !p.done ? '<span class="dan">sending stopped: ' + fmtN(p.added) + ' of ' + fmtN(p.total) + ' received</span> (add the same list again to send the rest)' :
+        p.left ? '<b>' + fmtN(p.left) + '</b> still waiting' : 'all given MR numbers';
+      return '<li><div><b>' + fmtN(p.added) + ' name' + (p.added === 1 ? '' : 's') + '</b> &middot; ' + h(PETTY_L[p.kind] || '') + '<div class="muted small">' + h(p.by) + ', ' + h(dmyAt(p.at)) + '</div><div class="small">' + st + '</div></div>' +
+        (p.canRm && p.left > 0 && !p.gone ? '<button class="lnk small dan" data-act="pt-rmlist" data-v="' + h(p.id) + '">Take off the ' + fmtN(p.left) + ' waiting</button>' : '') + '</li>';
+    }).join('') + '</ul></section>';
+    if (Q && Q.givenToday.length) html += '<section class="card"><div class="ct">MR given today (' + Q.givenToday.length + ')</div><ol class="ptmr">' + Q.givenToday.map(function (x) {
+      return '<li><span class="ptno">' + h(x.mr) + '</span><b>' + h(x.name) + '</b><span class="muted small">' + h(x.sex || '-') + (x.age ? ', ' + h(x.age) : '') + ' &middot; ' + h(PETTY_L[x.kind] || '') + ' &middot; ' + CEC.hm(x.t) + '</span></li>';
+    }).join('') + '</ol></section>';
     return html + '</div>';
   }
-  function pettyResultHtml() {
-    var R = S.petty.result;
-    return '<section class="card ptres"><div class="ct">Added to the shift list: ' + R.list.length + ' patient' + (R.list.length === 1 ? '' : 's') + ' &middot; ' + h(R.shiftName) + '</div>' +
-      '<p class="muted small" style="margin:0 0 8px">Write each MR number in the register next to the name. A name or gender can be corrected in the patient’s record on the Patient dashboard.</p><ol class="ptmr">' + R.list.map(function (x) {
-        return '<li><span class="ptno">' + h(x.num) + '</span><b>' + h(x.name) + '</b><span class="muted small">' + (x.sex === 'F' ? 'F' : 'M') + (x.age !== '' && x.age != null ? ', ' + h(x.age) : '') + ' &middot; ' + h(PETTY_L[x.kind] || '') + '</span><span class="ptmrn">MR ' + h(x.mr) + '</span></li>';
-      }).join('') + '</ol><div class="sbtns"><button class="btn" data-act="pt-copy">Copy the list</button><button class="btn" data-act="pt-new">New list</button></div></section>';
+  function pettyLoad() {
+    if (isOff() || S.pqBusy) return;
+    S.pqBusy = true;
+    api('apiPettyQueue').then(function (q) { S.pqBusy = false; S.pq = q; if (S.view === 'petty' && !typing() && !anyOverlay()) render(); }, function () { S.pqBusy = false; });
   }
-  /* Add to shift list: one tap. Only a gender that cannot be read or guessed is asked, and a list pasted a second time is caught. */
+  function pettyRows() {
+    var P = S.petty, lines = String(P.file ? P.file.text : P.text || '').split(/\r?\n/);
+    if (lines.length && /\bname\b/i.test(lines[0]) && /\b(age|gender|sex)\b/i.test(lines[0])) lines.shift();     // the heading line of a file
+    return pettyParse(lines.join('\n'));
+  }
+  /* Add: one tap. A gender that cannot be read or guessed is asked (a long list: those names are left out and shown to correct), a short
+     list pasted a second time is caught, and a long list is shown (first and last name) before it is sent. */
   function pettyAdd() {
     var P = S.petty, t = $('ptText'); if (t) P.text = t.value;
     if (P.busy) return;
-    if (!(P.text || '').trim()) return toast('Paste the names from the register first.');
-    var sh = pettyTarget();
-    if (!sh) return toast('Open the shift first.');
-    var rows = pettyParse(P.text).filter(function (r) { return r.name.replace(/[^A-Z]/g, '').length >= 2; });
-    if (!rows.length) return toast('No name found. Paste one patient on each line.');
-    rows.forEach(function (r) { r.kind = P.kind || 'REG'; });
-    var ask = rows.filter(function (r) { return !r.sex; });
-    var step = ask.length ? pettyAskSex(ask) : Promise.resolve(true);
-    step.then(function (ok) {
-      if (!ok) return;
-      var have = {};
-      ((sh && sh.entries) || []).forEach(function (e) { if (e.petty && e.petty === (P.kind || 'REG')) have[up(e.name)] = (have[up(e.name)] || 0) + 1; });
-      var dup = rows.filter(function (r) { if (have[r.name]) { have[r.name]--; return true; } return false; });
-      if (!dup.length) return pettySave(rows, sh);
-      modal('Added already?', '<p><b>' + dup.length + '</b> of these ' + rows.length + ' names ' + (dup.length === 1 ? 'is' : 'are') + ' already in this shift’s petty OPD list (' + h(PETTY_L[P.kind || 'REG']) + '): ' +
-        h(dup.slice(0, 6).map(function (r) { return r.name; }).join(', ')) + (dup.length > 6 ? '…' : '') + '.</p><p class="small">If the same list was pasted before, add only the new names.</p>',
-        [{ label: 'Add only the new names', cls: 'pri', value: 'new' }, { label: 'Add all ' + rows.length, value: 'all' }, { label: 'Cancel', value: null }], true).then(function (v) {
-        if (!v) return;
-        var list = v === 'all' ? rows : rows.filter(function (r) { return dup.indexOf(r) < 0; });
-        if (!list.length) return toast('Nothing new to add.');
-        pettySave(list, sh);
+    if (!P.file && !(P.text || '').trim()) return toast('Paste the names from the register, or choose a file.');
+    var rows = pettyRows().filter(function (r) { return r.name.replace(/[^A-Z]/g, '').length >= 2; }), kind = P.kind || 'REG', left = [];
+    if (!rows.length) return toast('No name found. One patient on each line.');
+    rows.forEach(function (r) { r.kind = kind; });
+    var ask = rows.filter(function (r) { return !r.sex; }), step;
+    if (!ask.length) step = Promise.resolve(true);
+    else if (ask.length <= 30) step = pettyAskSex(ask);
+    else step = modal('Male or female?', '<p><b>' + fmtN(ask.length) + '</b> of the ' + fmtN(rows.length) + ' names have no M or F, and the gender could not be told from the name (for example ' +
+      h(ask.slice(0, 3).map(function (r) { return r.name; }).join(', ')) + ').</p><p class="small">Leave them out now and add the other ' + fmtN(rows.length - ask.length) + '? The names left out are shown afterwards, to add M or F and add again.</p>',
+      [{ label: 'Cancel', value: false }, { label: 'Leave them out', cls: 'pri', value: 'skip' }]).then(function (v) {
+        if (v === 'skip') { left = ask.map(function (r) { return r.line; }); rows = rows.filter(function (r) { return r.sex; }); }
+        return !!v;
       });
+    step.then(function (ok) {
+      if (!ok || !rows.length) return;
+      if (rows.length <= 500) return pettySend(rows, left, true);
+      var lim = (S.pq && S.pq.limit) || 100;
+      modal((P.stopped ? 'Carry on sending ' : 'Add ') + fmtN(rows.length) + ' names?', '<p class="small" style="margin:0">First: <b>' + h(ptDesc(rows[0])) + '</b><br>Last: <b>' + h(ptDesc(rows[rows.length - 1])) + '</b></p>' +
+        '<p class="small">Category: ' + h(PETTY_L[kind]) + '. Sent in parts of ' + fmtN(PT_PART) + ': keep this page open until it says done. Up to ' + lim + ' names get MR numbers each morning shift, Monday to Saturday, in this order.</p>',
+        [{ label: 'Cancel', value: false }, { label: 'Add all ' + fmtN(rows.length), cls: 'pri', value: true }]).then(function (v) { if (v) pettySend(rows, left, false); });
     });
   }
   function pettyAskSex(ask) {
@@ -4669,36 +4890,99 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var body = '<p class="small" style="margin:0 0 8px">The gender of ' + (ask.length === 1 ? 'this name' : 'these names') + ' could not be read. Tap M or F:</p><div class="ptask">' + ask.map(function (r, i) {
       return '<div class="ptaskr"><span><b>' + h(r.num) + '.</b> ' + h(r.name) + '</span><span class="seg" id="ptAsk' + i + '"><button type="button" data-act="pt-g" data-r="' + i + '" data-v="M">M</button><button type="button" data-act="pt-g" data-r="' + i + '" data-v="F">F</button></span></div>';
     }).join('') + '</div>';
-    return modal('Male or female?', body, [{ label: 'Cancel', value: false }, { label: 'Add to shift list', cls: 'pri', value: true }]).then(function (ok) {
+    return modal('Male or female?', body, [{ label: 'Cancel', value: false }, { label: 'Add to the waiting list', cls: 'pri', value: true }]).then(function (ok) {
       if (!ok) return false;
       if (ask.some(function (r) { return !r.sex; })) { toast('Tap M or F for every name.'); return pettyAskSex(ask); }
       return true;
     });
   }
-  function pettySave(rows, sh) {
-    var P = S.petty;
-    P.batch = P.batch || 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-    var list = rows.map(function (r) { return { name: r.name, age: r.age, sex: r.sex, kind: r.kind, cid: P.batch + ':' + r.name + ':' + r.num }; });
-    P.busy = true; render();
-    apiRetry('apiAddPetty', JSON.stringify({ shiftId: sh.id, list: list })).then(function (r) {
-      P.busy = false; if (r.mrState) S.mr = r.mrState;
-      P.result = { shiftName: CEC.shiftName(sh.shift) + ' shift, ' + CEC.dmy(sh.censusDate), list: r.list.map(function (x, i) { return Object.assign({ num: rows[i].num, sex: rows[i].sex, age: rows[i].age }, x); }) };
-      P.text = ''; P.batch = null;
-      toast(r.list.length + ' patient' + (r.list.length === 1 ? '' : 's') + ' added to the ' + P.result.shiftName + ' list with MR numbers.');
-      render(); window.scrollTo(0, 0);
-      refresh(true);
-      if (P.where === 'other' && P.other) api('apiGetShift', P.other.id).then(function (s2) { if (s2) P.other = s2; }, function () { });
+  /* the same list (same names, same order, same category) always gets the same ID, so sending it again only adds the parts not received */
+  function pettyHash(rows, kind) {
+    var a = 0x811c9dc5, b = 5381, s = kind + '\n' + rows.map(function (r) { return r.name + '|' + r.age + '|' + r.sex; }).join('\n');
+    for (var i = 0; i < s.length; i++) { var c = s.charCodeAt(i); a ^= c; a = Math.imul(a, 16777619) >>> 0; b = (Math.imul(b, 33) + c) >>> 0; }
+    return 'P' + a.toString(36) + b.toString(36) + rows.length.toString(36);
+  }
+  function pettySend(rows, left, check) {
+    var P = S.petty, kind = P.kind || 'REG', parts = Math.ceil(rows.length / PT_PART), id = pettyHash(rows, kind), added = 0, again = 0, last = null;
+    var sid = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);      // this sending: a lost answer sent again counts as added
+    P.busy = true; P.prog = { sent: 0, total: rows.length }; P.stopped = null; P.result = null; render();
+    var send = function (i) {
+      if (i >= parts) return Promise.resolve(null);
+      var list = rows.slice(i * PT_PART, (i + 1) * PT_PART).map(function (r) { return { name: r.name, age: r.age, sex: r.sex, kind: kind }; });
+      return apiRetry('apiAddPetty', JSON.stringify({ paste: { id: id, total: rows.length, parts: parts, kind: kind }, part: i, sid: sid, list: list, check: !!check && parts === 1 })).then(function (r) {
+        if (r && r.dups) return r;
+        last = r; if (r.again && !r.mine) again += list.length; else added += list.length;
+        P.prog.sent = Math.min(rows.length, (i + 1) * PT_PART);
+        if (S.view === 'petty' && !anyOverlay()) { var pg = $('ptProg'); if (pg) { pg.querySelector('i').style.width = Math.round(100 * P.prog.sent / P.prog.total) + '%'; pg.querySelector('span').textContent = 'Sending ' + fmtN(P.prog.sent) + ' of ' + fmtN(P.prog.total) + '… keep this page open.'; } }
+        return send(i + 1);
+      });
+    };
+    send(0).then(function (r) {
+      P.busy = false; P.prog = null;
+      if (r && r.dups) { render(); return pettyDups(rows, left, r.dups); }
+      P.text = ''; P.file = null; P.stopped = null;
+      P.result = { added: added, again: again, waiting: last ? last.waiting : null, est: last ? last.est : '', left: left };
+      toast(added ? fmtN(added) + ' name' + (added === 1 ? '' : 's') + ' added to the waiting list.' : 'This list had been added before: nothing added twice.');
+      render(); window.scrollTo(0, 0); pettyLoad();
     }, function (x) {
-      P.busy = false; render();
-      var mrErr = /Automatic MR/.test(errText(x));
-      modal('Not added', '<p>The patients were <b>not added</b>: ' + h(errText(x)) + '</p><p class="small">' + (mrErr ? 'Set the automatic MR, then tap Add to shift list again.' : 'The list is kept here. Tap Add to shift list again; nothing is added twice.') + '</p>',
+      var sent = P.prog ? P.prog.sent : 0, mrErr = /Automatic MR/.test(errText(x));
+      P.busy = false; P.prog = null;
+      if (parts > 1 && sent > 0) P.stopped = { sent: sent, total: rows.length, err: errText(x) };
+      render(); pettyLoad();
+      modal(sent ? 'Sending stopped' : 'Not added', '<p>' + (sent ? '<b>' + fmtN(sent) + '</b> of ' + fmtN(rows.length) + ' names were added; the rest were <b>not</b>: ' : 'The names were <b>not added</b>: ') + h(errText(x)) + '</p><p class="small">' +
+        (mrErr ? 'Set the automatic MR, then tap Add to the waiting list again.' : 'The list is kept here. Tap Add to the waiting list again: it carries on, nothing is added twice.') + '</p>',
         mrErr ? [{ label: 'Close', value: false }, { label: 'Set automatic MR', cls: 'pri', value: true }] : [{ label: 'OK', cls: 'pri', value: false }]).then(function (v) { if (v) askMr(); });
     });
   }
-  function pettyCopyText() {
-    var R = S.petty.result;
-    return 'PETTY OPD REGISTER - ' + R.shiftName.toUpperCase() + '\n' + R.list.map(function (x) { return x.num + '. ' + x.name + ' - MR ' + x.mr + ' (' + (PETTY_L[x.kind] || '') + ')'; }).join('\n');
+  function pettyDups(rows, left, dups) {
+    var P = S.petty, dset = {}; dups.forEach(function (i) { dset[i] = 1; });
+    var dupRows = rows.filter(function (r, i) { return dset[i]; });
+    modal('Added already?', '<p><b>' + dupRows.length + '</b> of these ' + rows.length + ' names ' + (dupRows.length === 1 ? 'is' : 'are') + ' already on the waiting list or given an MR today (' + h(PETTY_L[P.kind || 'REG']) + '): ' +
+      h(dupRows.slice(0, 6).map(function (r) { return r.name; }).join(', ')) + (dupRows.length > 6 ? '…' : '') + '.</p><p class="small">If the same list was pasted before, add only the new names.</p>',
+      [{ label: 'Add only the new names', cls: 'pri', value: 'new' }, { label: 'Add all ' + rows.length, value: 'all' }, { label: 'Cancel', value: null }], true).then(function (v) {
+      if (!v) return;
+      var list = v === 'all' ? rows : rows.filter(function (r, i) { return !dset[i]; });
+      if (!list.length) return toast('Nothing new to add.');
+      pettySend(list, left, false);
+    });
   }
+  function pettyFile(f) {
+    if (!f) return;
+    if (f.size > 30 * 1024 * 1024) return toast('This file is too big (more than 30 MB). Save only the names, age and gender columns as CSV.');
+    if (/\.(xlsx?|ods|docx?|pdf)$/i.test(f.name)) return toast('Choose a text or CSV file. In Excel: File > Save As > CSV.');
+    var rd = new FileReader();
+    rd.onload = function () {
+      var text = String(rd.result || ''), ls = text.split(/\r?\n/), n = ls.filter(function (l) { return /[A-Za-z]{2}/.test(l); }).length;
+      if (ls.length && /\bname\b/i.test(ls[0]) && /\b(age|gender|sex)\b/i.test(ls[0])) n--;      // the heading line
+      if (!n) return toast('No names found in ' + f.name + '.');
+      S.petty.file = { name: f.name, text: text, n: n }; S.petty.text = ''; S.petty.result = null; render();
+    };
+    rd.onerror = function () { toast('The file could not be read.'); };
+    rd.readAsText(f);
+  }
+
+  /* ---------- MR register (12-11-2026): for everyone. The MR numbers of the census day as they are given, newest first, as one plain list
+     (the petty OPD names given in the morning shift are simply OPD patients here), so the record keeper writes them in the paper register. ---------- */
+  function mrRegHtml() {
+    var R = S.mrreg;
+    var html = '<div class="narrow"><div class="listhead"><h3>MR register' + (R ? ' &middot; census day ' + h(CEC.dmy(R.date)) : '') + '</h3><button class="btn sm" data-act="mr-reload" aria-label="Refresh">&#8635; ' +
+      (R && R.at ? CEC.hm(new Date(R.at).toISOString()) : 'Refresh') + '</button></div>' +
+      '<p class="muted small" style="margin:0 0 8px">Every MR number given today, newest on top. The list updates by itself.</p>';
+    if (!R) return html + '<section class="card center muted"><span class="spin"></span>Loading&hellip;</section></div>';
+    html += '<div class="mrsum">' + (R.mr ? '<span>Last MR given: <b>' + h(R.mr) + '</b></span>' : '') + '<span>Today: <b>' + R.rows.length + '</b></span></div>';
+    if (!R.rows.length) return html + '<div class="plist"><div class="empty">No patient yet today.</div></div></div>';
+    return html + '<ol class="mrlist">' + R.rows.slice(0, 600).map(function (x) {
+      return '<li><span class="mrn">' + h(x.mr || '-') + '.</span><span class="mrb"><b>' + h(x.name || '(no name)') + '</b>' +
+        '<span class="muted small">' + (x.sex === 'M' ? 'M' : x.sex === 'F' ? 'F' : '-') + (x.age !== '' && x.age != null ? ', ' + h(x.age) : '') + ' &middot; ' + CEC.hm(x.t) + ' &middot; ' +
+        h(x.only ? (x.only === 'BP' ? 'BP check only' : 'ECG only') : (CEC.label(CEC.CATS, x.cat) || x.cat)) + '</span></span></li>';
+    }).join('') + '</ol></div>';
+  }
+  function mrRegLoad() {
+    if (isOff() || S.mrregBusy) return;
+    S.mrregBusy = true;
+    api('apiMrRegister').then(function (r) { S.mrregBusy = false; r.at = Date.now(); S.mrreg = r; if (S.view === 'mrreg' && !typing() && !anyOverlay()) render(); }, function () { S.mrregBusy = false; });
+  }
+  setInterval(function () { if (!S.me || document.hidden) return; if (S.view === 'mrreg') mrRegLoad(); else if (S.view === 'petty') pettyLoad(); }, 15000);
 
   /* ---------- this device: slip paper, counter PC ---------- */
   function deviceHtml() {
@@ -5495,7 +5779,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
       tile('q-vit', svg('<path d="M3 12h4l2-5 4 10 2-5h6"/>'), 'Vitals', 'BP, pulse, temp, RBS, SpO2, weight, height') +
       tile('q-ecg', svg('<path d="M2 12h3l2-6 3 12 3-9 2 3h7"/>'), 'ECG', 'Tick ECG done: last hour and ECG only') +
       tile('q-slip', svg('<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>'), 'OPD / ER slip', 'Print, choose slips, autoprint') +
-      (canEdit() ? tile('go-petty', svg('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h3M8 12h3M8 16h3M13 8h3M13 12h3M13 16h3"/>'), 'Petty OPD register', 'Paste the names: each gets an MR') : '') +
+      tile('q-mrreg', svg('<path d="M5 4h11l3 3v13H5z"/><path d="M8 9h2M8 13h2M8 17h2M12 9h4M12 13h4M12 17h4"/>'), 'MR register', 'Today’s MR numbers as they are given, newest on top') +
+      (isAdmin() ? tile('go-petty', svg('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h3M8 12h3M8 16h3M13 8h3M13 12h3M13 16h3"/>'), 'Petty OPD register', 'Paste names (any number): MR each morning, up to the daily limit') : '') +
       (canClin() ? tile('q-erx', svg('<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/>'), 'ER procedures & medications', 'Cannula, oxygen, CPR; medicines given (drug account)') : '') +
       '</div>';
   }
@@ -5969,22 +6254,49 @@ if (typeof module !== 'undefined') module.exports = CEC;
         withPaper(function (p) { psel.forEach(function (x) { delete S.slipSel[x.e.id]; }); manualPrint(psel, p); if (S.view === 'slipq') setTimeout(render, 0); });
         break; }
       case 'go-petty': setView('petty'); break;
-      case 'pt-kind': { var pk = $('ptText'); if (pk) S.petty.text = pk.value; S.petty.kind = v; setOn('ptKind', v); break; }
-      case 'pt-where': { var pw = $('ptText'); if (pw) S.petty.text = pw.value; S.petty.where = v; render(); break; }
-      case 'pt-code': { var pc = $('ptText'); if (pc) S.petty.text = pc.value; S.petty.code = v; S.petty.other = null; render(); break; }
-      case 'pt-load': {
-        var pl = $('ptText'); if (pl) S.petty.text = pl.value;
-        var pd = ($('ptDate') || {}).value || pkToday(); S.petty.date = pd;
-        toast('Opening the shift\u2026');
-        api('apiAdminShift', pd, S.petty.code || 'M').then(function (s2) { S.petty.other = s2; render(); }, function (x) { toast(errText(x)); });
+      case 'start-retry': if (S.retryStart) S.retryStart(); break;
+      case 'pw-show': {
+        var pwOn = !!el.checked; store_('cec_showpw', pwOn);
+        Array.prototype.forEach.call(document.querySelectorAll('input[data-pw]'), function (i) { i.type = pwOn ? 'text' : 'password'; });
+        Array.prototype.forEach.call(document.querySelectorAll('input[data-act=pw-show]'), function (c) { c.checked = pwOn; });
         break; }
+      case 'start-other': S.startErr = null; signOut('', true); break;
+      case 'q-mrreg': if (isOff()) { toast('The MR register needs internet.'); break; } setView('mrreg'); break;
+      case 'mr-reload': mrRegLoad(); break;
+      case 'pt-reload': pettyLoad(); break;
+      case 'pt-rm': {
+        var prm = ((S.pq && S.pq.head) || []).concat((S.petty.find && S.petty.find.hits) || []).filter(function (x) { return x.ref === v; })[0];
+        if (!prm) break;
+        confirmBox('Take off the waiting list?', h(prm.name) + ' (' + h(PETTY_L[prm.kind] || '') + ') will not get an MR number.', 'Remove', true).then(function (ok) {
+          if (ok) api('apiPettyRemove', v).then(function (q) {
+            S.pq = q; var F = S.petty.find; if (F && F.hits) F.hits = F.hits.filter(function (x) { return x.ref !== v; });
+            toast(prm.name + ' taken off the waiting list.'); render();
+          }, function (x) { toast(errText(x)); });
+        });
+        break; }
+      case 'pt-rmlist': {
+        var pl = ((S.pq && S.pq.pastes) || []).filter(function (x) { return x.id === v; })[0];
+        if (!pl) break;
+        confirmBox('Take this list off?', 'The <b>' + fmtN(pl.left) + '</b> names of this list that have no MR yet (' + h(pl.by) + ', ' + h(dmyAt(pl.at)) + ') will not get one. Names already given an MR stay in the census.', 'Take off', true).then(function (ok) {
+          if (ok) api('apiPettyRemoveList', v).then(function (q) { S.pq = q; S.petty.find = null; toast('The list was taken off the waiting list.'); render(); }, function (x) { toast(errText(x)); });
+        });
+        break; }
+      case 'pt-lim':
+        api('apiPettyLimit', +v).then(function (q) { S.pq = q; toast('Daily limit: ' + v + ' names each morning shift.'); render(); }, function (x) { toast(errText(x)); });
+        break;
+      case 'pt-find': {
+        var fq = $('ptFind') ? $('ptFind').value.trim() : '';
+        S.petty.findQ = fq;
+        if (fq.replace(/[^A-Za-z0-9]/g, '').length < 2) { S.petty.find = null; toast('Type at least 2 letters of the name.'); render(); break; }
+        S.petty.find = { busy: true }; render();
+        api('apiPettyFind', fq).then(function (r) { S.petty.find = r; render(); }, function (x) { S.petty.find = null; toast(errText(x)); render(); });
+        break; }
+      case 'pt-file': { var pf = $('ptFile'); if (pf) pf.click(); break; }
+      case 'pt-clear': S.petty.text = ''; S.petty.file = null; S.petty.result = null; S.petty.stopped = null; render(); break;
+      case 'pt-kind': { var pk = $('ptText'); if (pk) S.petty.text = pk.value; S.petty.kind = v; setOn('ptKind', v); break; }
       case 'pt-add': pettyAdd(); break;
       case 'pt-g': { var pa = S.petty.ask && S.petty.ask[+el.getAttribute('data-r')]; if (pa) { pa.sex = v; setOn('ptAsk' + el.getAttribute('data-r'), v); } break; }
-      case 'pt-new': S.petty.result = null; S.petty.text = ''; render(); setTimeout(function () { var t = $('ptText'); if (t) t.focus(); }, 50); break;
-      case 'pt-copy': {
-        var ptx = pettyCopyText(), pdone = function () { toast('List copied.'); };
-        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ptx).then(pdone, function () { showText(ptx); }); else showText(ptx);
-        break; }
+      case 'pt-new': S.petty.result = null; S.petty.text = ''; S.petty.file = null; render(); setTimeout(function () { var t = $('ptText'); if (t) t.focus(); }, 50); break;
       case 'ap-set': apDialog(); break;
       case 'ap-off': confirmBox('Switch autoprint off?', 'Slips are then printed by hand on the OPD / ER slip page (Print, Print selected or Print all), for everyone.', 'Switch off', true).then(function (ok) { if (ok) apSend({ on: false }); }); break;
       case 'ap-now': if (apHere()) { toast('Printing the ready slips\u2026'); apRun(true); } break;
@@ -6402,6 +6714,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
         api('apiSignOutUser', id).then(function (r) { if (r && r.token) { S.token = r.token; store_('cec_token', r.token); } toast('Signed out on all devices. They must sign in again.'); }, function (e) { toast(errText(e)); });
         break;
       }
+      case 'sec-reload': confirmBox('Reload everybody?', 'Every open census page and phone app reloads by itself within about 2 minutes (not while someone is typing or saving), so everyone gets the new version. Nobody is signed out. Use this after a new version is deployed.', 'Reload everybody', false).then(function (ok) {
+        if (ok) api('apiReloadAll').then(function (r) { S.reloadSeen = r.at; toast('Every open census page and phone app will reload by itself within about 2 minutes.'); }, function (e) { toast(errText(e)); });
+      }); break;
       case 'sec-all': confirmBox('Sign out everybody?', 'Every user must sign in again on every phone and computer (use this if a password may have leaked). You stay signed in here.', 'Sign out everybody', true).then(function (ok) {
         if (ok) api('apiSignOutAll').then(function (r) { if (r && r.token) { S.token = r.token; store_('cec_token', r.token); } toast('Everybody was signed out.'); }, function (e) { toast(errText(e)); });
       }); break;
@@ -6460,6 +6775,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   document.addEventListener('change', function (ev) {
     var t = ev.target;
     if ((t.id === 'ppCam' || t.id === 'ppFile') && t.files && t.files[0]) { paperPhoto(t.files[0]); t.value = ''; return; }
+    if (t.id === 'ptFile' && t.files && t.files[0]) { pettyFile(t.files[0]); t.value = ''; return; }
     if (t.getAttribute && t.getAttribute('data-dx') && S.form) {
       var dv = t.getAttribute('data-dx'), di = S.form.dxs.indexOf(dv);
       if (t.checked && di < 0) S.form.dxs.push(dv); else if (!t.checked && di >= 0) S.form.dxs.splice(di, 1);
@@ -6581,7 +6897,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var b = $('banner');
     if (!b) return;
     var q = queueAll(), mine = queueMine(), errs = mine.filter(function (x) { return x.err; }), html = demoBarHtml(), vq = vqMine();
-    if (S.me && apHere() && S.view !== 'slipq') html += '<div class="apbar">Autoprint on this device: next print in <b id="apBar">' + (S.apNext ? mmss(S.apNext - Date.now()) : '5:00') + '</b> <button class="lnk" data-act="ap-now">Print now</button></div>';
+    if (S.me && apHere() && S.view !== 'slipq') html += '<div class="apbar">Autoprint on this device: ' + (apInstant() ? 'each slip as soon as it is ready' : 'next print in <b id="apBar">' + (S.apNext ? mmss(S.apNext - Date.now()) : mmss(apEvery())) + '</b>') + ' <button class="lnk" data-act="ap-now">Print now</button></div>';
     if (isOff()) html += '<div class="off"><b>No internet.</b> You can keep adding new patients; they are kept on this phone and sent automatically when the internet is back.</div>';
     if (q.length) {
       html += '<div class="qbar"><b>' + q.length + '</b> patient' + (q.length === 1 ? '' : 's') + ' waiting to be sent' + (S.flushing ? ' &middot; sending\u2026' : '') +
@@ -6702,12 +7018,24 @@ if (typeof module !== 'undefined') module.exports = CEC;
       });
       return;
     }
-    loadState().then(function () { S.loaded = true; S.day = currentCensus(); S.view = 'home'; render(); }, function (e) {
-      var c2 = APP_BUILD && e && e.offline ? cache : null;
+    loadState().then(function () { S.loaded = true; S.day = currentCensus(); S.view = 'home'; render(); }, startFailed);
+    /* 12-11-2026: only an ended sign-in shows the sign-in page. No internet, a busy or slow census: the last saved copy (if any) or a
+       "connecting" card, and the census is asked again by itself; the person stays signed in (the phone app is never signed out by this). */
+    function startFailed(e) {
       S.loaded = true;
-      if (c2 && c2.st) { applyState(c2.st); S.offline = true; S.day = currentCensus(); S.view = 'home'; render(); return; }
-      S.token = null; S.me = null; render();
-    });
+      if (!S.token) { S.me = null; render(); return; }                       // the sign-in has ended (signed out by the census)
+      var c2 = cache && cache.st && cache.uid === uid && (cache.view || '') === tokenView(tok) ? cache : null;
+      if (c2 && !S.me) { applyState(c2.st); S.offline = !!(e && e.offline) && APP_BUILD; S.stale = true; S.day = currentCensus(); S.view = 'home'; render(); }
+      if (S.me) { if (!(e && e.offline)) toast('Could not update: ' + errText(e) + '. Trying again by itself.'); setTimeout(function () { if (S.token && S.stale) loadState().then(function () { S.stale = false; if (!anyOverlay() && !typing()) render(); }, function () { }); }, 15000); return; }
+      S.startErr = errText(e); render();
+      setTimeout(retryStart, 15000);
+    }
+    function retryStart() {
+      if (!S.token || S.me) return;
+      S.startErr = 'Connecting\u2026'; render();
+      loadState().then(function () { S.startErr = null; S.day = currentCensus(); S.view = 'home'; render(); }, startFailed);
+    }
+    S.retryStart = retryStart;
   })();
   S.day = currentCensus();
 })();
