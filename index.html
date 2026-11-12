@@ -727,6 +727,7 @@ label.check.pwshow input{width:18px;height:18px;margin:0}
 .ppneed:empty{display:none}
 .ppview{max-height:62vh;overflow:auto}
 .sh-foot.ppf{flex-wrap:wrap}
+.imgjob img{display:block;max-width:100%;max-height:277mm;margin:0 auto;object-fit:contain}
 
 </style>
 </head>
@@ -4637,6 +4638,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       store_('cec_blankp', paper);
       var list = []; for (var i = 0; i < n; i++) list.push({ blank: true });
       if (v._b === 'pdf') return offerFile('Blank_OPD_slips_' + n + '_' + paper.toUpperCase() + '.pdf', CEC.slipPdfMany(list, slipLogoBytes(), paper), 'application/pdf', false);
+      if (canDesk()) return deskJob({ kind: 'blankslips', n: n }, n + ' blank OPD slip' + (n === 1 ? '' : 's'));   // on the print desk's own paper
       printSlips(list.map(function (e) { return { e: e }; }), paper, { claimed: true, blank: true });
     });
   }
@@ -4644,10 +4646,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function askBlankCerts() {
     modal('Blank death certificates', '<p class="muted small">A4. One file with all the copies; it opens for printing (or saving).</p>' +
       '<label class="lb" for="bcN">How many certificates</label><input class="in" id="bcN" type="number" inputmode="numeric" min="1" max="50" value="5">',
-      [{ label: 'Cancel', value: null }, { label: 'Print', cls: 'pri', value: 'form' }]).then(function (v) {
+      canDesk() ? [{ label: 'Cancel', value: null }, { label: 'Download PDF', value: 'form:pdf' }, { label: 'Print at the print desk', cls: 'pri', value: 'form:desk' }]
+        : [{ label: 'Cancel', value: null }, { label: 'Print', cls: 'pri', value: 'form' }]).then(function (v) {
       if (!v) return;
       var n = Math.round(+v.bcN || 0);
       if (!(n >= 1 && n <= 50)) return toast('Type a number of certificates from 1 to 50.');
+      if (v._b === 'desk') return deskJob({ kind: 'blankcert', n: n }, n + ' blank death certificate' + (n === 1 ? '' : 's'));
       offerFile('Death_Certificates_blank_' + n + '_SGHL_CEC.pdf', CEC.deathCertPdf({}, S.settings, logoBytes(), n), 'application/pdf', false);
     });
   }
@@ -4701,6 +4705,74 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (S.view === 'slipq') setTimeout(render, 0);
     return true;
   }
+  /* 13-11-2026: a phone (no printer) sends a death certificate, blank certificates, blank OPD slips or a PDF / photo form to the print desk. */
+  function canDesk() { return isPhone() && apOn() && !apHere(); }
+  function deskJob(job, label) {
+    if (isOff()) { toast('No internet: ' + label + ' could not be sent to the print desk. Try again when the internet is back.'); return; }
+    job.jid = 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);   // sent twice (lost answer): printed once
+    toast(label.charAt(0).toUpperCase() + label.slice(1) + ' sent to the print desk' + (deskAwake() ? ': it prints in a few seconds.' : ', but the print desk looks asleep or off.'));
+    apiRetry('apiPrintJob', JSON.stringify(job)).then(null, function (e) { toast('Not sent to the print desk: ' + errText(e)); });
+  }
+  /* A phone with the print desk on: print there, or download the PDF as before. */
+  function deskOrFile(title, job, label, fileFn) {
+    if (!canDesk()) return fileFn();
+    modal(title, '<p>Print it at the print desk, or download the PDF to this phone?</p><p class="small">' + deskStatusHtml() + '</p>',
+      [{ label: 'Print at the print desk', cls: 'pri', value: 'desk' }, { label: 'Download PDF', value: 'dl' }, { label: 'Cancel', value: null }], true).then(function (v) {
+      if (v === 'desk') deskJob(job, label); else if (v === 'dl') fileFn();
+    });
+  }
+  /* The print desk: takes the jobs one at a time, prints each once and keeps nothing (no copy is saved on this device). */
+  function deskJobs() {
+    if (S.jobBusy || !apHere()) return;
+    S.jobBusy = true;
+    api('apiJobTake', myDev()).then(function (r) {
+      S.jobBusy = false;
+      if (!r || !r.job) return;
+      try { printJob(r.job); } catch (x) { toast('Print desk: ' + (r.job.what || 'a job') + ' could not be printed.'); }
+      if (r.left > 0) setTimeout(deskJobs, 5000);       // the next one when this print has gone out
+    }, function () { S.jobBusy = false; });
+  }
+  function printJob(j) {
+    var paper = S.auto && S.auto.paper === 'a4' ? 'a4' : 'a5', list = [], i;
+    if (j.err) return toast('Print desk: ' + j.err);
+    if (j.kind === 'blankslips') { for (i = 0; i < j.n; i++) list.push({ e: { blank: true } }); return printSlips(list, paper, { claimed: true, blank: true }); }
+    if (j.kind === 'cert') return printPdfBytes(CEC.deathCertPdf(j.cert, S.settings, logoBytes()), j.what);
+    if (j.kind === 'blankcert') return printPdfBytes(CEC.deathCertPdf({}, S.settings, logoBytes(), j.n), j.what);
+    if (j.kind === 'doc') {
+      if (j.mime === 'application/pdf') return printPdfBytes(fromB64(j.data), j.what);
+      return printImage('data:' + j.mime + ';base64,' + j.data, j.what);
+    }
+  }
+  /* A PDF printed from a hidden frame (with kiosk printing: straight to the printer), then removed; nothing is kept. */
+  function printPdfBytes(bytes, what) {
+    var url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' })), fr = document.createElement('iframe');
+    fr.className = 'pdfjob'; fr.setAttribute('aria-hidden', 'true'); fr.setAttribute('tabindex', '-1');
+    fr.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+    var gone = function () { try { fr.parentNode.removeChild(fr); } catch (x) { } URL.revokeObjectURL(url); };
+    fr.onload = function () {
+      setTimeout(function () {
+        try { fr.contentWindow.focus(); fr.contentWindow.print(); toast('Print desk: ' + what + ' sent to the printer.'); }
+        catch (x) { toast('Print desk: ' + what + ' could not be printed.'); }
+        setTimeout(gone, 120000);
+      }, 800);
+    };
+    fr.src = url; document.body.appendChild(fr);
+  }
+  /* A photo form: one A4 page, the photo fitted to it. */
+  function printImage(src, what) {
+    var pa = $('printArea'), img = new Image();
+    img.onload = function () {
+      pa.innerHTML = '<div class="imgjob"><img src="' + src + '" alt=""></div>';
+      var ps = $('pageSize');
+      if (!ps) { ps = document.createElement('style'); ps.id = 'pageSize'; document.head.appendChild(ps); }
+      ps.textContent = '@page{size:A4 portrait;margin:8mm}';
+      document.body.classList.add('printing');
+      try { window.print(); toast('Print desk: ' + what + ' sent to the printer.'); } catch (x) { toast('Print desk: ' + what + ' could not be printed.'); }
+      setTimeout(function () { document.body.classList.remove('printing'); ps.textContent = ''; pa.innerHTML = ''; }, 1500);
+    };
+    img.onerror = function () { toast('Print desk: ' + what + ' could not be opened.'); };
+    img.src = src;
+  }
   /* The print desk: slips that a phone asked to print again (same numbers). */
   function deskReprint() {
     if (S.reprinting || !apHere()) return;
@@ -4716,7 +4788,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function deskStatusHtml() {
     if (!apOn() || apHere()) return '';
     return S.apBeat && deskAwake() ? '<span class="deskon">Print desk: on (checked ' + Math.max(1, Math.round((Date.now() - S.apBeat) / 1000)) + ' s ago)</span>'
-      : '<span class="deskoff">Print desk: asleep / off' + (S.apBeat ? ' since ' + CEC.hm(new Date(S.apBeat).toISOString()) : '') + '</span>';
+      : '<span class="deskoff">Print desk: asleep / off' + (S.apBeat ? ' since ' + CEC.hm(new Date(S.apBeat).toISOString()) : '') + '. Wake that computer; what is sent now prints when it wakes.</span>';
   }
   function manualPrint(items, paper) {
     if (deskPrint(items)) return;
@@ -4944,6 +5016,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     try { apWake(); } catch (x) { }
     if (!S.me || !apHere()) { if (S.apNext) { S.apNext = 0; apSaveNext(); } apPaintCd(); return; }
     var now = Date.now(), every = apEvery(), instant = every === 0;
+    /* 13-11-2026: "Print desk: on" on every phone. Sent every 30 seconds whatever the timer is (also "no wait") and also while a round is printing. */
+    if (now >= (S.apBeatAt || 0) && !isOff()) { S.apBeatAt = now + 30000; api('apiBeat').then(null, function () { S.apBeatAt = Date.now() + 10000; }); }
     if (!S.apNext) {
       var sv = store_('cec_apnext'), pg = store_('cec_apclaim');
       S.apNext = instant ? now + 3000 : sv && sv.shift === S.open.id && sv.at > now - every && sv.at <= now + every ? Math.max(sv.at, now + 15000) : now + every;
@@ -4961,7 +5035,6 @@ if (typeof module !== 'undefined') module.exports = CEC;
     /* Emergency / Resus: at once. Timer off: every 10 seconds the device looks for ready slips. Both also when the screen is asleep. */
     if (!instant && now < S.apNext) {
       if (now >= (S.apCheck || 0)) { S.apCheck = now + AP_POLL; if (!wait || ready.some(function (x) { return apAtOnce(x.e); })) apRun(false, 'check'); }
-      if (now >= (S.apBeatAt || 0)) { S.apBeatAt = now + 30000; api('apiBeat').then(null, function () { }); }   // 13-11-2026: "Print desk: on" on every phone
       return;
     }
     if (now < S.apNext) return;
@@ -4986,6 +5059,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var fresh = api('apiState').then(function (st) {             // the latest patients of the shift (also those registered on other devices)
       var s = st && st.open;
       if (st && st.reprintN) setTimeout(deskReprint, 0);
+      if (st && st.jobsN) setTimeout(deskJobs, 300);
       if (st && typeof st === 'object' && 'autoprint' in st) S.auto = st.autoprint || null;
       if (s && s.entries && S.open && S.open.id === s.id) {
         s.entries.forEach(function (en) { var cur = (S.open.entries || []).filter(function (y) { return y.id === en.id; })[0]; if (!S.opt[en.id] && (!cur || (cur.tokPr || '') <= (en.tokPr || ''))) putEntry(S.open, en); });
@@ -5028,6 +5102,15 @@ if (typeof module !== 'undefined') module.exports = CEC;
     }).then(null, function () { if (mine()) { S.apBusy = false; S.apNext = Date.now() + 60000; apSaveNext(); } });   // never left stuck
   }
   setInterval(apTick, 1000);
+  /* 13-11-2026: with the screen off (or the window hidden) Chrome runs page timers only once a minute. A small worker keeps the print desk's
+     clock at one tick a second, so it still checks every 10 seconds and its "on" signal does not stop. Only when the page is hidden. */
+  (function () {
+    try {
+      var url = URL.createObjectURL(new Blob(['setInterval(function () { postMessage(1); }, 1000);'], { type: 'text/javascript' })), wk = new Worker(url);
+      wk.onmessage = function () { if (document.visibilityState === 'hidden' && S.me && apHere()) { try { apTick(); } catch (x) { } } };
+      wk.onerror = function () { try { wk.terminate(); } catch (x) { } };
+    } catch (x) { }
+  })();
   /* Records the printing in the background (the slip list moves the patient to "Printed" at once). */
   function markPrinted(items) {
     var real = items.filter(function (x) { return x.sh && x.e.id && !/^(q-|tmp)/.test(x.e.id) && x.e.tok; });   // a test slip is not recorded
@@ -5901,6 +5984,11 @@ if (typeof module !== 'undefined') module.exports = CEC;
     rd.readAsDataURL(f);
   }
   function getDoc(id) {
+    var dd = findDoc(id);
+    if (dd && canDesk() && /^(application\/pdf|image\/(jpeg|png|webp|gif))$/.test(dd.mime || '')) return deskOrFile(dd.title || 'Form', { kind: 'doc', docId: id }, 'form ' + (dd.title || ''), function () { getDocFile(id); });
+    getDocFile(id);
+  }
+  function getDocFile(id) {
     toast('Opening\u2026');
     api('apiGetDoc', id).then(function (r) { offerFile(r.name, fromB64(r.data), r.mime || 'application/octet-stream', false); }, function (e) { toast(errText(e)); });
   }
@@ -6076,7 +6164,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (!miss.length) return Promise.resolve(true);
     return confirmBox('Proceed without ' + (miss.length === 1 ? 'this' : 'these') + '?', 'Not written yet: <b>' + h(miss.join(', ')) + '</b>. These are normally needed on a death certificate. Go back to add ' + (miss.length === 1 ? 'it' : 'them') + ', or proceed without.', 'Proceed without', false);
   }
-  function certPrint(c) { offerFile(certFileName(c), CEC.deathCertPdf(c, S.settings, logoBytes()), 'application/pdf', false); }
+  /* direct: Print / Save & print (a phone sends it to the print desk); otherwise a phone asks: print desk or download. */
+  function certPrint(c, direct) {
+    var file = function () { offerFile(certFileName(c), CEC.deathCertPdf(c, S.settings, logoBytes()), 'application/pdf', false); };
+    var label = 'death certificate' + (c && c.mr ? ' MR ' + c.mr : ''), job = { kind: 'cert', cert: c };
+    if (direct && canDesk()) return deskJob(job, label);
+    deskOrFile('Death certificate', job, label, file);
+  }
   function certTimesOk(c) {
     var bad = [['arrival time', c.arrTime], ['time death was confirmed', c.deathTime]].filter(function (t) { return t[1] && !/^([01]\d|2[0-3]):[0-5]\d$/.test(t[1]); });
     if (bad.length) { $('cErr').innerHTML = '<div class="err">Check the ' + bad.map(function (t) { return t[0]; }).join(' and ') + ': use 24-hour time such as 14:35.</div>'; return false; }
@@ -6093,7 +6187,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       toast('Certificate saved' + (saved.mr ? ' (MR ' + saved.mr + ')' : '')); closeCert();
       if (S.certs) { var ci = S.certs.map(function (x) { return x.id; }).indexOf(saved.id); if (ci >= 0) S.certs[ci] = saved; else S.certs.unshift(saved); S.pend = (S.pend || []).filter(function (x) { return x.id !== saved.entryId; }); S.pendCerts = S.pend.length; loadCerts(true); }
       if (S.view === 'certs') render();
-      if (print) certPrint(saved);
+      if (print) certPrint(saved, true);
     }, function (e) { $('cErr').innerHTML = '<div class="err">' + h(errText(e)) + '</div>'; });
   }
   function certFromPatient() {
@@ -7197,7 +7291,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'cert-close': closeCert(); break;
       case 'c-sex': S.cert.sex = v; setOn('cSex', v); if (v === 'M' && !S.cert.so) { S.cert.so = 'S/O'; setOn('cSo', 'S/O'); } break;
       case 'c-so': { var sk = el.getAttribute('data-k'); if (sk === 'c') { S.cert.so = v; setOn('cSo', v); } else { S.cert.rSo = v; setOn('cRSo', v); } break; }
-      case 'cert-print': { var cp = readCert(); if (certTimesOk(cp) && certNeededOk(cp)) certMissingOk(cp).then(function (ok) { if (ok) certPrint(cp); }); break; }
+      case 'cert-print': { var cp = readCert(); if (certTimesOk(cp) && certNeededOk(cp)) certMissingOk(cp).then(function (ok) { if (ok) certPrint(cp, true); }); break; }
       case 'cert-save': certSave(false); break;
       case 'cert-saveprint': certSave(true); break;
       case 'cert-del': {
@@ -7210,7 +7304,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       }
       case 'blank-opd': case 'blank-slips': askBlankSlips(); break;
       case 'blank-dcn': askBlankCerts(); break;
-      case 'blank-dc': offerFile('Death_Certificate_blank_SGHL_CEC.pdf', CEC.deathCertPdf({}, S.settings, logoBytes()), 'application/pdf', false); break;
+      case 'blank-dc': deskOrFile('Blank death certificate', { kind: 'blankcert', n: 1 }, '1 blank death certificate', function () { offerFile('Death_Certificate_blank_SGHL_CEC.pdf', CEC.deathCertPdf({}, S.settings, logoBytes()), 'application/pdf', false); }); break;
       case 'doc-upload': uploadDoc(); break;
       case 'doc-get': getDoc(id); break;
       case 'doc-edit': { var dd = findDoc(id); if (dd) editDoc(dd); break; }

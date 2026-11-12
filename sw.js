@@ -1,6 +1,6 @@
 /* CEC Census phone app: keeps the app itself on the phone so it opens without internet.
    Patient data is never stored here; calls to the Google script always go straight to Google. */
-var CACHE = 'cec-census-15209543';
+var CACHE = 'cec-census-62229639';
 var SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); }));
