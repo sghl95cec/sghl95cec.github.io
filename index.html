@@ -626,6 +626,28 @@ ul.ptlists .lnk{flex:0 0 auto;text-align:right;max-width:45%}
 /* 12-11-2026: Show password tick */
 label.check.pwshow{display:flex;align-items:center;gap:8px;margin:6px 0 2px;font-size:14px;color:var(--mute);cursor:pointer}
 label.check.pwshow input{width:18px;height:18px;margin:0}
+/* one-staff desk (12-11-2026): red */
+.stiles .stile.solo{border-color:#f3b0b0;background:#fff5f5}
+.stiles .stile.solo .sti{background:#dc2626;color:#fff}
+.stiles .stile.solo b{color:#b91c1c}
+.stiles .stile.solo:hover,.stiles .stile.solo:active{border-color:#b91c1c;box-shadow:inset 0 0 0 2px #b91c1c}
+#sheet .sh-head.soloh{background:#b91c1c}
+#sheet .sh-body.solob .fsec{color:#b91c1c}
+#sheet .sh-body.solob .in:focus{border-color:#dc2626;box-shadow:0 0 0 3px rgba(220,38,38,.18);outline:0}
+#sheet .sh-body.solob .seg button.on{background:#dc2626;border-color:#dc2626;color:#fff}
+#sheet .sh-foot.solof .btn.pri{background:#dc2626;border-color:#dc2626;color:#fff}
+.solosel{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 2px}
+.soloopt{display:flex;gap:10px;align-items:flex-start;text-align:left;border:2px solid #fecaca;background:#fff;border-radius:12px;padding:12px;font:inherit;color:inherit;cursor:pointer}
+.soloopt .tk{flex:0 0 24px;height:24px;border:2px solid #dc2626;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px}
+.soloopt.on{border-color:#dc2626;background:#fef2f2}
+.soloopt.on .tk{background:#dc2626}
+.soloopt b{display:block;font-size:15px;color:#991b1b}
+.soloopt .d{display:block;font-size:12.5px;color:var(--mute);margin-top:2px;line-height:1.35}
+.solosteps{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:#991b1b}
+.solosteps i{font-style:normal;padding:3px 10px;border-radius:999px;background:#fee2e2}
+.solosteps i.on{background:#dc2626;color:#fff}
+.solokv{border-left:4px solid #dc2626}
+@media (max-width:440px){.solosel{grid-template-columns:1fr}}
 
 </style>
 </head>
@@ -4127,6 +4149,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       box.scrollIntoView({ block: 'nearest' }); return;
     }
     var e = r.entry, isNew = !e.id, target = f.target, temp = null, orig = f.orig;
+    if (f.extra) Object.assign(e, f.extra);              // one-staff desk: vitals and "print now" go with the registration in one save
     if (dup && f.dupOk) e.dupOk = true;                  // saved anyway after the warning
     if (isNew && !e.clientId) e.clientId = 'q-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);   // a repeated send is not added twice
     if (isNew) { temp = Object.assign({}, e, { id: 'tmp' + Date.now(), t: new Date().toISOString(), signed: false, mr: e.autoMr ? (S.mr ? S.mr.next : 'Auto') : e.mr }); sh.entries.push(temp); }
@@ -4146,7 +4169,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         : 'No internet: ' + e.name + ' is saved on this phone and will be sent automatically.');
       if (!S.form) render();
     };
-    if (APP_BUILD && isNew && isOff()) { keepOnPhone(); if (mode === 'next') openForm(target, null); else closeForm(); render(); if (mode === 'vitals') toast('Saved on this phone. Vitals can be added after it is sent.'); return; }
+    if (APP_BUILD && isNew && isOff()) { keepOnPhone(); if (mode === 'next') openForm(target, null); else if (mode === 'solo') openSolo(); else closeForm(); render(); if (mode === 'vitals') toast('Saved on this phone. Vitals can be added after it is sent.'); return; }
     S.pending++;
     apiRetry(isNew ? 'apiAddEntry' : 'apiUpdateEntry', sh.id, JSON.stringify(e)).then(function (saved) {
       S.pending--;
@@ -4159,6 +4182,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       }
       var i = sh.entries.map(function (x) { return x.id; }).indexOf(isNew ? temp.id : saved.id);
       if (i >= 0) sh.entries[i] = saved; else sh.entries.push(saved);
+      if (mode === 'solo') soloPrint(saved, sh);
       if (mode === 'vitals' && !S.form && !S.qe) openQuick(saved, 'vitals', target);
       else if (signing && nowDead && canCertMake() && !anyOverlay()) {      // brought dead / expired: signing off goes straight to the death certificate
         toast('Signed off. Opening the death certificate\u2026');
@@ -4176,7 +4200,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
           [{ label: 'Do not save', value: false }, { label: 'Save anyway', cls: 'pri', value: true }], true).then(function (yes) {
           if (!yes) return;
           e.dupOk = true; S.pending++;
-          apiRetry('apiAddEntry', sh.id, JSON.stringify(e)).then(function (saved) { S.pending--; putEntry(sh, saved); toast('Saved MR ' + saved.mr + ' ' + saved.name); if (!anyOverlay()) render(); },
+          apiRetry('apiAddEntry', sh.id, JSON.stringify(e)).then(function (saved) { S.pending--; putEntry(sh, saved); toast('Saved MR ' + saved.mr + ' ' + saved.name); if (mode === 'solo') soloPrint(saved, sh); if (!anyOverlay()) render(); },
             function (x2) { S.pending--; if (x2 && (x2.offline || transient(x2))) { temp = { id: 'tmp' + Date.now(), t: new Date().toISOString() }; keepOnPhone(!x2.offline); return; } modal('Not saved', '<p>' + h(e.name) + ' was not saved: ' + h(errText(x2)) + '</p>', [{ label: 'OK', cls: 'pri', value: true }]); });
         });
       }
@@ -4195,8 +4219,115 @@ if (typeof module !== 'undefined') module.exports = CEC;
     });
     var msg = (signing ? 'Signed off' : 'Saved') + (e.autoMr || !e.mr ? ' ' + e.name : ' MR ' + e.mr);
     if (mode === 'next') { toast(msg + '. Enter the next patient.'); openForm(target, null); }
+    else if (mode === 'solo') { toast(msg + '. Next patient.'); openSolo(); }
     else { closeForm(); toast(mode === 'vitals' ? msg + '. Opening vitals\u2026' : msg); }
     render();
+  }
+  /* ---------- one-staff desk (12-11-2026): one person registers and takes the vitals; the slip goes to printing ----------
+     With vitals: registration page, then at once the vitals page (nothing is saved and no slip is made before the vitals are done),
+     then one save with the vitals: the slip is released for printing. Without vitals: the slip is released as soon as the registration is saved.
+     A released slip is printed by autoprint even when autoprint waits for vitals. */
+  function soloPref() { return store_('cec_solo') === 'novit' ? 'novit' : 'vit'; }
+  function soloSteps(step) {
+    var vit = soloPref() === 'vit', it = function (n, t) { return '<i class="' + (n === step ? 'on' : '') + '">' + t + '</i>'; };
+    return '<div class="solosteps">' + it(1, '1 Registration') + (vit ? ' &rsaquo; ' + it(2, '2 Vitals') : '') + ' &rsaquo; ' + it(3, 'Slip prints') + '</div>';
+  }
+  function openSolo() {
+    if (!S.work) return toast('No shift is open yet. Refresh the page.');
+    openForm('work', null); S.form.solo = true; soloDress();
+  }
+  function soloDress() {
+    var el = $('sheet'), hd = el.querySelector('.sh-head'), bd = el.querySelector('.sh-body'), ft = el.querySelector('.sh-foot'), pf = $('pf');
+    if (!hd || !pf || !ft) return;
+    hd.classList.add('soloh'); bd.classList.add('solob'); ft.classList.add('solof');
+    var t = hd.querySelector('h3'); if (t) t.textContent = 'Register & vitals';
+    var p = soloPref(), opt = function (v, b, d) { return '<button type="button" class="soloopt' + (p === v ? ' on' : '') + '" data-act="solo-pick" data-v="' + v + '"><span class="tk">' + (p === v ? '&#10003;' : '') + '</span><span><b>' + b + '</b><span class="d">' + d + '</span></span></button>'; };
+    pf.insertAdjacentHTML('afterbegin', '<div id="soloTop">' + soloSteps(1) + '<div class="solosel" id="soloSel">' +
+      opt('vit', 'Register with vitals', 'The vitals page opens next. The slip prints with the vitals.') +
+      opt('novit', 'Register without vitals', 'In a hurry: the slip prints as soon as you save.') + '</div></div>');
+    soloFoot();
+  }
+  function soloNote() {
+    var n = $('fRegNote'); if (!n) return;
+    n.innerHTML = soloPref() === 'vit' ? 'Tap <b>Next: vitals</b>, fill the vitals, then <b>Save &amp; print slip</b>. Nothing is saved before that.'
+      : 'Tap <b>Save &amp; print slip</b>: the patient is saved and the slip goes to printing at once.';
+  }
+  function soloFoot() {
+    soloNote();
+    var ft = document.querySelector('#sheet .sh-foot'); if (!ft) return;
+    ft.innerHTML = soloPref() === 'vit' ? '<button class="btn pri" data-act="solo-next">Next: vitals &rsaquo;</button>' : '<button class="btn pri" data-act="solo-next">Save &amp; print slip</button>';
+  }
+  function soloPick(v) {
+    store_('cec_solo', v === 'novit' ? 'novit' : 'vit');
+    var top = $('soloTop'); if (!top || !S.form) return;
+    var old = top.querySelector('.solosteps'); if (old) old.outerHTML = soloSteps(1);
+    var bs = top.querySelectorAll('.soloopt');
+    for (var i = 0; i < bs.length; i++) { var on = bs[i].getAttribute('data-v') === soloPref(); bs[i].classList.toggle('on', on); bs[i].querySelector('.tk').innerHTML = on ? '&#10003;' : ''; }
+    soloFoot();
+  }
+  function soloNext() {
+    var f = S.form; if (!f || !f.solo) return;
+    if (soloPref() === 'novit') { f.extra = { rel: true }; savePatient('solo'); return soloCheck(); }
+    var r = readForm(false), box = $('fErr'), sh = targetShift();
+    if (r.err.length) { box.innerHTML = '<div class="err">Please enter: ' + h(r.err.join(', ')) + '.</div>'; box.scrollIntoView({ block: 'nearest' }); return; }
+    var dup = r.entry.autoMr || !r.entry.mr ? null : sh.entries.filter(function (x) { return String(x.mr).toLowerCase() === r.entry.mr.toLowerCase(); })[0];
+    if (dup && !f.dupOk) {
+      f.dupOk = true;
+      box.innerHTML = '<div class="err dup">MR ' + h(dup.mr) + ' was already entered at ' + CEC.hm(dup.t) + '. Tap again to go on anyway.</div>';
+      box.scrollIntoView({ block: 'nearest' }); return;
+    }
+    box.innerHTML = '';
+    var e = r.entry, bd = document.querySelector('#sheet .sh-body'), v = $('soloV');
+    if (!v) { bd.insertAdjacentHTML('beforeend', '<div id="soloV"></div>'); v = $('soloV'); }
+    v.innerHTML = soloSteps(2) + '<div class="kv solokv" style="margin-top:12px"><b>' + h(e.name) + '</b> &middot; MR ' + h(e.autoMr ? '(automatic)' : e.mr) +
+      '<div class="muted small">' + h(catLabel(e)) + ' &middot; ' + (e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '') + (e.age !== '' && e.age != null ? ', ' + h(e.age) + ' y' : '') + '</div></div>' +
+      vitalsHtml({}) + '<div id="qErr"></div>';
+    v.classList.remove('hidden'); $('pf').classList.add('hidden');
+    var hb = document.querySelector('#sheet .sh-head button'); if (hb) { hb.setAttribute('data-act', 'solo-back'); hb.innerHTML = '&lsaquo; Back'; }
+    var t = document.querySelector('#sheet .sh-head h3'); if (t) t.textContent = 'Vitals';
+    document.querySelector('#sheet .sh-foot').innerHTML = '<button class="btn" data-act="solo-skip">Save without vitals</button><button class="btn pri" data-act="solo-save">Save &amp; print slip</button>';
+    bd.scrollTop = 0;
+    setTimeout(function () { var b = $('fBp'); if (b) b.focus(); }, 60);
+  }
+  function soloBack() {
+    var v = $('soloV'); if (v) v.classList.add('hidden');
+    if ($('pf')) $('pf').classList.remove('hidden');
+    var hb = document.querySelector('#sheet .sh-head button'); if (hb) { hb.setAttribute('data-act', 'close-form'); hb.textContent = 'Cancel'; }
+    var t = document.querySelector('#sheet .sh-head h3'); if (t) t.textContent = 'Register & vitals';
+    soloFoot();
+  }
+  function soloSave(skip) {
+    var f = S.form; if (!f || !f.solo) return;
+    var x = { rel: true };
+    if (!skip) {
+      var err = [], vit = readVitals(err);
+      if (err.length) { $('qErr').innerHTML = '<div class="err">Please check: ' + h(err.join(', ')) + '.</div>'; return; }
+      if (!VIT.some(function (k) { return vit[k[0]]; })) { $('qErr').innerHTML = '<div class="err">Enter at least one vital (for example the BP), or tap Save without vitals.</div>'; return; }
+      VIT.forEach(function (k) { x[k[0]] = vit[k[0]] || ''; });   // the registration reader also reads them and ticks BP / BSR as before
+    } else { var v = $('soloV'); if (v) v.innerHTML = ''; }       // without vitals: nothing typed on the vitals page is saved
+    f.extra = x;
+    savePatient('solo');
+    soloCheck();
+  }
+  /* The slip of the one-staff desk goes to printing. Autoprint on: printed at once (on this device now, on the slip device within
+     10 seconds). Autoprint off: printed here (the paper is asked once while this page is open). */
+  function soloPrint(e, sh) {
+    if (!e) return;
+    if (!e.tok) { toast('MR ' + e.mr + ' ' + e.name + ' saved. No slip for this category.'); return; }
+    if (e.tokPr) return;
+    if (apOn()) {
+      toast('MR ' + e.mr + ' ' + e.name + ': slip ' + e.tok + ' sent to autoprint' + (apHere() ? '.' : ' (it prints on the slip device).'));
+      if (apHere()) setTimeout(function () { try { apRun(false, 'check'); } catch (x) { } }, 0);
+      return;
+    }
+    var go = function (p) { var cur = (sh.entries || []).filter(function (y) { return y.id === e.id; })[0] || e; if (!cur.tokPr) printSlip(cur, sh, p); };
+    if (S.soloPaper) return go(S.soloPaper);
+    askPaper().then(function (v) { if (!v) return toast('Slip ' + e.tok + ' is on the OPD / ER slip page.'); S.soloPaper = v; go(v); });
+  }
+  /* savePatient stopped on the registration page (a missing detail, or the same MR saved meanwhile at another desk): show it. */
+  function soloCheck() {
+    var f = S.form, box = $('fErr');
+    if (f && f.solo && f.extra && box && box.innerHTML) { f.extra = null; soloBack(); box.scrollIntoView({ block: 'nearest' }); }
   }
   /* Someone saved the patient while I had it open: fetch only this patient, put my changes on top and save again.
      Busy patients (vitals, ECG, slip, doctor at the same moment) may need a few rounds (12-11-2026). */
@@ -4428,6 +4559,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function apInstant() { return apEvery() === 0; }
   function apEveryText(n) { n = n == null ? 300 : n; return n === 0 ? 'each slip as soon as it is ready' : n < 60 ? 'every ' + n + ' seconds' : 'every ' + (n / 60) + ' minute' + (n === 60 ? '' : 's'); }
   function apIsEr(e) { return e && e.cat === 'EMR'; }
+  function apAtOnce(e) { return apIsEr(e) || !!(e && e.rel); }      // Emergency / Resus, and slips of the one-staff desk: printed at once, no timer
   function claimId() { return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 9); }   // a request sent again gets the same slips back
   function myDev() {
     var d = store_('cec_dev');
@@ -4442,12 +4574,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function apReady(sh) {
     sh = sh || S.open; if (!apOn() || !sh) return [];
     var vit = S.auto.mode !== 'now';
-    return (sh.entries || []).filter(function (e) { return !/^(q-|tmp)/.test(e.id) && slipWaiting(e) && (!vit || hasVitals(e) || apIsEr(e)); })
+    return (sh.entries || []).filter(function (e) { return !/^(q-|tmp)/.test(e.id) && slipWaiting(e) && (!vit || hasVitals(e) || apIsEr(e) || e.rel); })
       .map(function (e) { return { e: e, sh: S.open }; }).sort(function (a, b) { return apReadyAt(a.e) - apReadyAt(b.e); });
   }
   /* When a slip became ready: without vitals, when its number was given; with vitals, when this device first saw the vitals. */
   function apReadyAt(e) {
-    if (S.auto && (S.auto.mode === 'now' || apIsEr(e))) return Date.parse(e.tokAt || e.t) || Date.now();
+    if (S.auto && (S.auto.mode === 'now' || apIsEr(e) || e.rel)) return Date.parse(e.tokAt || e.t) || Date.now();
     var m = apSeen(); return m[e.id] || Date.now();
   }
   function apSeen() {
@@ -4463,6 +4595,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function apRowNote(e) {
     if (!apOn()) return '';
     if (apIsEr(e)) return ' &middot; <span class="apw ok">autoprint at once (ER)</span>';
+    if (e.rel && !hasVitals(e)) return ' &middot; <span class="apw ok">autoprint (one-staff desk, without vitals)</span>';
     if (S.auto.mode !== 'now' && !hasVitals(e)) return ' &middot; <span class="apw">autoprint waits for the vitals (or print it by hand)</span>';
     return ' &middot; <span class="apw ok">autoprint</span>';
   }
@@ -4560,7 +4693,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var wait = (typing() && now - S.lastAct < 6000) || ($('modal') && !$('modal').classList.contains('hidden'));
     /* Emergency / Resus: at once. Timer off: every 10 seconds the device looks for ready slips. Both also when the screen is asleep. */
     if (!instant && now < S.apNext) {
-      if (now >= (S.apCheck || 0)) { S.apCheck = now + AP_POLL; if (!wait || ready.some(function (x) { return apIsEr(x.e); })) apRun(false, 'check'); }
+      if (now >= (S.apCheck || 0)) { S.apCheck = now + AP_POLL; if (!wait || ready.some(function (x) { return apAtOnce(x.e); })) apRun(false, 'check'); }
       return;
     }
     if (now < S.apNext) return;
@@ -4592,7 +4725,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     return fresh.then(function () {
       if (!mine()) return;
       if (!apHere()) { S.apBusy = false; return; }                   // switched off or moved meanwhile
-      var list = apReady(), now = Date.now(), er = list.some(function (x) { return apIsEr(x.e); });
+      var list = apReady(), now = Date.now(), er = list.some(function (x) { return apAtOnce(x.e); });
       apNote(list);
       var pend00 = store_('cec_apclaim'), owed = pend00 && pend00.got && pend00.shift === sh.id;
       if (why === 'check' && !instant && !er && !owed) { S.apBusy = false; return; }   // looked: no Emergency / Resus slip, the timer prints the rest
@@ -5775,6 +5908,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var svg = function (d) { return '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2">' + d + '</svg>'; };
     if (!canEnter()) return '';
     return '<div class="stiles">' +
+      '<button class="stile wide solo" data-act="solo"><span class="sti" aria-hidden="true">' + svg('<circle cx="9" cy="7" r="3.5"/><path d="M2.5 20c0-3.6 2.8-5.5 6.5-5.5"/><path d="M13 14h2.5l1.5-3.5 2.5 7 1.5-3.5H23"/>') +
+        '</span><span class="stt"><b>Register &amp; vitals (one staff)</b><span>One person registers the patient and takes the vitals; the slip goes to printing</span></span></button>' +
       tile('new-reg', svg('<circle cx="10" cy="8" r="4"/><path d="M3 21c0-4 3-6 7-6s7 2 7 6"/><path d="M19 8v6M16 11h6"/>'), 'Patient registration', 'MR, name, age, gender, category') +
       tile('q-vit', svg('<path d="M3 12h4l2-5 4 10 2-5h6"/>'), 'Vitals', 'BP, pulse, temp, RBS, SpO2, weight, height') +
       tile('q-ecg', svg('<path d="M2 12h3l2-6 3 12 3-9 2 3h7"/>'), 'ECG', 'Tick ECG done: last hour and ECG only') +
@@ -6519,6 +6654,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
       }
       case 'dx-remove': S.form.dxs = S.form.dxs.filter(function (x) { return x !== v; }); renderDx(); break;
       case 'save-pt': savePatient('save'); break;
+      case 'solo': openSolo(); break;
+      case 'solo-pick': soloPick(v); break;
+      case 'solo-next': soloNext(); break;
+      case 'solo-back': soloBack(); break;
+      case 'solo-save': soloSave(false); break;
+      case 'solo-skip': soloSave(true); break;
       case 'save-next': savePatient('next'); break;
       case 'save-vit': savePatient('vitals'); break;
       case 'pp-new': openPaper(null); break;
