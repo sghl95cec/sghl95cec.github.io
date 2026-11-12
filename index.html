@@ -4782,10 +4782,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (!fresh.length && !re.length) return false;
     if (isOff()) { toast('No internet: the slips could not be sent to the print desk. Tap Print again when the internet is back.'); return true; }
     fresh.forEach(function (x) { x.e.rel = true; x.e.relNow = true; });
-    var n = fresh.length + re.length;
-    toast(n + ' slip' + (n === 1 ? '' : 's') + ' sent to the print desk' + (re.length && !fresh.length ? ' to print again' : '') + (deskAwake() ? ': it prints them in a few seconds.' : ', but the print desk looks asleep or off.'));
+    var n = fresh.length + re.length, what = n + ' slip' + (n === 1 ? '' : 's');
+    toast('Sending ' + what + ' to the print desk\u2026');
     apiRetry('apiPrintNow', JSON.stringify(fresh.map(function (x) { return { shiftId: x.sh.id, id: x.e.id }; }).concat(re.map(function (x) { return { shiftId: x.sh.id, id: x.e.id, again: 1 }; }))))
-      .then(null, function (e) { toast('Not sent to the print desk: ' + errText(e)); });
+      .then(function (r) { deskSent(r, what + (re.length && !fresh.length ? ' (to print again)' : ''), true); }, function (e) { toast('Not sent to the print desk: ' + errText(e)); });
     if (S.view === 'slipq') setTimeout(render, 0);
     return true;
   }
@@ -4794,9 +4794,28 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function deskJob(job, label) {
     if (isOff()) { toast('No internet: ' + label + ' could not be sent to the print desk. Try again when the internet is back.'); return; }
     job.jid = 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);   // sent twice (lost answer): printed once
-    toast(label.charAt(0).toUpperCase() + label.slice(1) + ' sent to the print desk' + (deskAwake() ? ': it prints in a few seconds.' : ', but the print desk looks asleep or off.'));
-    apiRetry('apiPrintJob', JSON.stringify(job)).then(null, function (e) { toast('Not sent to the print desk: ' + errText(e)); });
+    toast('Sending ' + label + ' to the print desk\u2026');
+    apiRetry('apiPrintJob', JSON.stringify(job)).then(function (r) { deskSent(r, label, false); }, function (e) { toast('Not sent to the print desk: ' + errText(e)); });
   }
+  /* 13-11-2026: the message after sending is based on the census's answer at that moment (not on what this phone last heard). */
+  function deskSeen(age) { if (age != null) S.apBeat = age >= 0 ? Date.now() - age : 0; }
+  function deskSent(r, what, many) {
+    deskSeen(r && r.beatAge);
+    var W = what.charAt(0).toUpperCase() + what.slice(1);
+    if (deskAwake()) toast(W + ' sent to the print desk: ' + (many ? 'they print' : 'it prints') + ' in a few seconds.');
+    else toast(W + ' sent. The print desk has not answered' + (S.apBeat ? ' since ' + CEC.hm(new Date(S.apBeat).toISOString()) : '') + ': wake that computer; ' + (many ? 'they print' : 'it prints') + ' when it wakes.');
+    if (S.view === 'slipq' && !typing() && !anyOverlay()) render();
+  }
+  /* Every 20 seconds, the print desk state for the "Print desk: on / asleep" line, on every page (also with a form open). */
+  setInterval(function () {
+    if (!S.me || !S.token || document.hidden || isOff() || !apOn() || apHere() || S.deskAsk) return;
+    S.deskAsk = true;
+    api('apiDesk').then(function (r) {
+      S.deskAsk = false;
+      var was = deskAwake(); deskSeen(r && r.age);
+      if (was !== deskAwake() && S.view === 'slipq' && !typing() && !anyOverlay()) render();
+    }, function () { S.deskAsk = false; });
+  }, 20000);
   /* The print desk: takes the jobs one at a time, prints each once and keeps nothing (no copy is saved on this device). */
   function deskJobs() {
     if (S.jobBusy || !apHere()) return;
@@ -4869,7 +4888,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       printSlips(list.map(function (en) { return { e: en, sh: S.open && S.open.id === en.shiftId ? S.open : { id: en.shiftId } }; }), S.auto && S.auto.paper === 'a4' ? 'a4' : 'a5', { again: true });
     }, function () { S.reprinting = false; });
   }
-  function deskAwake() { return !!S.apBeat && Date.now() - S.apBeat < 90000; }
+  function deskAwake() { return !!S.apBeat && Date.now() - S.apBeat < 120000; }     // the print desk says it is on every 30 seconds: 4 missed in a row = asleep
   function deskStatusHtml() {
     if (!apOn() || apHere()) return '';
     return S.apBeat && deskAwake() ? '<span class="deskon">Print desk: on (checked ' + Math.max(1, Math.round((Date.now() - S.apBeat) / 1000)) + ' s ago)</span>'
