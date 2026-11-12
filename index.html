@@ -728,6 +728,7 @@ label.check.pwshow input{width:18px;height:18px;margin:0}
 .ppview{max-height:62vh;overflow:auto}
 .sh-foot.ppf{flex-wrap:wrap}
 .imgjob img{display:block;max-width:100%;max-height:277mm;margin:0 auto;object-fit:contain}
+.pgsvg{display:block}
 
 </style>
 </head>
@@ -794,16 +795,21 @@ var PDFGen = (function () {
   Doc.prototype.addPage = function () { this.cur = []; this.pages.push(this.cur); };
   Doc.prototype.usePage = function (i) { this.cur = this.pages[i]; };
   Doc.prototype.op = function (s) { this.cur.push(s); };
+  /* 13-11-2026: every drawing is also kept as a plain record, so the same page can be drawn as SVG and printed straight from the page
+     (Chrome cannot open a PDF inside the Google Apps Script page, so the print desk prints certificates the way it prints slips). */
+  Doc.prototype.sv = function (o) { this.cur.push(o); };
   Doc.prototype.text = function (x, y, s, f, size, align, gray, cs) {
     f = f || 'R'; size = size || 11; gray = gray || 0; cs = cs || 0;
     var w = width(s, f, size) + (cs ? cs * Math.max(0, clean(s).length - 1) : 0);
     if (align === 'center') x -= w / 2; else if (align === 'right') x -= w;
     this.op('BT /' + f + ' ' + size + ' Tf ' + (cs ? cs + ' Tc ' : '') + gray + ' g ' + n2(x) + ' ' + n2(this.H - y) + ' Td (' + esc(s) + ') Tj ' + (cs ? '0 Tc ' : '') + 'ET');
+    this.sv({ t: 'x', x: x, y: y, s: clean(s), f: f, z: size, g: gray, w: w, cs: cs });
     return w;
   };
   /* Text filled and outlined (a little bolder), like the CEC's printed slip. */
   Doc.prototype.textS = function (x, y, s, f, size, sw) {
     this.op('q ' + n2(sw) + ' w 0 G BT /' + f + ' ' + size + ' Tf 2 Tr 0 g ' + n2(x) + ' ' + n2(this.H - y) + ' Td (' + esc(s) + ') Tj ET Q');
+    this.sv({ t: 'x', x: x, y: y, s: clean(s), f: f, z: size, g: 0, w: width(s, f, size), sw: sw });
   };
   Doc.prototype.rrect = function (x, y, w, h, r, lw) {
     var k = 0.5523 * r, X = x, Y = this.H - y - h, a = [];
@@ -812,9 +818,11 @@ var PDFGen = (function () {
       n2(X + r) + ' ' + n2(Y + h) + ' l', n2(X + r - k) + ' ' + n2(Y + h) + ' ' + n2(X) + ' ' + n2(Y + h - r + k) + ' ' + n2(X) + ' ' + n2(Y + h - r) + ' c',
       n2(X) + ' ' + n2(Y + r) + ' l', n2(X) + ' ' + n2(Y + r - k) + ' ' + n2(X + r - k) + ' ' + n2(Y) + ' ' + n2(X + r) + ' ' + n2(Y) + ' c');
     this.op((lw || 1) + ' w 0 G ' + a.join(' ') + ' h S');
+    this.sv({ t: 'rr', x: x, y: y, w: w, h: h, r: r, lw: lw || 1 });
   };
   Doc.prototype.line = function (x1, y1, x2, y2, lw, gray) {
     this.op((lw || 0.5) + ' w ' + (gray || 0) + ' G ' + n2(x1) + ' ' + n2(this.H - y1) + ' m ' + n2(x2) + ' ' + n2(this.H - y2) + ' l S');
+    this.sv({ t: 'l', x1: x1, y1: y1, x2: x2, y2: y2, lw: lw || 0.5, g: gray || 0 });
   };
   Doc.prototype.rect = function (x, y, w, h, fill, stroke, lw) {
     var s = '';
@@ -823,6 +831,7 @@ var PDFGen = (function () {
     s += n2(x) + ' ' + n2(this.H - y - h) + ' ' + n2(w) + ' ' + n2(h) + ' re ';
     s += (fill != null && stroke != null) ? 'B' : (fill != null ? 'f' : 'S');
     this.op(s);
+    this.sv({ t: 'r', x: x, y: y, w: w, h: h, fill: fill, stroke: stroke, lw: lw || 0.5 });
   };
   /* Practice data of a demonstration ID (PDFGen.demo). Strong enough to stay plain on a black-and-white laser printer and on a photocopy:
      a large dark diagonal DEMONSTRATION, the same words repeated small over the whole box (it cannot be cut off), and solid bands
@@ -857,6 +866,7 @@ var PDFGen = (function () {
         n2(b.x + b.w / 2 - width(BAND, 'HB', b.z) / 2) + ' ' + n2(H - b.y - b.h + 4.6) + ' Td (' + esc(BAND) + ') Tj ET Q');
     });
     ops.forEach(function (o) { self.op(o); });
+    this.sv({ t: 'm', x: x, y: y, w: w, h: h, bands: bands });
     this.cur.marked = true;
   };
   /* A see-through stamp inside a box (signature boxes of a demonstration death certificate). */
@@ -864,11 +874,13 @@ var PDFGen = (function () {
     var z1 = Math.min(h * 0.42, 0.9 * w / width(t1, 'HB', 1)), z2 = Math.min(z1 * 0.5, 0.9 * w / width(t2, 'HB', 1));
     this.op('q /GS gs 0.6 0.04 0.04 rg BT /HB ' + n2(z1) + ' Tf ' + n2(x + w / 2 - width(t1, 'HB', z1) / 2) + ' ' + n2(this.H - y - h / 2 + z1 * 0.1) + ' Td (' + esc(t1) + ') Tj ET' +
       ' BT /HB ' + n2(z2) + ' Tf ' + n2(x + w / 2 - width(t2, 'HB', z2) / 2) + ' ' + n2(this.H - y - h / 2 - z2 * 1.25) + ' Td (' + esc(t2) + ') Tj ET Q');
+    this.sv({ t: 'st', x: x, y: y, w: w, h: h, t1: t1, t2: t2, z1: z1, z2: z2 });
   };
   Doc.prototype.setImage = function (bytes, w, h) { this.img = { bytes: bytes, w: w, h: h }; };
   Doc.prototype.image = function (x, y, w, h) {
     if (!this.img) return;
     this.op('q ' + n2(w) + ' 0 0 ' + n2(h) + ' ' + n2(x) + ' ' + n2(this.H - y - h) + ' cm /Im1 Do Q');
+    this.sv({ t: 'i', x: x, y: y, w: w, h: h });
   };
   Doc.prototype.output = function () {
     var self = this, chunks = [], len = 0, offs = [], n = 0;
@@ -899,7 +911,7 @@ var PDFGen = (function () {
     var fontRes = keys.map(function (k) { return '/' + k + ' ' + fontObjs[k] + ' 0 R'; }).join(' '), demo = !!PDFGen.demo;
     self.pages.forEach(function (ops, i) {
       if (demo && !ops.marked) { var keep = self.cur; self.cur = ops; self.mark(0, 0, self.W, self.H); self.cur = keep; }
-      var content = ops.join('\n');
+      var content = ops.filter(function (o) { return typeof o === 'string'; }).join('\n');
       write(pageObjs[i], '<< /Type /Page /Parent ' + pagesObj + ' 0 R /MediaBox [0 0 ' + self.W + ' ' + self.H + '] /Resources << /Font << ' + fontRes + ' >>' +
         (imgObj ? ' /XObject << /Im1 ' + imgObj + ' 0 R >>' : '') + (demo ? ' /ExtGState << /GW << /Type /ExtGState /ca 0.4 /CA 0.4 >> /GT << /Type /ExtGState /ca 0.16 /CA 0.16 >> /GS << /Type /ExtGState /ca 0.55 /CA 0.55 >> >>' : '') + ' >> /Contents ' + contentObjs[i] + ' 0 R >>');
       write(contentObjs[i], '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream');
@@ -912,6 +924,53 @@ var PDFGen = (function () {
     var out = new Uint8Array(len), p = 0;
     chunks.forEach(function (c) { out.set(c, p); p += c.length; });
     return out;
+  };
+
+  /* The pages as SVG (A4 or A4 landscape, drawn in PDF points), the same drawing as the PDF. */
+  var FAM = { R: ['Times New Roman,Times,Liberation Serif,Tinos,serif', 400, 0], B: ['Times New Roman,Times,Liberation Serif,Tinos,serif', 700, 0],
+    I: ['Times New Roman,Times,Liberation Serif,Tinos,serif', 400, 1], H: ['Helvetica,Arial,Liberation Sans,Arimo,sans-serif', 400, 0], HB: ['Helvetica,Arial,Liberation Sans,Arimo,sans-serif', 700, 0] };
+  var svgClip = 0;
+  function xe(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function gc(g) { var v = Math.round(Math.max(0, Math.min(1, +g || 0)) * 255); return 'rgb(' + v + ',' + v + ',' + v + ')'; }
+  function markSvg(x, y, w, h, bands) {
+    var m = markPlan(x, y, w, h, bands), id = 'pgc' + (++svgClip), deg = n2(-m.a * 180 / Math.PI), HF = FAM.H[0];
+    var out = '<clipPath id="' + id + '"><rect x="' + n2(x) + '" y="' + n2(y) + '" width="' + n2(w) + '" height="' + n2(h) + '"/></clipPath><g clip-path="url(#' + id + ')">' +
+      '<g transform="translate(' + n2(m.cx) + ' ' + n2(m.cy) + ') rotate(' + deg + ')" font-family="' + HF + '" font-weight="700"><g fill="#8c0d0d" fill-opacity="0.16" font-size="' + n2(m.z3) + '">';
+    m.tiles.forEach(function (t) { out += '<text x="' + n2(t[0]) + '" y="' + n2(t[1]) + '">' + MARK3 + '</text>'; });
+    out += '</g><g fill="#990a0a" fill-opacity="0.4" text-anchor="middle"><text y="' + n2(0.12 * m.z1) + '" font-size="' + n2(m.z1) + '">' + MARK1 + '</text>' +
+      '<text y="' + n2(0.12 * m.z1 + 0.3 * m.z1 + 0.8 * m.z2) + '" font-size="' + n2(m.z2) + '">' + MARK2 + '</text></g></g></g>';
+    m.bands.forEach(function (b) {
+      out += '<rect x="' + n2(b.x) + '" y="' + n2(b.y) + '" width="' + n2(b.w) + '" height="' + n2(b.h) + '" fill="#800f0f"/><text x="' + n2(b.x + b.w / 2) + '" y="' + n2(b.y + b.h - 4.6) +
+        '" font-family="' + HF + '" font-weight="700" font-size="' + n2(b.z) + '" fill="#fff" text-anchor="middle" textLength="' + n2(width(BAND, 'HB', b.z)) + '" lengthAdjust="spacingAndGlyphs" xml:space="preserve">' + BAND + '</text>';
+    });
+    return out;
+  }
+  function b64(bytes) { var s = '', k = 0x8000; for (var i = 0; i < bytes.length; i += k) s += String.fromCharCode.apply(null, Array.prototype.slice.call(bytes, i, i + k)); return btoa(s); }
+  Doc.prototype.svg = function () {
+    var self = this, W = self.W, H = self.H, img = self.img ? 'data:image/jpeg;base64,' + b64(self.img.bytes) : '', demo = !!PDFGen.demo;
+    return self.pages.map(function (ops) {
+      var out = '<svg xmlns="http://www.w3.org/2000/svg" class="pgsvg" viewBox="0 0 ' + W + ' ' + H + '" width="' + (W > H ? '297mm' : '210mm') + '" height="' + (W > H ? '210mm' : '297mm') + '">' +
+        '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="#fff"/>';
+      ops.forEach(function (o) {
+        if (typeof o === 'string') return;
+        if (o.t === 'x') {
+          var fm = FAM[o.f] || FAM.R;
+          out += '<text x="' + n2(o.x) + '" y="' + n2(o.y) + '" font-family="' + fm[0] + '" font-weight="' + fm[1] + '"' + (fm[2] ? ' font-style="italic"' : '') + ' font-size="' + n2(o.z) + '" fill="' + gc(o.g) + '"' +
+            (o.sw ? ' stroke="#000" stroke-width="' + n2(o.sw) + '"' : '') + (o.w > 0 && o.s.length > 1 ? ' textLength="' + n2(o.w) + '" lengthAdjust="' + (o.cs ? 'spacing' : 'spacingAndGlyphs') + '"' : '') +
+            ' xml:space="preserve">' + xe(o.s) + '</text>';
+        } else if (o.t === 'l') out += '<line x1="' + n2(o.x1) + '" y1="' + n2(o.y1) + '" x2="' + n2(o.x2) + '" y2="' + n2(o.y2) + '" stroke="' + gc(o.g) + '" stroke-width="' + n2(o.lw) + '"/>';
+        else if (o.t === 'r') out += '<rect x="' + n2(o.x) + '" y="' + n2(o.y) + '" width="' + n2(o.w) + '" height="' + n2(o.h) + '" fill="' + (o.fill != null ? gc(o.fill) : 'none') + '"' +
+          (o.stroke != null ? ' stroke="' + gc(o.stroke) + '" stroke-width="' + n2(o.lw) + '"' : '') + '/>';
+        else if (o.t === 'rr') out += '<rect x="' + n2(o.x) + '" y="' + n2(o.y) + '" width="' + n2(o.w) + '" height="' + n2(o.h) + '" rx="' + n2(o.r) + '" fill="none" stroke="#000" stroke-width="' + n2(o.lw) + '"/>';
+        else if (o.t === 'i' && img) out += '<image href="' + img + '" x="' + n2(o.x) + '" y="' + n2(o.y) + '" width="' + n2(o.w) + '" height="' + n2(o.h) + '" preserveAspectRatio="none"/>';
+        else if (o.t === 'm') out += markSvg(o.x, o.y, o.w, o.h, o.bands);
+        else if (o.t === 'st') out += '<g fill="#990a0a" fill-opacity="0.55" font-family="' + FAM.H[0] + '" font-weight="700" text-anchor="middle">' +
+          '<text x="' + n2(o.x + o.w / 2) + '" y="' + n2(o.y + o.h / 2 - o.z1 * 0.1) + '" font-size="' + n2(o.z1) + '">' + xe(o.t1) + '</text>' +
+          '<text x="' + n2(o.x + o.w / 2) + '" y="' + n2(o.y + o.h / 2 + o.z2 * 1.25) + '" font-size="' + n2(o.z2) + '">' + xe(o.t2) + '</text></g>';
+      });
+      if (demo && !ops.marked) out += markSvg(0, 0, W, H);
+      return out + '</svg>';
+    });
   };
 
   return { Doc: Doc, width: width, wrap: wrap, fit: fit, clean: clean, demo: false, MARK1: MARK1, MARK2: MARK2, MARK3: MARK3, BAND: BAND, markPlan: markPlan };
@@ -1805,7 +1864,10 @@ var CEC = (function () {
     ['name', 'mr', 'address', 'status', 'comments', 'doctor', 'paramedics', 'rName', 'rRel', 'rAddress'].forEach(function (k) { if (typeof o[k] === 'string') o[k] = o[k].toUpperCase(); });
     return o;
   }
-  function deathCertPdf(c, st, logo, copies) {     // copies: blank certificates, the same page that many times (12-11-2026)
+  function deathCertPdf(c, st, logo, copies) { return certDoc(c, st, logo, copies).output(); }
+  /* 13-11-2026: the same certificate as SVG pages, printed straight from the page (print desk, Print button). */
+  function deathCertSvg(c, st, logo, copies) { return certDoc(c, st, logo, copies).svg(); }
+  function certDoc(c, st, logo, copies) {     // copies: blank certificates, the same page that many times (12-11-2026)
     c = certUp(c); st = st || DEFAULTS;
     var P = PDFGen, d = new P.Doc(), L = 48, R = 533, W = R - L, V = 'H', VS = 9.5;
     d.title = 'Death certificate' + (c.name ? ' - ' + c.name : '');
@@ -1889,7 +1951,7 @@ var CEC = (function () {
     });
     if (DEMO.on) d.mark(0, 0, d.W, d.H, [786]);                     // the band sits inside the certificate's border
     for (var cp = 1; cp < Math.min(+copies || 1, 50); cp++) d.pages.push(d.pages[0].slice());
-    return d.output();
+    return d;
   }
   function opdSlipPdf(st, logo) {
     var P = PDFGen, d = new P.Doc();
@@ -2444,7 +2506,7 @@ var CEC = (function () {
     CATS: CATS, OUTS: OUTS, outExtra: outExtra, PROCS: PROCS, SHIFTS: SHIFTS, DEFAULTS: DEFAULTS, label: label, short: short, shiftName: shiftName, ymd: ymd, addDays: addDays,
     dmy: dmy, hm: hm, hm12: hm12, dxOf: dxOf, mainDx: mainDx, shiftTimes: shiftTimes, censusDateFor: censusDateFor, suggestShift: suggestShift, sexCount: sexCount, monthName: monthName,
     shiftModel: shiftModel, dayModel: dayModel, monthModel: monthModel, letterHtml: letterHtml, letterPdf: letterPdf, summaryText: summaryText, esc: h,
-    EXAMS: EXAMS, deathCertPdf: deathCertPdf, opdSlipPdf: opdSlipPdf, slipOps: slipOps, slipPdf: slipPdf, slipPdfMany: slipPdfMany, slipSvg: slipSvg, slipSvgMany: slipSvgMany, slipVitals: slipVitals, SLIP_TOP: SLIP_TOP, STAFF_PROCS: STAFF_PROCS, listPdf: listPdf, listCsv: listCsv,
+    EXAMS: EXAMS, deathCertPdf: deathCertPdf, deathCertSvg: deathCertSvg, opdSlipPdf: opdSlipPdf, slipOps: slipOps, slipPdf: slipPdf, slipPdfMany: slipPdfMany, slipSvg: slipSvg, slipSvgMany: slipSvgMany, slipVitals: slipVitals, SLIP_TOP: SLIP_TOP, STAFF_PROCS: STAFF_PROCS, listPdf: listPdf, listCsv: listCsv,
     certHtml: certHtml, setDemo: setDemo, DEMO_LINE: DEMO_LINE, weekday: weekday, MEDS: MEDS, DX_GROUPS: DX_GROUPS, DX_LIST: DX_LIST, DXKW: DXKW, FREQ_DX: FREQ_DX, canonDx: canonDx, canonList: canonList, dxMatch: dxMatch, dxKey: dxKey, LIST_KINDS: LIST_KINDS, listSpec: listSpec, LIST_COLS: LIST_COLS, LIST_COLSETS: LIST_COLSETS, LIST_PRESETS: LIST_PRESETS, LIST_DEF: LIST_DEF,
     listCfg: listCfg, presetCfg: presetCfg, listColsFor: listColsFor, buildList: buildList, listText: listText, listTitle: listTitle, APPTS: APPTS, APPT_STATUS: APPT_STATUS, apptType: apptType,
     apptSpec: apptSpec, apptSlipPdf: apptSlipPdf, apptMessage: apptMessage, parseYmd: parseYmd, yearModel: yearModel, yearSummary: yearSummary, MONTHS: MONTHS, sexCountOf: sexCount
@@ -4646,12 +4708,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function askBlankCerts() {
     modal('Blank death certificates', '<p class="muted small">A4. One file with all the copies; it opens for printing (or saving).</p>' +
       '<label class="lb" for="bcN">How many certificates</label><input class="in" id="bcN" type="number" inputmode="numeric" min="1" max="50" value="5">',
-      canDesk() ? [{ label: 'Cancel', value: null }, { label: 'Download PDF', value: 'form:pdf' }, { label: 'Print at the print desk', cls: 'pri', value: 'form:desk' }]
-        : [{ label: 'Cancel', value: null }, { label: 'Print', cls: 'pri', value: 'form' }]).then(function (v) {
+      [{ label: 'Cancel', value: null }, { label: 'Download PDF', value: 'form:pdf' }, { label: canDesk() ? 'Print at the print desk' : 'Print', cls: 'pri', value: 'form:print' }]).then(function (v) {
       if (!v) return;
       var n = Math.round(+v.bcN || 0);
       if (!(n >= 1 && n <= 50)) return toast('Type a number of certificates from 1 to 50.');
-      if (v._b === 'desk') return deskJob({ kind: 'blankcert', n: n }, n + ' blank death certificate' + (n === 1 ? '' : 's'));
+      var lbl = n + ' blank death certificate' + (n === 1 ? '' : 's');
+      if (v._b === 'print') return canDesk() ? deskJob({ kind: 'blankcert', n: n }, lbl) : printPages(CEC.deathCertSvg({}, S.settings, logoBytes(), n), lbl.charAt(0).toUpperCase() + lbl.slice(1));
       offerFile('Death_Certificates_blank_' + n + '_SGHL_CEC.pdf', CEC.deathCertPdf({}, S.settings, logoBytes(), n), 'application/pdf', false);
     });
   }
@@ -4713,14 +4775,6 @@ if (typeof module !== 'undefined') module.exports = CEC;
     toast(label.charAt(0).toUpperCase() + label.slice(1) + ' sent to the print desk' + (deskAwake() ? ': it prints in a few seconds.' : ', but the print desk looks asleep or off.'));
     apiRetry('apiPrintJob', JSON.stringify(job)).then(null, function (e) { toast('Not sent to the print desk: ' + errText(e)); });
   }
-  /* A phone with the print desk on: print there, or download the PDF as before. */
-  function deskOrFile(title, job, label, fileFn) {
-    if (!canDesk()) return fileFn();
-    modal(title, '<p>Print it at the print desk, or download the PDF to this phone?</p><p class="small">' + deskStatusHtml() + '</p>',
-      [{ label: 'Print at the print desk', cls: 'pri', value: 'desk' }, { label: 'Download PDF', value: 'dl' }, { label: 'Cancel', value: null }], true).then(function (v) {
-      if (v === 'desk') deskJob(job, label); else if (v === 'dl') fileFn();
-    });
-  }
   /* The print desk: takes the jobs one at a time, prints each once and keeps nothing (no copy is saved on this device). */
   function deskJobs() {
     if (S.jobBusy || !apHere()) return;
@@ -4736,42 +4790,44 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var paper = S.auto && S.auto.paper === 'a4' ? 'a4' : 'a5', list = [], i;
     if (j.err) return toast('Print desk: ' + j.err);
     if (j.kind === 'blankslips') { for (i = 0; i < j.n; i++) list.push({ e: { blank: true } }); return printSlips(list, paper, { claimed: true, blank: true }); }
-    if (j.kind === 'cert') return printPdfBytes(CEC.deathCertPdf(j.cert, S.settings, logoBytes()), j.what);
-    if (j.kind === 'blankcert') return printPdfBytes(CEC.deathCertPdf({}, S.settings, logoBytes(), j.n), j.what);
-    if (j.kind === 'doc') {
-      if (j.mime === 'application/pdf') return printPdfBytes(fromB64(j.data), j.what);
-      return printImage('data:' + j.mime + ';base64,' + j.data, j.what);
-    }
+    if (j.kind === 'cert') return printPages(CEC.deathCertSvg(j.cert, S.settings, logoBytes()), 'Print desk: ' + j.what);
+    if (j.kind === 'blankcert') return printPages(CEC.deathCertSvg({}, S.settings, logoBytes(), j.n), 'Print desk: ' + j.what);
+    if (j.kind === 'doc' && /^image\//.test(j.mime || '')) return printImage('data:' + j.mime + ';base64,' + j.data, 'Print desk: ' + j.what);
+    toast('Print desk: ' + (j.what || 'this') + ' cannot be printed here.');
   }
-  /* A PDF printed from a hidden frame (with kiosk printing: straight to the printer), then removed; nothing is kept. */
-  function printPdfBytes(bytes, what) {
-    var url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' })), fr = document.createElement('iframe');
-    fr.className = 'pdfjob'; fr.setAttribute('aria-hidden', 'true'); fr.setAttribute('tabindex', '-1');
-    fr.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
-    var gone = function () { try { fr.parentNode.removeChild(fr); } catch (x) { } URL.revokeObjectURL(url); };
-    fr.onload = function () {
-      setTimeout(function () {
-        try { fr.contentWindow.focus(); fr.contentWindow.print(); toast('Print desk: ' + what + ' sent to the printer.'); }
-        catch (x) { toast('Print desk: ' + what + ' could not be printed.'); }
-        setTimeout(gone, 120000);
-      }, 800);
-    };
-    fr.src = url; document.body.appendChild(fr);
+  /* 13-11-2026: A4 pages printed straight from this page, like the slips (kiosk printing: no window). Pages: SVG (a certificate) or a photo.
+     The logo / photo is loaded first, so it is on the paper. Nothing is kept: the print area is emptied after printing. */
+  function printPages(svgs, what) {
+    var html = svgs.join(''), m = /href="(data:image\/[a-z]+;base64,[^"]+)"/.exec(html);
+    printReady(m ? m[1] : '', function () { printA4(html, what); });
   }
-  /* A photo form: one A4 page, the photo fitted to it. */
-  function printImage(src, what) {
-    var pa = $('printArea'), img = new Image();
-    img.onload = function () {
-      pa.innerHTML = '<div class="imgjob"><img src="' + src + '" alt=""></div>';
-      var ps = $('pageSize');
-      if (!ps) { ps = document.createElement('style'); ps.id = 'pageSize'; document.head.appendChild(ps); }
-      ps.textContent = '@page{size:A4 portrait;margin:8mm}';
-      document.body.classList.add('printing');
-      try { window.print(); toast('Print desk: ' + what + ' sent to the printer.'); } catch (x) { toast('Print desk: ' + what + ' could not be printed.'); }
-      setTimeout(function () { document.body.classList.remove('printing'); ps.textContent = ''; pa.innerHTML = ''; }, 1500);
-    };
-    img.onerror = function () { toast('Print desk: ' + what + ' could not be opened.'); };
+  function printImage(src, what) { printReady(src, function (ok) { if (!ok) return toast(what + ' could not be opened.'); printA4('<div class="imgjob"><img src="' + src + '" alt=""></div>', what, '8mm'); }); }
+  function printReady(src, go) {
+    if (!src) return go(true);
+    var img = new Image(), done = false, once = function (ok) { if (!done) { done = true; go(ok); } };
+    img.onload = function () { once(true); }; img.onerror = function () { once(false); };
+    setTimeout(function () { once(true); }, 4000);
     img.src = src;
+  }
+  function printA4(html, what, margin) {
+    var pa = $('printArea'); if (!pa) return;
+    pa.innerHTML = html;
+    var ps = $('pageSize');
+    if (!ps) { ps = document.createElement('style'); ps.id = 'pageSize'; document.head.appendChild(ps); }
+    ps.textContent = '@page{size:A4 portrait;margin:' + (margin || '0') + '}';
+    document.body.classList.add('printing');
+    var end = function () { document.body.classList.remove('printing'); ps.textContent = ''; pa.innerHTML = ''; window.removeEventListener('afterprint', end2); };
+    var end2 = function () { setTimeout(end, 1000); };
+    window.addEventListener('afterprint', end2);
+    try { window.print(); toast(what + ' sent to the printer.'); } catch (x) { toast(what + ' could not be printed.'); }
+    setTimeout(end, 1500);
+  }
+  /* Print a death certificate: a phone sends it to the print desk; a computer (or a phone without the print desk) prints it here. */
+  function certPrintNow(c) {
+    if (!c) return;
+    var label = 'death certificate' + (c.mr ? ' MR ' + c.mr : '');
+    if (canDesk()) return deskJob({ kind: 'cert', cert: c }, label);
+    printPages(CEC.deathCertSvg(c, S.settings, logoBytes()), label.charAt(0).toUpperCase() + label.slice(1));
   }
   /* The print desk: slips that a phone asked to print again (same numbers). */
   function deskReprint() {
@@ -5544,6 +5600,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     (S.docs || []).filter(function (d) { return !d.place; }).forEach(function (d) {
       a.push({ key: 'doc:' + d.id, title: d.title, sub: d.name + ' &middot; ' + h(d.sizeKb) + ' KB' + (isAdmin() ? ' &middot; <b>' + h(VISL[d.vis] || d.vis) + '</b>' : ''), raw: true,
         btns: '<button class="btn sm pri" data-act="doc-get" data-id="' + h(d.id) + '">' + dl + ' Open / download</button>' +
+          (/^image\//.test(d.mime || '') ? '<button class="btn sm" data-act="doc-print" data-id="' + h(d.id) + '">' + ICON.print + ' Print</button>' : '') +
           (isAdmin() ? '<button class="btn sm" data-act="doc-edit" data-id="' + h(d.id) + '">Title / who can see</button><button class="btn sm dan" data-act="doc-del" data-id="' + h(d.id) + '">Delete</button>' : '') });
     });
     if (canEnter() && !isPrintId()) a.push({ key: 'list', title: 'Registers (OPD, ETT, Echo, BD, Resus and any register you make)', sub: 'Choose the dates, which patients and which columns; tick or untick patients; download as PDF or Excel, or copy for WhatsApp.',
@@ -5708,6 +5765,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     return '<div class="drow"><div class="pr-name">' + h(c.name) + (c.mr ? ' <span class="muted">&middot; MR ' + h(c.mr) + '</span>' : '') + '</div>' +
       '<div class="pr-sub"><span class="tag online">Online</span>' + (x.time ? h(x.time) + ' hrs &middot; ' : '') + (c.mr ? 'MR ' + h(c.mr) : '') + ' &middot; issued ' + h(c.issueDate || '') + (isAdmin() && c.issuedBy ? ' by ' + h(c.issuedBy) : '') + '</div>' +
       '<div class="sbtns ico"><button class="btn sm" data-act="cert-view" data-id="' + h(c.id) + '">' + ICON.eye + ' View</button>' +
+      '<button class="btn sm" data-act="cert-printx" data-id="' + h(c.id) + '">' + ICON.print + ' Print</button>' +
       (canCertMake() ? '<button class="btn sm" data-act="cert-open" data-id="' + h(c.id) + '">' + ICON.pen + ' Edit</button>' : '') +
       '<button class="btn sm" data-act="cert-dl" data-id="' + h(c.id) + '">' + ICON.dl + ' Download</button></div></div>';
   }
@@ -5955,7 +6013,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     el.innerHTML = '<div class="sh-head"><button data-act="cert-close">Close</button><h3>Death certificate</h3><span>' + (c.mr ? 'MR ' + h(c.mr) : '') + '</span></div>' +
       '<div class="sh-body"><p class="muted small" style="margin:12px 0 8px">View only.' + (canCertMake() ? ' Use Edit to make changes.' : '') + '</p><div class="paperwrap" id="cpw"><div class="paper" id="cpaper">' +
       CEC.certHtml(c, S.settings, LOGO) + '</div></div></div>' +
-      '<div class="sh-foot"><button class="btn" data-act="cert-dl-cur">' + ICON.dl + ' Download</button><button class="btn" data-act="cert-drive">Google preview</button>' +
+      '<div class="sh-foot"><button class="btn" data-act="cert-print-cur">' + ICON.print + ' Print</button><button class="btn" data-act="cert-dl-cur">' + ICON.dl + ' Download</button><button class="btn" data-act="cert-drive">Google preview</button>' +
       (canCertMake() ? '<button class="btn pri" data-act="cert-edit-cur">' + ICON.pen + ' Edit</button>' : '') + '</div>';
     el.classList.remove('hidden'); document.body.style.overflow = 'hidden'; overlayOpened();
     fitBox('cpw', 'cpaper');
@@ -5983,10 +6041,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
     rd.onerror = function () { toast('Could not read the file'); };
     rd.readAsDataURL(f);
   }
-  function getDoc(id) {
-    var dd = findDoc(id);
-    if (dd && canDesk() && /^(application\/pdf|image\/(jpeg|png|webp|gif))$/.test(dd.mime || '')) return deskOrFile(dd.title || 'Form', { kind: 'doc', docId: id }, 'form ' + (dd.title || ''), function () { getDocFile(id); });
-    getDocFile(id);
+  function getDoc(id) { getDocFile(id); }
+  /* 13-11-2026: a photo form: Print sends it to the print desk from a phone, or prints it here (one A4 page). */
+  function docPrint(id) {
+    var dd = findDoc(id) || {}, label = 'form ' + (dd.title || '');
+    if (canDesk()) return deskJob({ kind: 'doc', docId: id }, label);
+    toast('Opening\u2026');
+    api('apiGetDoc', id).then(function (r) { printImage('data:' + (r.mime || 'image/jpeg') + ';base64,' + r.data, 'Form ' + (dd.title || '')); }, function (e) { toast(errText(e)); });
   }
   function getDocFile(id) {
     toast('Opening\u2026');
@@ -6164,13 +6225,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (!miss.length) return Promise.resolve(true);
     return confirmBox('Proceed without ' + (miss.length === 1 ? 'this' : 'these') + '?', 'Not written yet: <b>' + h(miss.join(', ')) + '</b>. These are normally needed on a death certificate. Go back to add ' + (miss.length === 1 ? 'it' : 'them') + ', or proceed without.', 'Proceed without', false);
   }
-  /* direct: Print / Save & print (a phone sends it to the print desk); otherwise a phone asks: print desk or download. */
-  function certPrint(c, direct) {
-    var file = function () { offerFile(certFileName(c), CEC.deathCertPdf(c, S.settings, logoBytes()), 'application/pdf', false); };
-    var label = 'death certificate' + (c && c.mr ? ' MR ' + c.mr : ''), job = { kind: 'cert', cert: c };
-    if (direct && canDesk()) return deskJob(job, label);
-    deskOrFile('Death certificate', job, label, file);
-  }
+  function certPrint(c) { offerFile(certFileName(c), CEC.deathCertPdf(c, S.settings, logoBytes()), 'application/pdf', false); }
   function certTimesOk(c) {
     var bad = [['arrival time', c.arrTime], ['time death was confirmed', c.deathTime]].filter(function (t) { return t[1] && !/^([01]\d|2[0-3]):[0-5]\d$/.test(t[1]); });
     if (bad.length) { $('cErr').innerHTML = '<div class="err">Check the ' + bad.map(function (t) { return t[0]; }).join(' and ') + ': use 24-hour time such as 14:35.</div>'; return false; }
@@ -6187,7 +6242,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       toast('Certificate saved' + (saved.mr ? ' (MR ' + saved.mr + ')' : '')); closeCert();
       if (S.certs) { var ci = S.certs.map(function (x) { return x.id; }).indexOf(saved.id); if (ci >= 0) S.certs[ci] = saved; else S.certs.unshift(saved); S.pend = (S.pend || []).filter(function (x) { return x.id !== saved.entryId; }); S.pendCerts = S.pend.length; loadCerts(true); }
       if (S.view === 'certs') render();
-      if (print) certPrint(saved, true);
+      if (print) certPrintNow(saved);
     }, function (e) { $('cErr').innerHTML = '<div class="err">' + h(errText(e)) + '</div>'; });
   }
   function certFromPatient() {
@@ -7250,6 +7305,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'cert-open': if (canCertMake()) getCert(id).then(function (c) { if (c) openCert(c); }); break;
       case 'cert-view': getCert(id).then(function (c) { if (c) openCertView(c); }); break;
       case 'cert-dl': getCert(id).then(function (c) { if (c) certPrint(c); }); break;
+      case 'cert-printx': getCert(id).then(function (c) { if (c) certPrintNow(c); }); break;
+      case 'cert-print-cur': certPrintNow(S.cert && S.cert.data); break;
       case 'cert-dl-cur': certPrint(S.cert.data); break;
       case 'cert-edit-cur': if (canCertMake()) openCert(S.cert.data); break;
       case 'cert-drive': { var cd = S.cert.data; saveToDrive(certFileName(cd), CEC.deathCertPdf(cd, S.settings, logoBytes()), 'application/pdf'); break; }
@@ -7291,7 +7348,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'cert-close': closeCert(); break;
       case 'c-sex': S.cert.sex = v; setOn('cSex', v); if (v === 'M' && !S.cert.so) { S.cert.so = 'S/O'; setOn('cSo', 'S/O'); } break;
       case 'c-so': { var sk = el.getAttribute('data-k'); if (sk === 'c') { S.cert.so = v; setOn('cSo', v); } else { S.cert.rSo = v; setOn('cRSo', v); } break; }
-      case 'cert-print': { var cp = readCert(); if (certTimesOk(cp) && certNeededOk(cp)) certMissingOk(cp).then(function (ok) { if (ok) certPrint(cp, true); }); break; }
+      case 'cert-print': { var cp = readCert(); if (certTimesOk(cp) && certNeededOk(cp)) certMissingOk(cp).then(function (ok) { if (ok) certPrintNow(cp); }); break; }
       case 'cert-save': certSave(false); break;
       case 'cert-saveprint': certSave(true); break;
       case 'cert-del': {
@@ -7304,9 +7361,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
       }
       case 'blank-opd': case 'blank-slips': askBlankSlips(); break;
       case 'blank-dcn': askBlankCerts(); break;
-      case 'blank-dc': deskOrFile('Blank death certificate', { kind: 'blankcert', n: 1 }, '1 blank death certificate', function () { offerFile('Death_Certificate_blank_SGHL_CEC.pdf', CEC.deathCertPdf({}, S.settings, logoBytes()), 'application/pdf', false); }); break;
+      case 'blank-dc': offerFile('Death_Certificate_blank_SGHL_CEC.pdf', CEC.deathCertPdf({}, S.settings, logoBytes()), 'application/pdf', false); break;
       case 'doc-upload': uploadDoc(); break;
       case 'doc-get': getDoc(id); break;
+      case 'doc-print': docPrint(id); break;
       case 'doc-edit': { var dd = findDoc(id); if (dd) editDoc(dd); break; }
       case 'doc-del': { var dl = findDoc(id); if (dl) delDoc(dl); break; }
       case 'ros-move': moveRoster(v, +id); break;
