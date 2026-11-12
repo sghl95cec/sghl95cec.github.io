@@ -2485,6 +2485,28 @@ var CEC = (function () {
       '<div class="dcs"><div><div class="box">' + nv + '</div>Signature &amp; Stamp<br>of Doctor</div><div><div class="box">' + nv + '</div>Signature / Thumb Impression<br>of Receiver</div></div></div>';
   }
 
+  /* 13-11-2026: these documents as SVG pages, printed straight from the page (no PDF): the same drawing as the PDF. */
+  /* A register's columns hold small functions, which cannot be sent: the sending device works out every cell first (listPlain),
+     the print desk rebuilds the same list from those cells (listPlainPdf). */
+  function listPlain(o) {
+    var cols = o.cols.filter(function (c) { return !c.csvOnly; });
+    return { title: o.title, sub: o.sub, portrait: !!o.portrait, empty: o.empty || '',
+      cols: cols.map(function (c) { return { h: c.h, a: c.a || '', m: c.m || 0, wt: c.wt || 0, w: c.w || 0 }; }),
+      groups: o.groups.map(function (g) { return { h: g.h || '', plain: !!g.plain, rows: g.list.map(function (e, i) { return cols.map(function (c) { var v = c.f(e, i); return v == null ? '' : String(v); }); }) }; }) };
+  }
+  function listPlainPdf(p, logo) {
+    var cols = (p.cols || []).map(function (c, k) { var o = { h: c.h, f: function (r) { return r[k]; } }; if (c.a) o.a = c.a; if (c.m) o.m = c.m; if (c.wt) o.wt = c.wt; if (c.w) o.w = c.w; return o; });
+    return listPdf({ title: p.title, sub: p.sub, portrait: p.portrait, empty: p.empty, cols: cols, groups: (p.groups || []).map(function (g) { return { h: g.h, plain: g.plain, list: g.rows || [] }; }) }, logo);
+  }
+  var SVG_DOCS = { letterPdf: letterPdf, listPdf: listPdf, listPlainPdf: listPlainPdf, apptSlipPdf: apptSlipPdf, deathCertPdf: deathCertPdf };
+  function svgOf(fn, args) {
+    var f = SVG_DOCS[fn];
+    if (!f) throw new Error('This cannot be printed.');
+    var P = PDFGen.Doc.prototype, o = P.output;
+    P.output = function () { return this.svg(); };
+    try { return f.apply(null, args); } finally { P.output = o; }
+  }
+
   /* ---------- WhatsApp summary ---------- */
   function summaryText(m, shifts) {
     var entries = recEntries(shifts), c = sexCount(entries);
@@ -2506,7 +2528,7 @@ var CEC = (function () {
     CATS: CATS, OUTS: OUTS, outExtra: outExtra, PROCS: PROCS, SHIFTS: SHIFTS, DEFAULTS: DEFAULTS, label: label, short: short, shiftName: shiftName, ymd: ymd, addDays: addDays,
     dmy: dmy, hm: hm, hm12: hm12, dxOf: dxOf, mainDx: mainDx, shiftTimes: shiftTimes, censusDateFor: censusDateFor, suggestShift: suggestShift, sexCount: sexCount, monthName: monthName,
     shiftModel: shiftModel, dayModel: dayModel, monthModel: monthModel, letterHtml: letterHtml, letterPdf: letterPdf, summaryText: summaryText, esc: h,
-    EXAMS: EXAMS, deathCertPdf: deathCertPdf, deathCertSvg: deathCertSvg, opdSlipPdf: opdSlipPdf, slipOps: slipOps, slipPdf: slipPdf, slipPdfMany: slipPdfMany, slipSvg: slipSvg, slipSvgMany: slipSvgMany, slipVitals: slipVitals, SLIP_TOP: SLIP_TOP, STAFF_PROCS: STAFF_PROCS, listPdf: listPdf, listCsv: listCsv,
+    EXAMS: EXAMS, deathCertPdf: deathCertPdf, deathCertSvg: deathCertSvg, svgOf: svgOf, listPlain: listPlain, listPlainPdf: listPlainPdf, opdSlipPdf: opdSlipPdf, slipOps: slipOps, slipPdf: slipPdf, slipPdfMany: slipPdfMany, slipSvg: slipSvg, slipSvgMany: slipSvgMany, slipVitals: slipVitals, SLIP_TOP: SLIP_TOP, STAFF_PROCS: STAFF_PROCS, listPdf: listPdf, listCsv: listCsv,
     certHtml: certHtml, setDemo: setDemo, DEMO_LINE: DEMO_LINE, weekday: weekday, MEDS: MEDS, DX_GROUPS: DX_GROUPS, DX_LIST: DX_LIST, DXKW: DXKW, FREQ_DX: FREQ_DX, canonDx: canonDx, canonList: canonList, dxMatch: dxMatch, dxKey: dxKey, LIST_KINDS: LIST_KINDS, listSpec: listSpec, LIST_COLS: LIST_COLS, LIST_COLSETS: LIST_COLSETS, LIST_PRESETS: LIST_PRESETS, LIST_DEF: LIST_DEF,
     listCfg: listCfg, presetCfg: presetCfg, listColsFor: listColsFor, buildList: buildList, listText: listText, listTitle: listTitle, APPTS: APPTS, APPT_STATUS: APPT_STATUS, apptType: apptType,
     apptSpec: apptSpec, apptSlipPdf: apptSlipPdf, apptMessage: apptMessage, parseYmd: parseYmd, yearModel: yearModel, yearSummary: yearSummary, MONTHS: MONTHS, sexCountOf: sexCount
@@ -3540,7 +3562,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var b = buildLetter(), L = S.letter;
     var title = L.type === 'shift' ? 'Shift letter' : L.type === 'day' ? '24-hour letter' : L.type === 'year' ? 'Annual letter' : 'Monthly letter';
     return '<div class="lv-head"><button class="btn sm" data-act="back">&lsaquo; Back</button><h2>' + title + '</h2></div>' +
-      '<div class="lv-act"><button class="btn pri" data-act="dl-pdf">Save PDF</button><button class="btn" data-act="copy-wa">Copy for WhatsApp</button></div>' +
+      '<div class="lv-act"><button class="btn pri" data-act="dl-pdf">Save PDF</button><button class="btn" data-act="dl-print">' + ICON.print + ' Print</button><button class="btn" data-act="copy-wa">Copy for WhatsApp</button></div>' +
       (L.type === 'shift' || L.type === 'day' ? '<label class="check"><input type="checkbox" id="annex"' + (L.annex ? ' checked' : '') + '> Attach patient list (annexure)</label>' : '<div style="height:12px"></div>') +
       '<div class="paperwrap" id="pw"><div class="paper" id="paper">' + CEC.letterHtml(b.model, LOGO) + '</div></div>';
   }
@@ -4792,14 +4814,21 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (j.kind === 'blankslips') { for (i = 0; i < j.n; i++) list.push({ e: { blank: true } }); return printSlips(list, paper, { claimed: true, blank: true }); }
     if (j.kind === 'cert') return printPages(CEC.deathCertSvg(j.cert, S.settings, logoBytes()), 'Print desk: ' + j.what);
     if (j.kind === 'blankcert') return printPages(CEC.deathCertSvg({}, S.settings, logoBytes(), j.n), 'Print desk: ' + j.what);
+    if (j.kind === 'pages') return printPages(CEC.svgOf(j.fn, (j.args || []).concat([logoBytes()])), 'Print desk: ' + j.what);
     if (j.kind === 'doc' && /^image\//.test(j.mime || '')) return printImage('data:' + j.mime + ';base64,' + j.data, 'Print desk: ' + j.what);
     toast('Print desk: ' + (j.what || 'this') + ' cannot be printed here.');
   }
   /* 13-11-2026: A4 pages printed straight from this page, like the slips (kiosk printing: no window). Pages: SVG (a certificate) or a photo.
      The logo / photo is loaded first, so it is on the paper. Nothing is kept: the print area is emptied after printing. */
   function printPages(svgs, what) {
-    var html = svgs.join(''), m = /href="(data:image\/[a-z]+;base64,[^"]+)"/.exec(html);
-    printReady(m ? m[1] : '', function () { printA4(html, what); });
+    var html = svgs.join(''), m = /href="(data:image\/[a-z]+;base64,[^"]+)"/.exec(html), land = /^<svg[^>]*width="297mm"/.test(html);
+    printReady(m ? m[1] : '', function () { printA4(html, what, '0', land); });
+  }
+  /* 13-11-2026: Print beside Download (census letters, registers, appointment slips and lists): a phone sends it to the print desk, a computer prints it here. */
+  function printDoc(fn, args, label) {
+    if (canDesk()) return deskJob(fn === 'listPdf' ? { kind: 'pages', fn: 'listPlainPdf', args: [CEC.listPlain(args[0])], label: label } : { kind: 'pages', fn: fn, args: args, label: label }, label);
+    toast('Preparing to print\u2026');
+    setTimeout(function () { printPages(CEC.svgOf(fn, args.concat([logoBytes()])), label.charAt(0).toUpperCase() + label.slice(1)); }, 30);
   }
   function printImage(src, what) { printReady(src, function (ok) { if (!ok) return toast(what + ' could not be opened.'); printA4('<div class="imgjob"><img src="' + src + '" alt=""></div>', what, '8mm'); }); }
   function printReady(src, go) {
@@ -4809,12 +4838,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
     setTimeout(function () { once(true); }, 4000);
     img.src = src;
   }
-  function printA4(html, what, margin) {
+  function printA4(html, what, margin, land) {
     var pa = $('printArea'); if (!pa) return;
     pa.innerHTML = html;
     var ps = $('pageSize');
     if (!ps) { ps = document.createElement('style'); ps.id = 'pageSize'; document.head.appendChild(ps); }
-    ps.textContent = '@page{size:A4 portrait;margin:' + (margin || '0') + '}';
+    ps.textContent = '@page{size:A4 ' + (land ? 'landscape' : 'portrait') + ';margin:' + (margin || '0') + '}';
     document.body.classList.add('printing');
     var end = function () { document.body.classList.remove('printing'); ps.textContent = ''; pa.innerHTML = ''; window.removeEventListener('afterprint', end2); };
     var end2 = function () { setTimeout(end, 1000); };
@@ -5821,7 +5850,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       return '<label><input type="checkbox" id="lc_' + c.c + '"' + (L.cats.indexOf(c.c) >= 0 ? ' checked' : '') + '> ' + h(c.l) + '</label>'; }).join('') + '</div>';
     if (L.kind === 'proc') html += '<label class="lb">Patients who had</label><div class="rights">' + LIST_PROCS.map(function (p) {
       return '<label><input type="checkbox" id="lp_' + p[0] + '"' + (L.procs.indexOf(p[0]) >= 0 ? ' checked' : '') + '> ' + h(p[1]) + '</label>'; }).join('') + '</div>';
-    return html + '<div class="sbtns"><button class="btn sm pri" data-act="lst-pdf">' + ICON.dl + ' PDF</button><button class="btn sm" data-act="lst-csv">' + ICON.dl + ' Excel (CSV)</button></div>';
+    return html + '<div class="sbtns"><button class="btn sm pri" data-act="lst-pdf">' + ICON.dl + ' PDF</button><button class="btn sm" data-act="lst-print">' + ICON.print + ' Print</button><button class="btn sm" data-act="lst-csv">' + ICON.dl + ' Excel (CSV)</button></div>';
   }
   function readList() {
     var L = S.lst; L.from = $('lFrom').value; L.to = $('lTo').value || L.from; L.kind = $('lKind').value;
@@ -5840,7 +5869,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
       var spec = CEC.listSpec(L.kind, shifts || [], { cats: L.cats, procs: L.procs }, canClin());
       var sub = (L.from === L.to ? CEC.weekday(L.from) + ', ' + CEC.dmy(L.from) : CEC.dmy(L.from) + ' to ' + CEC.dmy(L.to)) + '  |  ' + spec.n + ' patient' + (spec.n === 1 ? '' : 's');
       var base = 'CEC_' + spec.title.replace(/[^A-Za-z0-9]+/g, '_').replace(/_+$/, '') + '_' + CEC.dmy(L.from) + (L.to !== L.from ? '_to_' + CEC.dmy(L.to) : '');
-      if (fmt === 'pdf') offerFile(base + '.pdf', CEC.listPdf({ title: spec.title, sub: sub, cols: spec.cols, groups: spec.groups, empty: 'No patients found for the selected dates.' }, logoBytes()), 'application/pdf', false);
+      var lsp = { title: spec.title, sub: sub, cols: spec.cols, groups: spec.groups, empty: 'No patients found for the selected dates.' };
+      if (fmt === 'print') printDoc('listPdf', [lsp], 'list: ' + spec.title);
+      else if (fmt === 'pdf') offerFile(base + '.pdf', CEC.listPdf(lsp, logoBytes()), 'application/pdf', false);
       else offerFile(base + '.csv', new TextEncoder().encode(CEC.listCsv(spec)), 'text/csv', false);
     }, function (e) { toast(errText(e)); });
   }
@@ -5918,7 +5949,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<div><label class="lb" for="lbPage">Page</label><select class="in" id="lbPage">' + [['auto', 'Automatic'], ['portrait', 'Portrait'], ['landscape', 'Landscape']].map(function (o) { return '<option value="' + o[0] + '"' + (f.page === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div></div>' +
       '<label class="lb" for="lbTitle">Title on the list</label><input class="in" id="lbTitle" placeholder="' + h(CEC.listTitle(CEC.listCfg(Object.assign({}, f, { title: '' })))) + '" value="' + h(f.title) + '"></section>' +
       '<section class="card"><div class="ct">4. Check and download</div><div id="lbOut">' + lbOutHtml() + '</div>' +
-      '<div class="sbtns"><button class="btn pri" data-act="lb-pdf">' + ICON.dl + ' PDF</button><button class="btn" data-act="lb-csv">' + ICON.dl + ' Excel (CSV)</button>' +
+      '<div class="sbtns"><button class="btn pri" data-act="lb-pdf">' + ICON.dl + ' PDF</button><button class="btn" data-act="lb-print">' + ICON.print + ' Print</button><button class="btn" data-act="lb-csv">' + ICON.dl + ' Excel (CSV)</button>' +
       '<button class="btn" data-act="lb-text">Copy for WhatsApp</button><button class="btn" data-act="lb-save">Save this list</button></div></section></div>';
     return html;
   }
@@ -6393,6 +6424,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       tile('q-mrreg', svg('<path d="M5 4h11l3 3v13H5z"/><path d="M8 9h2M8 13h2M8 17h2M12 9h4M12 13h4M12 17h4"/>'), 'MR register', 'Today’s MR numbers as they are given, newest on top') +
       tile('q-slip', svg('<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>'), 'OPD / ER slip', 'Print, choose slips, autoprint') +
       tile('q-ecg', svg('<path d="M2 12h3l2-6 3 12 3-9 2 3h7"/>'), 'ECG', 'Tick ECG done: last hour and ECG only') +
+      tile('q-vit', svg('<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/><path d="M3.5 12h4l1.5-3 3 6 1.5-3h7"/>'), 'Vitals', 'BP, pulse, temp, RBS, SpO2 of registered patients') +   // 13-11-2026: back on Home (also Two staff › Vitals)
       (isAdmin() ? tile('go-petty', svg('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h3M8 12h3M8 16h3M13 8h3M13 12h3M13 16h3"/>'), 'Petty OPD register', 'Paste names (any number): MR each morning, up to the daily limit') : '') +
       (canClin() ? tile('q-erx', svg('<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/>'), 'ER procedures & medications', 'Cannula, oxygen, CPR; medicines given (drug account)') : '') +
       '</div>';
@@ -6736,7 +6768,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       (isAdmin() && a.bookedBy ? '<div class="pr-audit">Booked by ' + h(a.bookedBy) + (a.updatedBy ? ' &middot; changed by ' + h(a.updatedBy) : '') + '</div>' : '') +
       '</div><span class="tag ' + ST_CLS[a.status] + '">' + h(st) + '</span></div>' +
       '<div class="sbtns ico"><button class="btn sm" data-act="ap-edit" data-id="' + h(a.id) + '">' + ICON.pen + ' Edit</button>' +
-      '<button class="btn sm" data-act="ap-slip" data-id="' + h(a.id) + '">' + ICON.dl + ' Slip</button>' +
+      '<button class="btn sm" data-act="ap-slipp" data-id="' + h(a.id) + '">' + ICON.print + ' Print slip</button><button class="btn sm" data-act="ap-slip" data-id="' + h(a.id) + '">' + ICON.dl + ' Slip</button>' +
       (wa ? '<a class="btn sm" href="' + h(wa) + '" target="_blank" rel="noopener">WhatsApp</a>' : '<button class="btn sm" data-act="demo-wa">WhatsApp</button>') +
       (a.status === 'B' ? '<button class="btn sm" data-act="ap-st" data-v="D" data-id="' + h(a.id) + '">Done</button><button class="btn sm" data-act="ap-st" data-v="M" data-id="' + h(a.id) + '">Did not come</button>' : '') +
       '</div></div>';
@@ -6767,7 +6799,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<input class="in" type="date" id="apDate" value="' + A.date + '"><button class="btn" data-act="ap-day" data-v="1" aria-label="Next ' + h(t.l) + ' day">&rsaquo;</button></div>' +
       '<div class="muted small center" style="margin-top:6px"><b>' + CEC.weekday(A.date) + ', ' + CEC.dmy(A.date) + '</b> &middot; ' + n + ' booked' + (usual ? '' : ' &middot; <span style="color:var(--amb)">not a usual ' + h(t.l) + ' day</span>') + '</div>' +
       (day.length ? '<div class="plist" style="margin-top:10px">' + day.map(function (a) { return apRow(a, false); }).join('') + '</div>' : '<div class="empty">No appointments on this day.</div>') +
-      '<div class="sbtns"><button class="btn sm pri" data-act="ap-list" data-v="pdf">' + ICON.dl + ' Download list (PDF, A4 landscape)</button></div></section>';
+      '<div class="sbtns"><button class="btn sm pri" data-act="ap-list" data-v="pdf">' + ICON.dl + ' Download list (PDF, A4 landscape)</button><button class="btn sm" data-act="ap-list" data-v="print">' + ICON.print + ' Print list</button></div></section>';
     var today = pkToday(), dates = {};
     apList(A.type).forEach(function (a) { if (a.date >= today && a.status !== 'C') dates[a.date] = (dates[a.date] || 0) + 1; });
     var d = firstUsual(A.type); for (var i = 0; i < 4; i++) { if (!(d in dates)) dates[d] = 0; d = usualDay(A.type, d, 1); }
@@ -6787,10 +6819,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function apById(id) { return (S.ap.list || []).filter(function (a) { return a.id === id; })[0]; }
   function apSlip(a) { offerFile('Appointment_' + a.type + '_' + CEC.dmy(a.date) + '_No' + a.no + '_' + (a.name || '').replace(/[^A-Za-z0-9]+/g, '_') + '.pdf', CEC.apptSlipPdf(a, S.settings, logoBytes()), 'application/pdf', false); }
+  function apSlipPrint(a) { printDoc('apptSlipPdf', [a, S.settings], 'appointment slip No. ' + a.no + (a.name ? ' ' + a.name : '')); }
   function apDayList(fmt) {
     var A = S.ap, t = CEC.apptType(A.type), list = apList(A.type, A.date).filter(function (a) { return a.status !== 'C'; }), spec = CEC.apptSpec(list);
     var title = t.full.toUpperCase() + ' APPOINTMENTS', base = 'CEC_' + t.c + '_Appointments_' + CEC.dmy(A.date);
-    if (fmt === 'pdf') offerFile(base + '.pdf', CEC.listPdf({ title: title, sub: CEC.weekday(A.date) + ', ' + CEC.dmy(A.date) + '  |  ' + list.length + ' patient' + (list.length === 1 ? '' : 's'), cols: spec.cols, groups: spec.groups, empty: spec.empty }, logoBytes()), 'application/pdf', false);
+    var asp = { title: title, sub: CEC.weekday(A.date) + ', ' + CEC.dmy(A.date) + '  |  ' + list.length + ' patient' + (list.length === 1 ? '' : 's'), cols: spec.cols, groups: spec.groups, empty: spec.empty };
+    if (fmt === 'print') printDoc('listPdf', [asp], 'appointment list: ' + title);
+    else if (fmt === 'pdf') offerFile(base + '.pdf', CEC.listPdf(asp, logoBytes()), 'application/pdf', false);
     else offerFile(base + '.csv', new TextEncoder().encode(CEC.listCsv(spec)), 'text/csv', false);
   }
   function apStatus(id, st) {
@@ -6863,7 +6898,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       closeAppt(); S.ap.type = a.type; S.ap.date = a.date; S.ap.step = 'list'; S.ap.key = S.ap.key && S.ap.key.indexOf(a.type) === 0 ? S.ap.key : '';
       toast((r.a.id ? 'Saved: ' : 'Booked: ') + CEC.apptType(a.type).l + ' No. ' + a.no + ', ' + CEC.weekday(a.date) + ' ' + CEC.dmy(a.date));
       setView('appt');
-      if (print) apSlip(a);
+      if (print) apSlipPrint(a);
     }, function (e) { Array.prototype.forEach.call(btns, function (b) { b.disabled = false; }); box.innerHTML = '<div class="err">' + h(errText(e)) + '</div>'; });
   }
   function closeAppt() { S.af = null; $('sheet').classList.add('hidden'); $('sheet').innerHTML = ''; document.body.style.overflow = ''; overlayClosed(); }
@@ -7084,6 +7119,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'ap-new': openAppt({ type: S.ap.type }); break;
       case 'ap-edit': { var ae = apById(id); if (ae) openAppt(ae); break; }
       case 'ap-slip': { var as = apById(id); if (as) apSlip(as); break; }
+      case 'ap-slipp': { var asp = apById(id); if (asp) apSlipPrint(asp); break; }
       case 'ap-st': apStatus(id, v); break;
       case 'ap-day': S.ap.date = usualDay(S.ap.type, S.ap.date, +v); loadAppts().then(render); render(); break;
       case 'ap-go': S.ap.date = v; render(); break;
@@ -7267,6 +7303,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         break;
       }
       case 'dl-pdf': { var b = buildLetter(); offerFile(b.model.file, CEC.letterPdf(b.model, logoBytes()), 'application/pdf', true); break; }
+      case 'dl-print': { var bp = buildLetter(); printDoc('letterPdf', [bp.model], 'census letter'); break; }
       case 'copy-wa': {
         var bb = buildLetter(), txt = S.letter.type === 'year' ? CEC.yearSummary(bb.model) : CEC.summaryText(bb.model, bb.shifts);
         var done = function () { toast('Summary copied. Paste it in WhatsApp.'); };
@@ -7316,6 +7353,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         S.lst.from = dd; S.lst.to = dd; render(); break;
       }
       case 'lst-pdf': downloadList('pdf'); break;
+      case 'lst-print': downloadList('print'); break;
       case 'lb-pre': lbUseCfg(CEC.presetCfg(v), v); break;
       case 'lb-mine': { var mm = lbMine()[+v]; if (mm) lbUseCfg(mm.cfg, 'm' + v); break; }
       case 'lb-shared': { var ss = (S.lists || [])[+v]; if (ss) lbUseCfg(ss.cfg, 's' + v); break; }
@@ -7338,6 +7376,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'lb-all': S.lb.excl = {}; lbRefresh(); break;
       case 'lb-none': lbSpec(false).list.forEach(function (e) { S.lb.excl[e.id] = true; }); lbRefresh(); break;
       case 'lb-pdf': lbReady(function (sp) { offerFile(sp.file + '.pdf', CEC.listPdf({ title: sp.title, sub: sp.sub, cols: sp.cols, groups: sp.groups, portrait: sp.portrait, empty: 'No patients.' }, logoBytes()), 'application/pdf', false); }); break;
+      case 'lb-print': lbReady(function (sp) { printDoc('listPdf', [{ title: sp.title, sub: sp.sub, cols: sp.cols, groups: sp.groups, portrait: sp.portrait, empty: 'No patients.' }], 'list: ' + sp.title); }); break;
       case 'lb-csv': lbReady(function (sp) { offerFile(sp.file + '.csv', new TextEncoder().encode(CEC.listCsv(sp)), 'text/csv', false); }); break;
       case 'lb-text': lbReady(function (sp) {
         var txt = CEC.listText(sp), done = function () { toast('List copied. Paste it in WhatsApp.'); };
