@@ -5117,7 +5117,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
       (R && R.at ? CEC.hm(new Date(R.at).toISOString()) : 'Refresh') + '</button></div>' +
       '<p class="muted small" style="margin:0 0 8px">Every MR number given today, newest on top; on an OPD day the OPD numbers too (marked OPD, for the OPD register). The list updates by itself.</p>';
     if (!R) return html + '<section class="card center muted"><span class="spin"></span>Loading&hellip;</section></div>';
-    html += '<div class="mrsum">' + (R.mr ? '<span>Last MR given: <b>' + h(R.mr) + '</b></span>' : '') + (R.opd ? '<span>Last OPD No. given: <b>' + h(R.opd) + '</b></span>' : '') + '<span>Today: <b>' + R.rows.length + '</b></span></div>';
+    html += '<div class="mrsum">' + (R.mr ? '<span>Last MR given: <b>' + h(R.mr) + '</b></span>' : '') + (R.opd ? '<span>Last OPD No. given: <b>' + h(R.opd) + '</b></span>' : '') +
+      (canEnter() ? '<span><button class="lnk" data-act="nums-set">Set numbers</button></span>' : '') + '<span>Today: <b>' + R.rows.length + '</b></span></div>';
     if (!R.rows.length) return html + '<div class="plist"><div class="empty">No patient yet today.</div></div></div>';
     return html + '<ol class="mrlist">' + R.rows.slice(0, 600).map(function (x) {
       return '<li' + (x.opd ? ' class="opd"' : '') + '><span class="mrn">' + (x.opd ? '<i class="opdb">OPD</i>' : '') + h(x.mr || '-') + '.</span><span class="mrb"><b>' + h(x.name || '(no name)') + '</b>' +
@@ -6126,11 +6127,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (i < 0) d.unshift('1');
     return m[1] + d.join('') + m[3];
   }
-  /* OPD day (12-11-2026): on an OPD-day morning an OPD patient (not BP check only, ECG only or petty) gets an OPD No. from the OPD register's counter. */
+  /* OPD day (12-11-2026): on an OPD-day morning every patient gets an OPD No. from the OPD register's counter, except Emergency / Resus,
+     ECG only (sent back for ECG by the doctor) and Brought dead, who get MR numbers. */
   function formOpd() {
     var f = S.form; if (!f) return false;
     if (f.editId) return !!f.opdFixed;
-    return shOpd(targetShift()) && f.cat === 'OPD' && !f.petty;
+    return shOpd(targetShift()) && ['EMR', 'BD', 'ECGO'].indexOf(f.cat) < 0 && !f.petty;     // OPD day: all but Emergency / Resus, ECG only and Brought dead
   }
   function syncMr() {
     var f = S.form, inp = $('fMr'), info = $('mrInfo'), tg = $('fAuto');
@@ -6160,20 +6162,39 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var on = shOpd(sh);
     d.innerHTML = '<div class="dayrow"><div class="seg dayseg"><button type="button" data-act="f-day" data-v="opd" class="' + (on ? 'on' : '') + '">OPD day</button>' +
       '<button type="button" data-act="f-day" data-v="emr" class="' + (on ? '' : 'on') + '">Emergency day</button></div>' +
-      '<p class="muted small">' + (on ? 'OPD patients get an <b>OPD No.</b> (OPD register). Emergency / Resus, BP check only, ECG only, ETT, Echo and Brought dead get MR numbers.'
+      '<p class="muted small">' + (on ? 'Every patient gets an <b>OPD No.</b> (OPD register), except <b>Emergency / Resus, ECG only and Brought dead</b> (MR No.).' +
+        '<br>Automatic numbers: last MR <b>' + h(S.mr && S.mr.last || 'not set') + '</b> &middot; last OPD No. <b>' + h(S.opdc && S.opdc.last || 'not set') + '</b> &middot; <button type="button" class="lnk" data-act="nums-set">Set numbers</button>'
         : 'Every patient gets an MR No.') + '</p></div>';
   }
   function setOpdDay(on) {
     var sh = targetShift(); if (!sh || shOpd(sh) === on) return;
     if (isOff()) return toast('Changing the day needs internet.');
     confirmBox(on ? 'Make this morning an OPD day?' : 'Make this morning an Emergency day?',
-      on ? 'For everyone: OPD patients registered from now get OPD numbers (OPD register) instead of MR numbers. No petty OPD names are added this morning.'
+      on ? 'For everyone: patients registered from now get OPD numbers (OPD register), except Emergency / Resus, ECG only and Brought dead (MR numbers). No petty OPD names are added this morning.'
         : 'For everyone: every patient registered from now gets an MR No.', on ? 'OPD day' : 'Emergency day').then(function (ok) {
       if (!ok) return;
       api('apiOpdDay', sh.id, on).then(function (r) {
         [S.work, S.detail, S.prevShift].forEach(function (x) { if (x && x.id === r.shiftId) x.opdDay = !!r.opdDay; });
-        syncMr(); toast(r.opdDay ? 'This morning is an OPD day: OPD patients get OPD numbers.' : 'This morning is an Emergency day: MR numbers for everyone.');
+        syncMr(); toast(r.opdDay ? 'This morning is an OPD day: OPD numbers (MR for Emergency / Resus, ECG only, Brought dead).' : 'This morning is an Emergency day: MR numbers for everyone.');
       }, function (e) { toast(errText(e)); });
+    });
+  }
+  /* Both automatic counters in one box: the last MR No. (manual MR register) and the last OPD No. (OPD register). */
+  function askNums() {
+    var cur = function (C) { return C && C.last ? 'now ' + h(C.last) : 'not set yet'; };
+    return modal('Automatic numbers', '<p>Enter the <b>last number written</b> in each paper register. Every new patient then gets the next number of the right register, on every phone. Leave a box empty to keep it as it is.</p>' +
+      '<label class="lb" for="numMr">Last MR No. (MR register) &middot; <span class="muted">' + cur(S.mr) + '</span></label><input class="in" id="numMr" autocapitalize="characters" autocomplete="off" inputmode="numeric">' +
+      '<label class="lb" for="numOpd">Last OPD No. (OPD register) &middot; <span class="muted">' + cur(S.opdc) + '</span></label><input class="in" id="numOpd" autocapitalize="characters" autocomplete="off" inputmode="numeric">',
+      [{ label: 'Cancel', value: null }, { label: 'Save numbers', cls: 'pri', value: 'form' }]).then(function (v) {
+      if (!v) return false;
+      var mr = (v.numMr || '').trim(), op = (v.numOpd || '').trim();
+      if (!mr && !op) return false;
+      if ((mr && !/\d/.test(mr)) || (op && !/\d/.test(op))) { toast('A number must contain digits.'); return false; }
+      var p = Promise.resolve(), said = [];
+      if (mr) p = p.then(function () { return api('apiSetMr', mr).then(function (m) { S.mr = m; S.autoMr = true; store_('cec_automr', true); said.push('next MR ' + m.next); }); });
+      if (op) p = p.then(function () { return api('apiSetOpd', op).then(function (m) { S.opdc = m; S.autoOpd = true; store_('cec_autoopd', true); said.push('next OPD No. ' + m.next); }); });
+      return p.then(function () { syncMr(); if (S.view === 'mrreg') mrRegLoad(); toast('Automatic numbers: ' + said.join(', ') + '.'); return true; },
+        function (e) { toast(errText(e)); syncMr(); return false; });
     });
   }
   function askOpd() {
@@ -6645,6 +6666,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'lst-toggle': if (S.lstOpen && $('lFrom')) readList(); S.lstOpen = !S.lstOpen; render(); break;
       case 'mr-set': askMr(); break;
       case 'opd-set': askOpd(); break;
+      case 'nums-set': askNums(); break;
       case 'f-day': setOpdDay(v === 'opd'); break;
       case 'year-letter': if (S.cen.ydata) { S.prev = 'census'; openLetter({ type: 'year', year: S.cen.ydata.year, rows: S.cen.ydata.rows }); } break;
       case 'work-pick': pickShift(); break;
