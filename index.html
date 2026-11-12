@@ -713,6 +713,20 @@ label.check.pwshow input{width:18px;height:18px;margin:0}
 .sowo{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center}
 .sowo .seg{margin:0}
 @media (max-width:440px){.sowo{grid-template-columns:1fr}}
+/* 13-11-2026: large footer buttons, popup lines, print desk status, slow banner */
+.sh-foot .btn.big{min-height:58px;font-size:17px;font-weight:700}
+.manbox .mpn{white-space:nowrap;overflow:hidden}
+.manbox .mprows{display:flex;flex-direction:column;gap:6px;margin-top:10px;text-align:left}
+.manbox .mpr{display:flex;gap:10px;align-items:baseline;padding:8px 12px;border-radius:10px;background:#f3f4f6;font-size:19px}
+.manbox .mpr span{flex:0 0 96px;color:var(--mute);font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.04em}
+.manbox .mpr b{font-size:21px;font-weight:800;color:#111;word-break:break-word}
+.deskon{color:var(--g7);font-weight:700}.deskoff{color:#b91c1c;font-weight:700}
+#banner .off.slow{background:#92400e}
+.ppprev.cn img{max-height:220px}
+.ppneed{flex:1 1 100%;color:#b91c1c;font-weight:700;font-size:13px;text-align:center}
+.ppneed:empty{display:none}
+.ppview{max-height:62vh;overflow:auto}
+.sh-foot.ppf{flex-wrap:wrap}
 
 </style>
 </head>
@@ -2596,9 +2610,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function api(fn) {
     var args = [S.token].concat(Array.prototype.slice.call(arguments, 1));
-    return call(fn, args).then(function (v) { if (S.offline) { S.offline = false; renderBanner(); } return v; },
+    return call(fn, args).then(function (v) { if (S.offline || S.slow) { S.offline = false; S.slow = false; renderBanner(); if (S.form) syncMr(); } return v; },
       function (e) {
-        if (e && e.offline) { if (!S.offline) { S.offline = true; renderBanner(); } } else if (isAuthErr(e)) signOut(errText(e));
+        if (e && e.offline) { if (navigator.onLine === false) { if (!S.offline) { S.offline = true; renderBanner(); } } else if (!S.slow) { S.slow = true; renderBanner(); } } else if (isAuthErr(e)) signOut(errText(e));
         else if (/OFFHOURS:/.test((e && e.message) || String(e)) && !S.offHours && fn !== 'apiState') setTimeout(function () { loadState().then(function () { if (S.offHours) { S.form = null; closeModal(); render(); } }, function () { }); }, 300);
         throw e;
       });
@@ -2644,7 +2658,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     S.offHours = null;
     var oldOpen = S.open ? S.open.id : null;
     S.me = st.me; store_('cec_printid', st.me && st.me.print ? 1 : ''); S.settings = mergeSettings(st.settings); S.open = st.open; S.openEnds = st.openEnds; S.prevShift = st.prev; S.prevUntil = st.prevUntil;
-    S.handover = st.handover; S.pendingUsers = st.pendingUsers || 0; S.pendingResets = st.pendingResets || 0; S.synced = new Date(); S.mr = st.mr || null; S.opdc = st.opdc || null; S.pendCerts = st.pendingCerts || 0;
+    S.handover = st.handover; S.pendingUsers = st.pendingUsers || 0; S.pendingResets = st.pendingResets || 0; S.synced = new Date(); S.mr = st.mr || null; S.opdc = st.opdc || null; S.apBeat = st.apBeatAge != null ? (st.apBeatAge >= 0 ? Date.now() - st.apBeatAge : 0) : (st.apBeat || 0); S.pendCerts = st.pendingCerts || 0;
     var cu = st.custom || {}; S.custom = {}; S.customInfo = isAdmin() ? cu : null; S.lists = st.lists || []; S.demoInfo = st.demo || null; applyDemo();
     S.auto = st.autoprint || null;
     ['dx', 'proc', 'med'].forEach(function (k) { S.custom[k] = (cu[k] || []).map(function (x) { return typeof x === 'string' ? x : x.v; }); });
@@ -2866,10 +2880,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
     pwHash(pw, off.salt).then(function (hsh) {
       if (!hsh || hsh !== off.hash) return toast('Wrong password.');
       var cache = store_('cec_cache');
-      S.token = off.token || null; S.offline = true; touch();
+      S.token = off.token || null; S.offline = navigator.onLine === false; S.slow = !S.offline; touch();     // 13-11-2026: internet on but the census slow: slow, not No internet
       if (cache && cache.uid === off.uid) applyState(cache.st); else { S.me = off.me; S.settings = mergeSettings(null); }
       S.view = 'home'; S.prev = 'home'; render();
-      toast('Signed in without internet. New patients are kept on this phone and sent when the internet is back.');
+      toast(S.offline ? 'Signed in without internet. New patients are kept on this phone and sent when the internet is back.' : 'The census is slow: signed in with the copy on this phone. New patients are kept here and sent by themselves.');
     });
   }
   function doRegister() {
@@ -3654,7 +3668,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       ' <span class="muted">&middot; ' + (e.opd ? 'OPD No. ' : 'MR ') + h(e.mr || '-') + '</span></div><div class="pr-sub">' + (e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '') + (e.age !== '' && e.age != null ? ', ' + h(e.age) + ' y' : '') +
       ' &middot; ' + h(catLabel(e)) + (e.only && e.signed ? ' (closed: regular check-up)' : '') + (x.src === 'prev' ? ' &middot; ' + h(CEC.shiftName(x.sh.shift)) + ' shift' : '') + '</div>' +
       (ecgAdvised(e) && !done ? '<div class="pr-proc"><b class="advt">ECG advised</b></div>' : '') + '</div>' +
-      '<button class="tick' + (done ? ' on' : '') + '" data-act="q-tick" data-src="' + x.src + '" data-id="' + h(e.id) + '" aria-pressed="' + done + '"' + (busy ? ' disabled' : '') + '>' +
+      '<button class="tick' + (done ? ' on' : '') + '" data-act="q-tick" data-src="' + x.src + '" data-id="' + h(e.id) + '" aria-pressed="' + done + '">' +
       '<span class="box" aria-hidden="true">' + (done ? '&#10003;' : '') + '</span>' + (done ? 'ECG done' : 'ECG done?') + '</button></div>';
   }
   function ecgSearchHtml() {
@@ -3721,6 +3735,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var sh = src === 'prev' ? S.prevShift : S.work, e = sh && sh.entries.filter(function (x) { return x.id === id; })[0];
     if (!e) return;
     if (/^(q-|tmp)/.test(e.id)) return toast('Wait until this patient is saved.');
+    if (S.ecgBusy && S.ecgBusy[id]) return;                 // still sending the last tap
     var want = !ecgDone(e), was = (e.procs || []).slice(), wasDone = e.advDone;
     e.procs = want ? was.concat(['ECG']) : was.filter(function (p) { return p !== 'ECG'; });
     if (want && ecgAdvised(e) && !advLeft(e).length) e.advDone = new Date().toISOString();
@@ -4260,15 +4275,15 @@ if (typeof module !== 'undefined') module.exports = CEC;
       if (busy === 'auth') return modal('Kept on this device', '<p>Your sign-in had ended, so <b>' + h(e.name) + '</b> could not be saved yet. It is <b>kept on this device</b> and is saved by itself when <b>' + h(me0 ? me0.name : 'you') + '</b> signs in again here. No need to enter it again.</p>', [{ label: 'OK', cls: 'pri', value: true }]);
       if (S.manPop && temp && S.manPop.id === temp.id) manPopBusy();
       toast(busy ? 'The census is busy: ' + e.name + ' is kept on this device and will be sent automatically. No need to enter it again.'
-        : 'No internet: ' + e.name + ' is saved on this phone and will be sent automatically.');
+        : navigator.onLine === false ? 'No internet: ' + e.name + ' is saved on this phone and will be sent automatically.'
+        : 'The census is slow: ' + e.name + ' is kept on this device and sent by itself. No need to enter it again.');
       if (!S.form) render();
     };
-    if (APP_BUILD && isNew && isOff()) { keepOnPhone(); if (mode === 'next') openForm(target, null); else if (mode === 'solo') openSolo(false); else closeForm(); render(); if (mode === 'man') manPop(temp, false, f.solo ? 'solo' : 'reg'); if (mode === 'vitals') toast('Saved on this phone. Vitals can be added after it is sent.'); return; }
+    if (APP_BUILD && isNew && isOff()) { keepOnPhone(); if (mode === 'next') { if (target === 'work') openReg(!!f.man); else openForm(target, null); } else if (mode === 'solo') openSolo(false); else closeForm(); render(); if (mode === 'man') manPop(temp, false, f.solo ? 'solo' : 'reg'); if (mode === 'vitals') toast('Saved on this phone. Vitals can be added after it is sent.'); return; }
     S.pending++;
     apiRetry(isNew ? 'apiAddEntry' : 'apiUpdateEntry', sh.id, JSON.stringify(e)).then(function (saved) {
       S.pending--;
-      if (saved.mrState) S.mr = saved.mrState;
-      if (saved.opdState) S.opdc = saved.opdState;
+      numsFrom(saved);
       if (nowDead && !wasDead) { S.pendCerts = (S.pendCerts || 0) + 1; toast((e.cat === 'BD' ? 'Brought dead' : 'Expired') + ': ' + saved.name + ' added to the pending death certificates.'); }
       if (e.autoMr) toast(mrTag(saved) + ' given to ' + saved.name + '. Write it on the slip.');
       if (isNew && saved.shiftId && saved.shiftId !== sh.id) {
@@ -4314,7 +4329,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       refresh(true);
     });
     var msg = (signing ? 'Signed off' : 'Saved') + (e.autoMr || !e.mr ? ' ' + e.name : ' ' + mrTag(e));
-    if (mode === 'next') { toast(msg + '. Enter the next patient.'); openForm(target, null); }
+    if (mode === 'next') { toast(msg + '. Enter the next patient.'); if (target === 'work') openReg(!!f.man); else openForm(target, null); }
     else if (mode === 'solo') { toast(msg + '. Next patient.'); openSolo(false); }
     else { closeForm(); toast(mode === 'vitals' ? msg + '. Opening vitals\u2026' : msg); }
     render();
@@ -4355,8 +4370,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function soloFoot() {
     soloNote();
     var ft = document.querySelector('#sheet .sh-foot'); if (!ft) return;
-    ft.innerHTML = soloPref() === 'vit' ? '<button class="btn pri" data-act="solo-next">Next: vitals &rsaquo;</button>'
-      : '<button class="btn" data-act="solo-next" data-v="print">Save &amp; print</button><button class="btn pri" data-act="solo-next" data-v="next">Save &amp; next</button>';
+    ft.innerHTML = soloPref() === 'vit' ? '<button class="btn pri big" data-act="solo-next">Next: vitals &rsaquo;</button>'
+      : '<button class="btn pri big" data-act="solo-next" data-v="next">Save &amp; next</button><button class="btn big" data-act="solo-next" data-v="print">Save &amp; print</button>';
   }
   function soloPick(v) {
     store_('cec_solo', v === 'novit' ? 'novit' : 'vit');
@@ -4388,7 +4403,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var hb = document.querySelector('#sheet .sh-head button'); if (hb) { hb.setAttribute('data-act', 'solo-back'); hb.innerHTML = '&lsaquo; Back'; }
     var t = document.querySelector('#sheet .sh-head h3'); if (t) t.textContent = 'Vitals';
     document.querySelector('#sheet .sh-foot').innerHTML = f.man ? '<button class="btn pri" data-act="solo-save">Save &amp; show MR</button>'
-      : '<button class="btn" data-act="solo-save" data-v="print">Save &amp; print</button><button class="btn pri" data-act="solo-save" data-v="next">Save &amp; next</button>';   // 12-11-2026: no "Save without vitals" 
+      : '<button class="btn pri big" data-act="solo-save" data-v="next">Save &amp; next</button><button class="btn big" data-act="solo-save" data-v="print">Save &amp; print</button>';   // 12-11-2026: no "Save without vitals" 
     bd.scrollTop = 0;
     setTimeout(function () { var b = $('fBp'); if (b) b.focus(); }, 60);
   }
@@ -4418,25 +4433,31 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function manPop(x, wait, nxt) {
     if (!x) return;
     S.manPop = { id: x.id, next: nxt };
-    var vit = (CEC.slipVitals(x) || []).join(' &nbsp; '), bio = (x.age !== '' && x.age != null ? h(x.age) + ' y' : '') + (x.sex ? ' / ' + (x.sex === 'M' ? 'Male' : 'Female') : '') + ' &middot; ' + h(catLabel(x));
+    var row = function (l, v) { return v === '' || v == null ? '' : '<div class="mpr"><span>' + l + '</span><b>' + h(v) + '</b></div>'; };
     var m = $('modal');
     m.innerHTML = '<div class="mbox manbox" role="dialog" aria-modal="true"><div class="mpl">' + (x.opd ? 'OPD No.' : 'MR No.') + '</div>' +
       '<div class="mpn" id="mpNum">' + (wait ? '<span class="spin"></span>' : h(x.mr)) + '</div>' + (wait ? '<div class="muted small" id="mpWait">Getting the number from the census&hellip;</div>' : '') +
-      '<div class="mpname">' + h(String(x.name || '').toUpperCase()) + '</div><div class="mpbio">' + bio + '</div>' + (vit ? '<div class="mpvit">' + vit + '</div>' : '') +
+      '<div class="mprows">' + row('Name', String(x.name || '').toUpperCase()) + row('Age', x.age !== '' && x.age != null ? x.age + ' years' : '') + row('Gender', x.sex === 'M' ? 'Male' : x.sex === 'F' ? 'Female' : '') +
+        row('Category', catLabel(x)) + (CEC.slipVitals(x) || []).map(function (v) { var i = v.indexOf(':'); return i > 0 ? row(v.slice(0, i), v.slice(i + 1).trim()) : ''; }).join('') + '</div>' +
       '<p class="muted small" style="margin:12px 0 0">Write these on the paper slip, then tap Next.</p>' +
       '<div class="mbtns"><button class="btn pri" id="mpNext"' + (wait ? ' disabled' : '') + '>Next patient &rsaquo;</button></div></div>';
-    m.classList.remove('hidden');
+    m.classList.remove('hidden'); fitNum();
     m.onclick = function (ev) {
       if (!ev.target.closest('#mpNext') || ev.target.closest('#mpNext').disabled) return;
       closeModal(); S.manPop = null;
       if (nxt === 'solo') openSolo(true); else openReg(true);
     };
   }
+  function fitNum() {                                   // the number always on one line: the letters get smaller to fit
+    var n = $('mpNum'); if (!n) return;
+    var px = 64; n.style.fontSize = px + 'px';
+    while (px > 18 && n.scrollWidth > n.clientWidth) { px -= 2; n.style.fontSize = px + 'px'; }
+  }
   function manPopFill(saved, tempId) {
     if (!S.manPop || !saved || S.manPop.id !== tempId) return;
     S.manPop.id = saved.id;
     var n = $('mpNum'); if (!n) return;
-    if (n.textContent !== String(saved.mr)) n.textContent = saved.mr; var w = $('mpWait'); if (w) w.parentNode.removeChild(w);
+    if (n.textContent !== String(saved.mr)) { n.textContent = saved.mr; fitNum(); } var w = $('mpWait'); if (w) w.parentNode.removeChild(w);
     var b = $('mpNext'); if (b) b.disabled = false;
   }
   function manPopBusy() {
@@ -4450,14 +4471,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
     openForm('work', null);
     if (!man) {                                            // 12-11-2026: the vitals are at the other station
       var f0 = document.querySelector('#sheet .sh-foot');
-      if (f0) f0.innerHTML = '<button class="btn" data-act="close-form">&lsaquo; Back</button><span class="fgap"></span><button class="btn pri" data-act="save-next">Save &amp; next</button>';
+      if (f0) f0.innerHTML = '<button class="btn pri big" data-act="save-next">Save &amp; next</button><button class="btn big" data-act="close-form">&lsaquo; Back</button>';
       var n0 = $('fRegNote'); if (n0) n0.innerHTML = 'Tap <b>Save &amp; next</b>: the patient is saved and the registry opens again for the next patient. The vitals are taken at the Vitals station.';
       return;
     }
     S.form.man = true;
     var el = $('sheet'), t = el.querySelector('.sh-head h3'), ft = el.querySelector('.sh-foot');
     if (t) t.textContent = 'Patient registry (manual slip)';
-    if (ft) ft.innerHTML = '<button class="btn pri" data-act="man-save">Save &amp; show MR</button>';
+    if (ft) ft.innerHTML = '<button class="btn pri big" data-act="man-save">Save &amp; show MR</button>';
     var n = $('fRegNote'); if (n) n.innerHTML = 'Manual slip: after Save the <b>MR No.</b> shows in large letters with the details, for writing the paper slip. No slip is printed.';
   }
   /* Home: Electronic slip / Manual slip, then One staff / Two staff, then (two staff) Patient registry / Vitals. */
@@ -4590,6 +4611,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       [{ label: 'A5 (1 slip a page)', cls: 'pri', value: 'a5' }, { label: 'A4 (2 slips a sheet)', value: 'a4' }, { label: 'Not now', value: null }], true);
   }
   function withPaper(fn) {
+    if (isPhone() && apOn() && !apHere()) return fn(S.auto.paper === 'a4' ? 'a4' : 'a5');     // 13-11-2026: sent to the print desk, which uses its own paper
     var p = shiftPaper();
     if (p) return fn(p);
     askPaper().then(function (v) { if (!v) return; if (S.view === 'slipq') { S.paperNow = v; render(); } fn(v); });
@@ -4663,7 +4685,41 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   /* Printing by hand on the slip page. With autoprint on, slips not printed yet are first claimed on the server (like autoprint does),
      so a slip the printing device has just taken is not printed a second time here. Without internet they print as before. */
+  function isPhone() { return APP_BUILD || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent || ''); }
+  /* 13-11-2026: a phone has no printer: with autoprint on at the print desk, Print / Print all send the slips there (printed within seconds). */
+  function deskPrint(items, again) {
+    if (!isPhone() || !apOn() || apHere()) return false;
+    var real = items.filter(function (x) { return x.sh && x.e.id && !/^(q-|tmp)/.test(x.e.id); });
+    var fresh = again ? [] : real.filter(function (x) { return !x.e.tokPr; }), re = again ? real : real.filter(function (x) { return !!x.e.tokPr; });
+    if (!fresh.length && !re.length) return false;
+    if (isOff()) { toast('No internet: the slips could not be sent to the print desk. Tap Print again when the internet is back.'); return true; }
+    fresh.forEach(function (x) { x.e.rel = true; x.e.relNow = true; });
+    var n = fresh.length + re.length;
+    toast(n + ' slip' + (n === 1 ? '' : 's') + ' sent to the print desk' + (re.length && !fresh.length ? ' to print again' : '') + (deskAwake() ? ': it prints them in a few seconds.' : ', but the print desk looks asleep or off.'));
+    apiRetry('apiPrintNow', JSON.stringify(fresh.map(function (x) { return { shiftId: x.sh.id, id: x.e.id }; }).concat(re.map(function (x) { return { shiftId: x.sh.id, id: x.e.id, again: 1 }; }))))
+      .then(null, function (e) { toast('Not sent to the print desk: ' + errText(e)); });
+    if (S.view === 'slipq') setTimeout(render, 0);
+    return true;
+  }
+  /* The print desk: slips that a phone asked to print again (same numbers). */
+  function deskReprint() {
+    if (S.reprinting || !apHere()) return;
+    S.reprinting = true;
+    api('apiReprintTake').then(function (list) {
+      S.reprinting = false;
+      list = list || [];
+      if (!list.length) return;
+      printSlips(list.map(function (en) { return { e: en, sh: S.open && S.open.id === en.shiftId ? S.open : { id: en.shiftId } }; }), S.auto && S.auto.paper === 'a4' ? 'a4' : 'a5', { again: true });
+    }, function () { S.reprinting = false; });
+  }
+  function deskAwake() { return !!S.apBeat && Date.now() - S.apBeat < 90000; }
+  function deskStatusHtml() {
+    if (!apOn() || apHere()) return '';
+    return S.apBeat && deskAwake() ? '<span class="deskon">Print desk: on (checked ' + Math.max(1, Math.round((Date.now() - S.apBeat) / 1000)) + ' s ago)</span>'
+      : '<span class="deskoff">Print desk: asleep / off' + (S.apBeat ? ' since ' + CEC.hm(new Date(S.apBeat).toISOString()) : '') + '</span>';
+  }
   function manualPrint(items, paper) {
+    if (deskPrint(items)) return;
     var fresh = items.filter(function (x) { return !x.e.tokPr && x.sh && !/^(q-|tmp)/.test(x.e.id); });
     if (!fresh.length || isOff()) return printSlips(items, paper);       // 12-11-2026: always checked first (a device may not know yet that autoprint is on)
     var cid = claimId(), tries = 0, ask = fresh.map(function (x) { return { shiftId: x.sh.id, id: x.e.id }; });
@@ -4730,6 +4786,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function reprint(items, paper) {
     items = items.filter(function (x) { return x.e && x.e.tok; });
     if (!items.length) return;
+    if (deskPrint(items, true)) return;                  // a phone: the print desk prints them again
     printSlips(items, paper, { claimed: true, again: true });
   }
   /* Print selected: the ticked slips (ready ones and, if ticked, printed ones), in the order of the page. */
@@ -4817,7 +4874,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var A = S.auto, here = apHere();
     return '<section class="card apc"><div class="apt"><div><b>Autoprint is on</b> <span class="pill open">' + h(apModeText(A.mode)) + '</span> <span class="pill open">' + (A.paper === 'a4' ? 'A4' : 'A5') + '</span> <span class="pill open">' + (apInstant() ? 'timer off' : h(AP_EVERY.filter(function (x) { return x[0] * 1000 === apEvery(); }).map(function (x) { return x[1]; })[0] || '5 min')) + '</span>' +
       '<div class="muted small">' + (here ? 'Printing on <b>this device</b>. Keep the census open here; the ready slips print ' + h(apEveryText(A.every)) + '. Emergency / Resus slips print at once.' + (S.wake ? ' The screen is kept awake.' : '')
-        : 'Printing on another device (switched on there by ' + h(A.devBy || A.by || 'someone') + '). This device does not print by itself, so no slip prints twice.') +
+        : 'Printing on another device (switched on there by ' + h(A.devBy || A.by || 'someone') + '). This device does not print by itself, so no slip prints twice.' + (isPhone() ? ' Print and Print all here send the slips to that device.' : '') + ' ' + deskStatusHtml()) +
       ' Paper: ' + h(apPaperText(A.paper)) + '. Changed last by ' + h(A.by || '-') + (A.at ? ' at ' + CEC.hm(A.at) : '') + '. The next shift starts with autoprint off.</div></div>' +
       '<div class="apb"><button class="btn sm" data-act="ap-set">Change</button><button class="btn sm dan" data-act="ap-off">Switch off</button></div></div>' +
       (here ? '<div class="apcd"><span>' + (apInstant() ? 'Prints each slip as soon as it is ready' : 'Next print in <b class="apcdt">' + mmss((S.apNext || Date.now() + apEvery()) - Date.now()) + '</b>') + ' &middot; <span class="apcnt">' + apCountText() + '</span></span>' +
@@ -4834,7 +4891,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function apLineHtml() {
     if (!apOn()) return '<div class="apline"><span>Autoprint of slips: <b>off</b></span><button type="button" class="lnk" data-act="ap-set">Switch on</button></div>';
     return '<div class="apline on"><span>Autoprint: <b>on</b>, ' + h(apModeText(S.auto.mode)) + ', ' + (S.auto.paper === 'a4' ? 'A4' : 'A5') + ' &middot; ' + (apHere() ? (apInstant() ? 'this device, each slip at once' : 'this device, next in <b class="apcdt">' +
-      mmss((S.apNext || Date.now() + apEvery()) - Date.now()) + '</b>') : 'another device') + '</span><span>' + (apHere() ? '<button type="button" class="lnk" data-act="ap-now">Print now</button> &middot; ' : '') +
+      mmss((S.apNext || Date.now() + apEvery()) - Date.now()) + '</b>') : 'another device ' + deskStatusHtml()) + '</span><span>' + (apHere() ? '<button type="button" class="lnk" data-act="ap-now">Print now</button> &middot; ' : '') +
       '<button type="button" class="lnk" data-act="ap-set">Change</button></span></div>';
   }
   function apPaintLine() { var l = $('apLine'); if (l) l.innerHTML = apLineHtml(); }
@@ -4904,6 +4961,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     /* Emergency / Resus: at once. Timer off: every 10 seconds the device looks for ready slips. Both also when the screen is asleep. */
     if (!instant && now < S.apNext) {
       if (now >= (S.apCheck || 0)) { S.apCheck = now + AP_POLL; if (!wait || ready.some(function (x) { return apAtOnce(x.e); })) apRun(false, 'check'); }
+      if (now >= (S.apBeatAt || 0)) { S.apBeatAt = now + 30000; api('apiBeat').then(null, function () { }); }   // 13-11-2026: "Print desk: on" on every phone
       return;
     }
     if (now < S.apNext) return;
@@ -4927,6 +4985,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var mine = function () { return S.apBusy === round; };          // an old round that answers late does nothing
     var fresh = api('apiState').then(function (st) {             // the latest patients of the shift (also those registered on other devices)
       var s = st && st.open;
+      if (st && st.reprintN) setTimeout(deskReprint, 0);
       if (st && typeof st === 'object' && 'autoprint' in st) S.auto = st.autoprint || null;
       if (s && s.entries && S.open && S.open.id === s.id) {
         s.entries.forEach(function (en) { var cur = (S.open.entries || []).filter(function (y) { return y.id === en.id; })[0]; if (!S.opt[en.id] && (!cur || (cur.tokPr || '') <= (en.tokPr || ''))) putEntry(S.open, en); });
@@ -5008,7 +5067,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       if (!kind) return;
       if (isOff()) return toast('A slip number needs internet.');
       toast('Getting the slip number\u2026');
-      return api('apiSlip', sh.id, e.id, kind).then(function (saved) { putEntry(sh, saved); render(); withPaper(function (p) { printSlip(saved, sh, p); }); },
+      return api('apiSlip', sh.id, e.id, kind).then(function (saved) { putEntry(sh, saved); render(); withPaper(function (p) { if (!deskPrint([{ e: saved, sh: sh }])) printSlip(saved, sh, p); }); },
         function (x) { toast('No slip: ' + errText(x)); });
     });
   }
@@ -5444,21 +5503,24 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* ---------- certificates written by hand: a photo of the certificate is compulsory ---------- */
   function openPaper(p) {
     p = p || {};
-    S.pp = { entryId: p.id || '', photo: null, mime: '' };
+    S.pp = { entryId: p.id || '', ph: {} };
     var el = $('sheet'), fixed = !!p.id;
     el.innerHTML = '<div class="sh-head"><button data-act="pp-close">Cancel</button><h3>Paper death certificate</h3><span></span></div><div class="sh-body"><form id="ppf" novalidate autocomplete="off">' +
-      '<p class="small" style="margin:12px 0 0">For a certificate written by hand, a <b>photo of the filled certificate is compulsory</b>. It is kept privately with the record.</p>' +
+      '<p class="small" style="margin:12px 0 0">For a certificate written by hand, <b>three photos are compulsory</b>: the filled certificate, the CNIC / B-form of the deceased and the CNIC of the receiver. They are kept privately with the record.</p>' +
       '<div class="fsec">Patient</div>' +
       (fixed ? '<div class="kv"><b>' + h(p.name) + '</b> &middot; MR ' + h(p.mr) + '<div class="muted small">' + (p.cat === 'BD' ? 'Brought dead' : 'Expired in CEC') + ' &middot; ' + CEC.dmy(p.censusDate) + '</div></div>'
         : '<label class="lb" for="ppMr">MR No. <span class="req">*</span></label><input class="in" id="ppMr" autocapitalize="characters">' +
           '<label class="lb" for="ppName">Name of the deceased <span class="req">*</span></label><input class="in" id="ppName" autocapitalize="words">') +
       '<div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><label class="lb" for="ppNo">Certificate No. on paper</label><input class="in" id="ppNo" placeholder="optional"></div>' +
       '<div><label class="lb" for="ppDate">Date of death</label><input class="in" type="date" id="ppDate" value="' + h(p.censusDate || '') + '"></div></div>' +
-      '<div class="fsec">Photo of the certificate <span class="req">*</span></div>' +
-      '<div class="sbtns"><label class="btn pri" for="ppCam">' + ICON.cam + ' Take photo</label><label class="btn" for="ppFile">' + ICON.img + ' Choose photo</label></div>' +
-      '<input type="file" id="ppCam" accept="image/*" capture="environment" class="hidden"><input type="file" id="ppFile" accept="image/*" class="hidden">' +
-      '<div id="ppPrev" class="ppprev"><span class="muted small">No photo yet.</span></div>' +
-      '<div id="ppErr"></div></form></div><div class="sh-foot"><button class="btn pri" data-act="pp-save" disabled>Save</button></div>';
+      PP_SLOTS.map(function (x) {
+        return '<div class="fsec">' + x.t + ' <span class="req">*</span></div>' +
+          '<div class="sbtns"><label class="btn pri" for="ppCam_' + x.k + '">' + ICON.cam + ' Take photo</label><label class="btn" for="ppFile_' + x.k + '">' + ICON.img + ' Choose photo</label></div>' +
+          '<input type="file" id="ppCam_' + x.k + '" data-pp="' + x.k + '" accept="image/*" capture="environment" class="hidden"><input type="file" id="ppFile_' + x.k + '" data-pp="' + x.k + '" accept="image/*" class="hidden">' +
+          '<div id="ppPrev_' + x.k + '" class="ppprev' + (x.k === 'cert' ? '' : ' cn') + '"><span class="muted small">No photo yet.</span></div>';
+      }).join('') +
+      '<div id="ppErr"></div></form></div><div class="sh-foot ppf"><div class="ppneed" id="ppNeed"></div><button class="btn pri" data-act="pp-save" disabled>Save</button></div>';
+    ppNeed();
     el.classList.remove('hidden'); document.body.style.overflow = 'hidden'; overlayOpened();
   }
   /* Photos are made smaller on the phone (longest side 1800 px, JPEG) before they are sent. */
@@ -5476,34 +5538,57 @@ if (typeof module !== 'undefined') module.exports = CEC;
       img.src = url;
     });
   }
-  function paperPhoto(file) {
+  var PP_SLOTS = [{ k: 'cert', t: 'Photo of the certificate', n: 'the certificate photo' },
+    { k: 'cnic', t: 'Photo of the CNIC / B-form of the deceased', n: 'CNIC / B-form of the deceased' },
+    { k: 'rcnic', t: 'Photo of the CNIC of the receiver', n: 'CNIC of the receiver' }];
+  /* Save stays off until all three photos are there; the line above it names what is still missing. */
+  function ppNeed() {
+    if (!S.pp) return;
+    var miss = PP_SLOTS.filter(function (x) { return !S.pp.ph[x.k]; }).map(function (x) { return x.n; });
+    var n = $('ppNeed'); if (n) n.innerHTML = miss.length ? 'Still needed: ' + h(miss.join(', ')) + '.' : '';
+    var b = document.querySelector('[data-act=pp-save]'); if (b && !S.pp.busy) b.disabled = miss.length > 0;
+  }
+  function paperPhoto(file, k) {
     if (!file || !S.pp) return;
-    $('ppPrev').innerHTML = '<span class="spin"></span> Preparing the photo\u2026';
+    k = k || 'cert';
+    var slot = PP_SLOTS.filter(function (x) { return x.k === k; })[0] || PP_SLOTS[0], prev = $('ppPrev_' + k);
+    if (prev) prev.innerHTML = '<span class="spin"></span> Preparing the photo\u2026';
     shrinkPhoto(file).then(function (dataUrl) {
       if (!S.pp) return;
-      S.pp.photo = dataUrl.split(',')[1]; S.pp.mime = 'image/jpeg';
-      $('ppPrev').innerHTML = '<img src="' + dataUrl + '" alt="Photo of the paper death certificate"><div class="muted small">' + Math.round(S.pp.photo.length * 0.75 / 1024) + ' KB &middot; tap Take photo again to replace it</div>';
-      var b = document.querySelector('[data-act=pp-save]'); if (b) b.disabled = false;
-    }, function (e) { $('ppPrev').innerHTML = '<div class="err">' + h(errText(e)) + '</div>'; });
+      S.pp.ph[k] = { d: dataUrl.split(',')[1], m: 'image/jpeg' };
+      var pv = $('ppPrev_' + k);
+      if (pv) pv.innerHTML = '<img src="' + dataUrl + '" alt="' + h(slot.t) + '"><div class="muted small">' + Math.round(S.pp.ph[k].d.length * 0.75 / 1024) + ' KB &middot; tap Take photo again to replace it</div>';
+      ppNeed();
+    }, function (e) { var pv = $('ppPrev_' + k); if (pv) pv.innerHTML = '<div class="err">' + h(errText(e)) + '</div>'; });
   }
   function savePaper() {
     var P = S.pp, err = [], d = { entryId: P.entryId, paperNo: up($('ppNo').value.trim()), deathDate: $('ppDate').value };
     if (!P.entryId) { d.mr = up($('ppMr').value.trim()); d.name = up($('ppName').value.trim().replace(/\s+/g, ' ')); if (!d.mr) err.push('MR No.'); if (!d.name) err.push('name'); }
-    if (!P.photo) err.push('a photo of the certificate');
+    PP_SLOTS.forEach(function (x) { if (!P.ph[x.k]) err.push('photo of ' + x.n.replace(/^the /, '')); });
     if (err.length) { $('ppErr').innerHTML = '<div class="err">Please add: ' + h(err.join(', ')) + '.</div>'; return; }
-    var b = document.querySelector('[data-act=pp-save]'); b.disabled = true; b.innerHTML = '<span class="spin"></span>Saving\u2026';
-    api('apiSavePaperCert', JSON.stringify(d), P.photo, P.mime).then(function (r) {
+    if (P.busy) return;
+    var b = document.querySelector('[data-act=pp-save]'); P.busy = true; b.disabled = true; b.innerHTML = '<span class="spin"></span>Saving\u2026';
+    api('apiSavePaperCert', JSON.stringify(d), P.ph.cert.d, P.ph.cert.m, P.ph.cnic.d, P.ph.cnic.m, P.ph.rcnic.d, P.ph.rcnic.m).then(function (r) {
       S.pend = (S.pend || []).filter(function (x) { return x.id !== P.entryId; }); S.pendCerts = Math.max(0, S.pend.length);
-      S.papers = [r].concat(S.papers || []); closePaper(); toast('Paper certificate saved with its photo'); render();
-    }, function (e) { b.disabled = false; b.textContent = 'Save'; $('ppErr').innerHTML = '<div class="err">' + h(errText(e)) + '</div>'; });
+      S.papers = [r].concat(S.papers || []); closePaper(); toast('Paper certificate saved with its photos'); render();
+    }, function (e) { P.busy = false; b.textContent = 'Save'; ppNeed(); $('ppErr').innerHTML = '<div class="err">' + h(errText(e)) + '</div>'; });
   }
   function closePaper() { S.pp = null; $('sheet').classList.add('hidden'); $('sheet').innerHTML = ''; document.body.style.overflow = ''; overlayClosed(); }
+  /* Shows the certificate photo and, when they were taken with it, both CNIC photos, each with its own Download button. */
   function viewPaper(id) {
-    toast('Opening the photo\u2026');
-    api('apiPaperPhoto', id).then(function (r) {
-      var src = 'data:' + (r.mime || 'image/jpeg') + ';base64,' + r.data;
-      modal('Paper death certificate', '<img src="' + src + '" alt="Photo of the paper death certificate" style="width:100%;border-radius:8px;border:1px solid var(--line)">', [{ label: 'Download', value: 'dl' }, { label: 'Close', cls: 'pri', value: true }])
-        .then(function (v) { if (v === 'dl') offerFile(r.name || 'paper-certificate.jpg', fromB64(r.data), r.mime || 'image/jpeg', false); });
+    var p = (S.papers || []).filter(function (x) { return x.id === id; })[0] || {};
+    var want = [{ w: '', t: 'Paper death certificate', b: 'Download certificate photo' }];
+    if (p.hasCnic) want.push({ w: 'cnic', t: 'CNIC / B-form of the deceased', b: 'Download CNIC of deceased' });
+    if (p.hasRCnic) want.push({ w: 'rcnic', t: 'CNIC of the receiver', b: 'Download CNIC of receiver' });
+    toast(want.length > 1 ? 'Opening the photos\u2026' : 'Opening the photo\u2026');
+    Promise.all(want.map(function (x) { return api('apiPaperPhoto', id, x.w); })).then(function (rs) {
+      var body = rs.map(function (r, i) {
+        return (want.length > 1 ? '<div class="fsec" style="margin-top:' + (i ? 14 : 4) + 'px">' + h(want[i].t) + '</div>' : '') +
+          '<img src="data:' + (r.mime || 'image/jpeg') + ';base64,' + r.data + '" alt="' + h(want[i].t) + '" style="width:100%;border-radius:8px;border:1px solid var(--line)">';
+      }).join('');
+      var btns = rs.map(function (r, i) { return { label: want.length > 1 ? want[i].b : 'Download', value: 'dl' + i }; }).concat([{ label: 'Close', cls: 'pri', value: true }]);
+      modal('Paper death certificate', '<div class="ppview">' + body + '</div>', btns, want.length > 1)
+        .then(function (v) { if (typeof v === 'string' && v.indexOf('dl') === 0) { var r = rs[+v.slice(2)]; offerFile(r.name || 'paper-certificate.jpg', fromB64(r.data), r.mime || 'image/jpeg', false); } });
     }, function (e) { toast(errText(e)); });
   }
   function pendRowHtml(p) {
@@ -5533,7 +5618,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       var p = x.p;
       return '<div class="drow"><div class="pr-name">' + h(p.name) + ' <span class="muted">&middot; MR ' + h(p.mr) + '</span></div><div class="pr-sub"><span class="tag ppr">On paper</span>' + (p.paperNo ? 'No. ' + h(p.paperNo) + ' &middot; ' : '') +
         'photo saved ' + h(fmtTime(p.at)) + (isAdmin() && p.by ? ' by ' + h(p.by) : '') + '</div>' +
-        '<div class="sbtns ico"><button class="btn sm" data-act="pp-view" data-id="' + h(p.id) + '">' + ICON.eye + ' View / download photo</button>' +
+        '<div class="sbtns ico"><button class="btn sm" data-act="pp-view" data-id="' + h(p.id) + '">' + ICON.eye + ' View / download photo' + (p.hasCnic || p.hasRCnic ? 's' : '') + '</button>' +
         (isAdmin() ? '<button class="btn sm dan" data-act="pp-del" data-id="' + h(p.id) + '">Delete</button>' : '') + '</div></div>';
     }
     var c = x.c;
@@ -6370,7 +6455,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if ($('fAutoL')) $('fAutoL').textContent = op ? 'Automatic OPD No.' : 'Automatic MR';
     syncDay();
     if (!info) return;
-    f.auto = !f.editId && want && !!(C && C.last) && !isOff();
+    f.auto = !f.editId && want && !!(C && C.last);        // 13-11-2026: also when slow or offline: the phone gives the next number, the census corrects it if needed
     if (tg) tg.checked = f.auto;
     inp.disabled = f.auto;
     if (f.auto) {
@@ -6378,15 +6463,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
       info.innerHTML = 'Last ' + nm + ' given: <b>' + h(C.last) + '</b> &middot; <button type="button" class="lnk" data-act="' + (op ? 'opd-set' : 'mr-set') + '">Change starting ' + nm + '</button>';
     } else {
       inp.placeholder = op ? 'OPD No. from the OPD register' : '';
-      info.innerHTML = want && isOff() && !f.editId ? 'Automatic ' + nm + ' needs internet. Type the ' + (op ? 'OPD No. from the OPD register.' : 'MR No. from the manual register.')
-        : op && want && !(C && C.last) ? 'Automatic OPD No. is not set yet. <button type="button" class="lnk" data-act="opd-set">Enter the last OPD No. of the OPD register</button>' : '';
+      info.innerHTML = op && want && !(C && C.last) ? 'Automatic OPD No. is not set yet. <button type="button" class="lnk" data-act="opd-set">Enter the last OPD No. of the OPD register</button>' : '';
     }
   }
   /* "OPD day | Emergency day" at the top of a new registration in a morning shift: one choice for the whole shift, for everyone. */
   function syncDay() {
     var d = $('fDay'), f = S.form; if (!d || !f) return;
     var sh = targetShift();
-    if (!sh || sh.shift !== 'M') { d.innerHTML = ''; return; }
+    if (!sh || (sh.shift !== 'M' && !(S.me && S.me.demo))) { d.innerHTML = ''; return; }     // demonstration IDs: every shift (testing)
     var on = shOpd(sh), mrOk = !!(S.mr && S.mr.last), opOk = !!(S.opdc && S.opdc.last), miss = !mrOk || (on && !opOk);
     d.innerHTML = '<div class="dayrow"><div class="seg dayseg"><button type="button" data-act="f-day" data-v="opd" class="' + (on ? 'on' : '') + '">OPD day</button>' +
       '<button type="button" data-act="f-day" data-v="emr" class="' + (on ? '' : 'on') + '">Emergency day</button></div>' +
@@ -7249,7 +7333,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   });
   document.addEventListener('change', function (ev) {
     var t = ev.target;
-    if ((t.id === 'ppCam' || t.id === 'ppFile') && t.files && t.files[0]) { paperPhoto(t.files[0]); t.value = ''; return; }
+    if (t.getAttribute && t.getAttribute('data-pp') && t.files && t.files[0]) { paperPhoto(t.files[0], t.getAttribute('data-pp')); t.value = ''; return; }
     if (t.id === 'ptFile' && t.files && t.files[0]) { pettyFile(t.files[0]); t.value = ''; return; }
     if (t.getAttribute && t.getAttribute('data-dx') && S.form) {
       var dv = t.getAttribute('data-dx'), di = S.form.dxs.indexOf(dv);
@@ -7285,6 +7369,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     else if (t.id === 'fAuto') {
       var op = !!(S.form && S.form.opd), C = op ? S.opdc : S.mr, keep = function (x) { S.autoMr = S.autoOpd = x; store_('cec_autonum', x); };   // one switch for both
       var morn = !!(targetShift() && targetShift().shift === 'M');
+      if (S.me && S.me.demo) morn = true;
       if (t.checked && morn) { if (C && C.last) { keep(true); syncMr(); } else t.checked = false; askNums(); }     // morning shift: the numbers box opens (12-11-2026)
       else if (t.checked) { if (C && C.last) { keep(true); syncMr(); } else { t.checked = false; if (op) askOpd(); else askMr(); } }
       else { keep(false); syncMr(); if ($('fMr')) $('fMr').focus(); }
@@ -7337,6 +7422,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
       return Object.assign({}, x.e, { id: x.qid, t: x.t, queued: true, qerr: x.err, signed: !!x.e.signed, by: x.uname });
     });
   }
+  /* 13-11-2026: after a save the census says which numbers it gave; the next form follows it (also after patients kept on the phone were sent).
+     While another save from this device is still on its way, the number counted on the phone is kept until that one answers. */
+  function numsFrom(saved) {
+    if (!saved || S.pending > 0) return;
+    if (saved.mrState) S.mr = saved.mrState;
+    if (saved.opdState) S.opdc = saved.opdState;
+    if ((saved.mrState || saved.opdState) && S.form) syncMr();
+  }
   function flushQueue() {
     if (S.flushing || !S.token || !S.me || navigator.onLine === false) return Promise.resolve();   // phone app and website (09-11-2026)
     if (!queueMine().filter(function (x) { return !x.err; }).length) return Promise.resolve();
@@ -7345,7 +7438,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var next = function () {
       var it = queueMine().filter(function (x) { return !x.err; })[0];
       if (!it) return Promise.resolve();
-      return apiRetry('apiAddEntry', '', JSON.stringify(Object.assign({}, it.e, { clientId: it.qid, offlineAt: it.t }))).then(function () {
+      return apiRetry('apiAddEntry', '', JSON.stringify(Object.assign({}, it.e, { clientId: it.qid, offlineAt: it.t }))).then(function (saved) {
+        numsFrom(saved);
         store_('cec_q', queueAll().filter(function (x) { return x.qid !== it.qid; })); sent++; return next();
       }, function (err) {
         if (err && (err.offline || isAuthErr(err) || transient(err))) throw err;      // try again later
@@ -7382,6 +7476,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var q = queueAll(), mine = queueMine(), errs = mine.filter(function (x) { return x.err; }), html = demoBarHtml(), vq = vqMine();
     if (S.me && apHere() && S.view !== 'slipq') html += '<div class="apbar">Autoprint on this device: ' + (apInstant() ? 'each slip as soon as it is ready' : 'next print in <b id="apBar">' + (S.apNext ? mmss(S.apNext - Date.now()) : mmss(apEvery())) + '</b>') + ' <button class="lnk" data-act="ap-now">Print now</button></div>';
     if (isOff()) html += '<div class="off"><b>No internet.</b> You can keep adding new patients; they are kept on this phone and sent automatically when the internet is back.</div>';
+    else if (S.slow) html += '<div class="off slow"><b>The census is slow, still trying&hellip;</b> Keep working: everything is saved and sent by itself.</div>';
     if (q.length) {
       html += '<div class="qbar"><b>' + q.length + '</b> patient' + (q.length === 1 ? '' : 's') + ' waiting to be sent' + (S.flushing ? ' &middot; sending\u2026' : '') +
         (q.length > mine.length ? ' (' + (q.length - mine.length) + ' entered by someone else: they send after that person signs in)' : '') +
@@ -7393,6 +7488,32 @@ if (typeof module !== 'undefined') module.exports = CEC;
       (!S.vqBusy && !isOff() && S.token ? ' <button class="lnk" data-act="q-send">Send now</button>' : '') + '</div>';
     b.innerHTML = html; b.classList.toggle('hidden', !html);
   }
+  /* 13-11-2026: while "no internet" / "slow" shows, a tiny check every 10 seconds (also with a form open) clears it as soon as the census answers;
+     also when the phone or the app comes back to the screen. */
+  function recheck() {
+    if (!(S.offline || S.slow) || !S.token || navigator.onLine === false || S.rechecking) return;
+    S.rechecking = true;
+    call('apiPing', []).then(function () { S.rechecking = false; S.offline = false; S.slow = false; renderBanner(); if (S.form) syncMr(); else if (S.me) refresh(true); try { flushQueue(); if (vqAll().length) vqFlush(); if (prqAll().length) prqFlush(); } catch (x) { } },
+      function () { S.rechecking = false; });
+  }
+  setInterval(recheck, 10000);
+  /* 13-11-2026: with a registry form open, the "Next" number follows the numbers given at other desks (every 15 seconds, only when it changed). */
+  function numsTick() {
+    var f = S.form;
+    if (!f || f.editId || !S.token || !S.me || S.pending > 0 || S.numsBusy || isOff() || S.slow || document.visibilityState === 'hidden' || !$('fAuto')) return;
+    S.numsBusy = true;
+    api('apiNums').then(function (r) {
+      S.numsBusy = false;
+      if (!r || S.pending > 0 || S.form !== f) return;
+      var key = function (m) { return m ? m.last + '|' + m.next : ''; };
+      if (key(r.mr) === key(S.mr) && key(r.opdc) === key(S.opdc)) return;
+      if (r.mr) S.mr = r.mr;
+      if (r.opdc) S.opdc = r.opdc;
+      syncMr();
+    }, function () { S.numsBusy = false; });
+  }
+  setInterval(numsTick, 15000);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') { if (S.offline || S.slow) recheck(); else if (S.me && !S.form) refresh(true); } });
   window.addEventListener('online', function () { S.offline = false; renderBanner(); if (S.me && S.token) loadState().then(function () { if (!S.form && !S.cert && !S.af) render(); }, function () { }); });
   window.addEventListener('offline', function () { if (APP_BUILD) { S.offline = true; renderBanner(); } });
   setInterval(function () { if (navigator.onLine !== false) { if (queueAll().length) flushQueue(); if (vqAll().length) vqFlush(); if (prqAll().length) prqFlush(); } }, 30000);
