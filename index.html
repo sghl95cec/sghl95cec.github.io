@@ -4710,7 +4710,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
   var printEnd = null, logoWarm = new Image();
   logoWarm.src = SLIP_LOGO;                                // decoded once, so a slip prints at once
   /* Blank OPD slips (12-11-2026): the standard slip with empty lines, A5 (one a sheet) or A4 (two a sheet), printed or as a PDF. */
-  function askBlankSlips() {
+  function askBlankSlips() { withDesk(askBlankSlips0); }
+  function askBlankSlips0() {
     var lastP = store_('cec_blankp') === 'a4' ? 'a4' : 'a5';
     modal('Blank OPD slips', '<p class="muted small">The standard OPD / ER slip with empty lines, to fill by hand.</p>' +
       '<label class="lb" for="bsPaper">Paper</label><select class="in" id="bsPaper"><option value="a5"' + (lastP === 'a5' ? ' selected' : '') + '>A5: one slip a sheet</option><option value="a4"' + (lastP === 'a4' ? ' selected' : '') + '>A4: two slips a sheet (cut in the middle)</option></select>' +
@@ -4723,11 +4724,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
       var list = []; for (var i = 0; i < n; i++) list.push({ blank: true });
       if (v._b === 'pdf') return offerFile('Blank_OPD_slips_' + n + '_' + paper.toUpperCase() + '.pdf', CEC.slipPdfMany(list, slipLogoBytes(), paper), 'application/pdf', false);
       if (canDesk()) return deskJob({ kind: 'blankslips', n: n }, n + ' blank OPD slip' + (n === 1 ? '' : 's'));   // on the print desk's own paper
-      printSlips(list.map(function (e) { return { e: e }; }), paper, { claimed: true, blank: true });
+      phoneNoDesk(function () { printSlips(list.map(function (e) { return { e: e }; }), paper, { claimed: true, blank: true }); });
     });
   }
   /* Blank death certificates: one PDF with the copies asked for (A4), opened for printing. */
-  function askBlankCerts() {
+  function askBlankCerts() { withDesk(askBlankCerts0); }
+  function askBlankCerts0() {
     modal('Blank death certificates', '<p class="muted small">A4. One file with all the copies; it opens for printing (or saving).</p>' +
       '<label class="lb" for="bcN">How many certificates</label><input class="in" id="bcN" type="number" inputmode="numeric" min="1" max="50" value="5">',
       [{ label: 'Cancel', value: null }, { label: 'Download PDF', value: 'form:pdf' }, { label: canDesk() ? 'Print at the print desk' : 'Print', cls: 'pri', value: 'form:print' }]).then(function (v) {
@@ -4735,7 +4737,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       var n = Math.round(+v.bcN || 0);
       if (!(n >= 1 && n <= 50)) return toast('Type a number of certificates from 1 to 50.');
       var lbl = n + ' blank death certificate' + (n === 1 ? '' : 's');
-      if (v._b === 'print') return canDesk() ? deskJob({ kind: 'blankcert', n: n }, lbl) : printPages(CEC.deathCertSvg({}, S.settings, logoBytes(), n), lbl.charAt(0).toUpperCase() + lbl.slice(1));
+      if (v._b === 'print') return canDesk() ? deskJob({ kind: 'blankcert', n: n }, lbl) : phoneNoDesk(function () { printPages(CEC.deathCertSvg({}, S.settings, logoBytes(), n), lbl.charAt(0).toUpperCase() + lbl.slice(1)); });
       offerFile('Death_Certificates_blank_' + n + '_SGHL_CEC.pdf', CEC.deathCertPdf({}, S.settings, logoBytes(), n), 'application/pdf', false);
     });
   }
@@ -4802,20 +4804,45 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function deskSent(r, what, many) {
     deskSeen(r && r.beatAge);
     var W = what.charAt(0).toUpperCase() + what.slice(1);
-    if (deskAwake()) toast(W + ' sent to the print desk: ' + (many ? 'they print' : 'it prints') + ' in a few seconds.');
+    if (r && r.deskOn === false) {                        // autoprint was switched off at the print desk meanwhile: kept, printed when it is on again
+      S.auto = null;
+      toast(W + ' sent, but autoprint is off at the print desk. ' + (many ? 'They print' : 'It prints') + ' as soon as autoprint is switched on there.');
+    } else if (deskAwake()) toast(W + ' sent to the print desk: ' + (many ? 'they print' : 'it prints') + ' in a few seconds.');
     else toast(W + ' sent. The print desk has not answered' + (S.apBeat ? ' since ' + CEC.hm(new Date(S.apBeat).toISOString()) : '') + ': wake that computer; ' + (many ? 'they print' : 'it prints') + ' when it wakes.');
     if (S.view === 'slipq' && !typing() && !anyOverlay()) render();
   }
   /* Every 20 seconds, the print desk state for the "Print desk: on / asleep" line, on every page (also with a form open). */
+  function deskState(r) {
+    if (!r) return;
+    if ('autoprint' in r && S.open && r.shiftId === S.open.id) S.auto = r.autoprint || null;
+    deskSeen(r.age);
+  }
   setInterval(function () {
-    if (!S.me || !S.token || document.hidden || isOff() || !apOn() || apHere() || S.deskAsk) return;
+    if (!S.me || !S.token || document.hidden || isOff() || apHere() || S.deskAsk || !(apOn() || isPhone())) return;
     S.deskAsk = true;
     api('apiDesk').then(function (r) {
       S.deskAsk = false;
-      var was = deskAwake(); deskSeen(r && r.age);
-      if (was !== deskAwake() && S.view === 'slipq' && !typing() && !anyOverlay()) render();
+      var was = deskAwake() + '|' + apOn(); deskState(r);
+      if (was !== deskAwake() + '|' + apOn() && S.view === 'slipq' && !typing() && !anyOverlay()) render();
     }, function () { S.deskAsk = false; });
   }, 20000);
+  /* 13-11-2026: before Print on a phone decides where to go, it asks the census whether the print desk is on now
+     (the phone may have last refreshed before autoprint was switched on). */
+  function withDesk(fn) {
+    if (!isPhone() || apHere() || apOn() || isOff() || !S.token) return fn();
+    var done = false, go = function () { if (!done) { done = true; fn(); } };
+    toast('Checking the print desk\u2026');
+    setTimeout(go, 6000);
+    api('apiDesk').then(function (r) { deskState(r); go(); }, go);
+  }
+  /* A phone with no print desk on: say so, instead of opening the phone's print screen without a word. */
+  function phoneNoDesk(printHere) {
+    if (!isPhone()) return printHere();
+    modal('The print desk is not on', '<p>Autoprint is off at the print desk, so this cannot be sent there.</p>' +
+      '<p class="small">At the print desk computer: <b>OPD / ER slip &rsaquo; Autoprint &rsaquo; Switch on</b>, then tap Print again here.' +
+      (S.me && S.me.demo ? ' You are signed in with a demonstration ID: its printing is separate from the real print desk.' : '') + '</p>',
+      [{ label: 'Print on this phone', value: 'here' }, { label: 'OK', cls: 'pri', value: null }], true).then(function (v) { if (v === 'here') printHere(); });
+  }
   /* The print desk: takes the jobs one at a time, prints each once and keeps nothing (no copy is saved on this device). */
   function deskJobs() {
     if (S.jobBusy || !apHere()) return;
@@ -4845,9 +4872,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   /* 13-11-2026: Print beside Download (census letters, registers, appointment slips and lists): a phone sends it to the print desk, a computer prints it here. */
   function printDoc(fn, args, label) {
-    if (canDesk()) return deskJob(fn === 'listPdf' ? { kind: 'pages', fn: 'listPlainPdf', args: [CEC.listPlain(args[0])], label: label } : { kind: 'pages', fn: fn, args: args, label: label }, label);
-    toast('Preparing to print\u2026');
-    setTimeout(function () { printPages(CEC.svgOf(fn, args.concat([logoBytes()])), label.charAt(0).toUpperCase() + label.slice(1)); }, 30);
+    withDesk(function () {
+      if (canDesk()) return deskJob(fn === 'listPdf' ? { kind: 'pages', fn: 'listPlainPdf', args: [CEC.listPlain(args[0])], label: label } : { kind: 'pages', fn: fn, args: args, label: label }, label);
+      phoneNoDesk(function () {
+        toast('Preparing to print\u2026');
+        setTimeout(function () { printPages(CEC.svgOf(fn, args.concat([logoBytes()])), label.charAt(0).toUpperCase() + label.slice(1)); }, 30);
+      });
+    });
   }
   function printImage(src, what) { printReady(src, function (ok) { if (!ok) return toast(what + ' could not be opened.'); printA4('<div class="imgjob"><img src="' + src + '" alt=""></div>', what, '8mm'); }); }
   function printReady(src, go) {
@@ -4874,8 +4905,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function certPrintNow(c) {
     if (!c) return;
     var label = 'death certificate' + (c.mr ? ' MR ' + c.mr : '');
-    if (canDesk()) return deskJob({ kind: 'cert', cert: c }, label);
-    printPages(CEC.deathCertSvg(c, S.settings, logoBytes()), label.charAt(0).toUpperCase() + label.slice(1));
+    withDesk(function () {
+      if (canDesk()) return deskJob({ kind: 'cert', cert: c }, label);
+      phoneNoDesk(function () { printPages(CEC.deathCertSvg(c, S.settings, logoBytes()), label.charAt(0).toUpperCase() + label.slice(1)); });
+    });
   }
   /* The print desk: slips that a phone asked to print again (same numbers). */
   function deskReprint() {
@@ -4895,7 +4928,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
       : '<span class="deskoff">Print desk: asleep / off' + (S.apBeat ? ' since ' + CEC.hm(new Date(S.apBeat).toISOString()) : '') + '. Wake that computer; what is sent now prints when it wakes.</span>';
   }
   function manualPrint(items, paper) {
-    if (deskPrint(items)) return;
+    withDesk(function () {
+      if (deskPrint(items)) return;
+      if (isPhone() && !apHere()) return phoneNoDesk(function () { manualPrint0(items, paper); });
+      manualPrint0(items, paper);
+    });
+  }
+  function manualPrint0(items, paper) {
     var fresh = items.filter(function (x) { return !x.e.tokPr && x.sh && !/^(q-|tmp)/.test(x.e.id); });
     if (!fresh.length || isOff()) return printSlips(items, paper);       // 12-11-2026: always checked first (a device may not know yet that autoprint is on)
     var cid = claimId(), tries = 0, ask = fresh.map(function (x) { return { shiftId: x.sh.id, id: x.e.id }; });
@@ -4962,8 +5001,11 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function reprint(items, paper) {
     items = items.filter(function (x) { return x.e && x.e.tok; });
     if (!items.length) return;
-    if (deskPrint(items, true)) return;                  // a phone: the print desk prints them again
-    printSlips(items, paper, { claimed: true, again: true });
+    withDesk(function () {
+      if (deskPrint(items, true)) return;                  // a phone: the print desk prints them again
+      if (isPhone() && !apHere()) return phoneNoDesk(function () { printSlips(items, paper, { claimed: true, again: true }); });
+      printSlips(items, paper, { claimed: true, again: true });
+    });
   }
   /* Print selected: the ticked slips (ready ones and, if ticked, printed ones), in the order of the page. */
   function selItems() {
@@ -5254,7 +5296,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       if (!kind) return;
       if (isOff()) return toast('A slip number needs internet.');
       toast('Getting the slip number\u2026');
-      return api('apiSlip', sh.id, e.id, kind).then(function (saved) { putEntry(sh, saved); render(); withPaper(function (p) { if (!deskPrint([{ e: saved, sh: sh }])) printSlip(saved, sh, p); }); },
+      return api('apiSlip', sh.id, e.id, kind).then(function (saved) { putEntry(sh, saved); render(); withPaper(function (p) { withDesk(function () { if (deskPrint([{ e: saved, sh: sh }])) return; if (isPhone() && !apHere()) return phoneNoDesk(function () { printSlip(saved, sh, p); }); printSlip(saved, sh, p); }); }); },
         function (x) { toast('No slip: ' + errText(x)); });
     });
   }
@@ -6095,9 +6137,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* 13-11-2026: a photo form: Print sends it to the print desk from a phone, or prints it here (one A4 page). */
   function docPrint(id) {
     var dd = findDoc(id) || {}, label = 'form ' + (dd.title || '');
-    if (canDesk()) return deskJob({ kind: 'doc', docId: id }, label);
-    toast('Opening\u2026');
-    api('apiGetDoc', id).then(function (r) { printImage('data:' + (r.mime || 'image/jpeg') + ';base64,' + r.data, 'Form ' + (dd.title || '')); }, function (e) { toast(errText(e)); });
+    withDesk(function () {
+      if (canDesk()) return deskJob({ kind: 'doc', docId: id }, label);
+      phoneNoDesk(function () {
+        toast('Opening\u2026');
+        api('apiGetDoc', id).then(function (r) { printImage('data:' + (r.mime || 'image/jpeg') + ';base64,' + r.data, 'Form ' + (dd.title || '')); }, function (e) { toast(errText(e)); });
+      });
+    });
   }
   function getDocFile(id) {
     toast('Opening\u2026');
