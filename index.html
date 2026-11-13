@@ -2050,30 +2050,88 @@ var CEC = (function () {
     }
     return ops;
   }
-  /* Pages of slips. paper 'a4' (A4 sideways: two slips side by side) or 'a5' (one slip on each A5 sheet). One slip alone on A4 goes on the
-     left half, with a blank standard slip on the right half (12-11-2026: kept for writing by hand). */
+  /* 13-11-2026: four slips on one A4 sheet (paper 'a4q'): each slip is A6 (a quarter of A4, upright), cut along the light dashed lines.
+     The same slip made compact: a small logo, no Working Diagnosis box; the printed part ends at 103 pt of 421, the rest is for the doctor's notes.
+     ox, oy: the top left corner of the quarter. */
+  var Q_W = 297.64, Q_H = 420.945;
+  function slipOps6(e, dateYmd, ox, oy) {
+    var P = PDFGen, ops = [], X = function (v) { return v + ox; }, Y = function (v) { return v + oy; };
+    var L = X(17), R = X(Q_W - 17);
+    function T(x, y, s, f, size, sw, align) { var w = P.width(s, f, size); ops.push({ k: 't', x: align === 'c' ? x - w / 2 : x, y: Y(y), s: P.clean(s), f: f, size: size, sw: sw || 0, w: w }); }
+    function Ln(x1, x2, y, lw) { ops.push({ k: 'l', x1: x1, x2: x2, y: Y(y), lw: lw }); }
+    function fitSize(s, f, size, maxW, min) { while (size > min && P.width(s, f, size) > maxW) size -= 0.25; return size; }
+    var kind = String(e.tok || '').split(' ')[0] === 'ER' ? 'ER' : 'OPD', num = String(e.tok || '').split(' ')[1] || '';
+    var bw = 44, bh = 30, bx = R - bw, by = 11;
+    ops.push({ k: 'rr', x: bx, y: Y(by), w: bw, h: bh, r: 5, lw: 1.6 });
+    T(bx + bw / 2, by + 9, kind + ' No.', 'HB', 6.2, 0.1, 'c');
+    T(bx + bw / 2, by + 25.5, num, 'HB', fitSize(num, 'HB', 17, bw - 6, 9), 0.35, 'c');
+    ops.push({ k: 'img', x: L, y: Y(14), w: 15, h: 15 * 33.15 / 27 });                 // the logo, small
+    var hl = L + 19, hr = bx - 5, hc = (hl + hr) / 2, hw = hr - hl;
+    var h1 = 'SINDH GOVERNMENT HOSPITAL LIAQUATABAD', h2 = 'Cardiac Emergency Centre (C.E.C)';
+    T(hc, 25, h1, 'B', fitSize(h1, 'B', 8.6, hw, 6), 0.3, 'c');
+    T(hc, 36, h2, 'B', 7.8, 0.25, 'c');
+    Ln(L, R, 46, 0.7);
+    var op = !!e.opd, lx = L + (op ? 40 : 35), vx = lx + 2, mid = X(166), rx = X(172), dl = X(193), al = X(209);
+    T(L, 60, op ? 'OPD No.:' : 'MR No.:', 'HB', 7.3, 0.2); Ln(lx, mid, 61.2, 0.35);
+    T(rx, 60, 'Date:', 'HB', 7.3, 0.2); Ln(dl, R, 61.2, 0.35);
+    T(L, 75, 'Name:', 'HB', 7.3, 0.2); Ln(lx, mid, 76.2, 0.35);
+    T(rx, 75, 'Age/Sex:', 'HB', 7.3, 0.2); Ln(al, R, 76.2, 0.35);
+    Ln(L, R, 81.5, 0.45);
+    T(L, 96, 'Vitals:', 'HB', 7.3, 0.2); Ln(lx, R, 97.2, 0.35);
+    Ln(L, R, 103, 0.7);
+    if (e.blank) return ops;
+    function val(x, y, s, size, maxW) { s = P.clean(s || ''); if (!s) return; size = fitSize(s, 'H', size, maxW, 6); T(x, y, P.fit(s, 'H', size, maxW), 'H', size); }
+    var mw = mid - vx - 2;
+    val(vx, 59, UP(e.mr), 8.6, mw);
+    var when = e.t && !isNaN(Date.parse(e.t)) ? new Date(e.t) : new Date();
+    val(dl + 1.5, 59, dmy(dateYmd || ymd(when)) + '  ' + hm12(when.toISOString()), 7.6, R - dl - 1.5);
+    val(vx, 74, UP(e.name), 8.6, mw);
+    val(al + 1.5, 74, (e.age !== '' && e.age != null ? e.age : '-') + ' / ' + (e.sex || '-'), 8.6, R - al - 1.5);
+    var parts = slipVitals(e), vw = R - vx, gap = '   ';
+    if (parts.length) {
+      var one = parts.join(gap), size = fitSize(one, 'HB', 8.2, vw, 6.6);
+      if (P.width(one, 'HB', size) <= vw) T(vx, 95, one, 'HB', size, 0.12);
+      else {                                          // too many vitals for one line: two lines just above the Vitals line
+        var a = [], b = parts.slice();
+        while (b.length > 1 && P.width(a.concat(b[0]).join(gap), 'HB', 6.6) <= vw && P.width(a.concat(b[0]).join(gap), 'HB', 6.6) < P.width(b.slice(1).join(gap), 'HB', 6.6) + vw * 0.3) a.push(b.shift());
+        if (!a.length) a.push(b.shift());
+        var s1 = a.join(gap), s2 = b.join(gap), z = Math.min(fitSize(s1, 'HB', 6.6, vw, 5.2), fitSize(s2, 'HB', 6.6, vw, 5.2));
+        T(vx, 95 - z - 0.6, s1, 'HB', z, 0.1); T(vx, 95, s2, 'HB', z, 0.1);
+      }
+    }
+    return ops;
+  }
+  var Q_BANDS = [112, Q_H - 30];                      // practice copy: the DEMO bands of each quarter
+  function quarterAt(k) { return { x: (k % 2) * Q_W, y: Math.floor(k / 2) * Q_H }; }
+  /* Pages of slips. paper 'a4' (A4 sideways: two slips side by side), 'a4q' (A4 upright: four A6 slips) or 'a5' (one slip on each A5 sheet).
+     The last A4 sheet is filled up with blank standard slips (12-11-2026: kept for writing by hand). */
   function slipPages(list, paper) {
-    var per = paper === 'a5' ? 1 : 2, pages = [];
+    var per = paper === 'a5' ? 1 : paper === 'a4q' ? 4 : 2, pages = [];
     for (var i = 0; i < list.length; i += per) pages.push(list.slice(i, i + per));
-    if (per === 2 && pages.length && pages[pages.length - 1].length === 1) pages[pages.length - 1].push({ blank: true });
+    if (per > 1 && pages.length) { var last = pages[pages.length - 1]; while (last.length < per) last.push({ blank: true }); }
     return pages;
   }
   function slipPdfMany(list, logo, paper, dateYmd) {
-    var P = PDFGen, d = new P.Doc(true), a5 = paper === 'a5';
+    var P = PDFGen, q = paper === 'a4q', d = new P.Doc(!q), a5 = paper === 'a5';
     if (a5) d.W = SLIP_W;
     d.title = list.length === 1 ? (String(list[0].tok || 'OPD').split(' ')[0] === 'ER' ? 'ER' : 'OPD') + ' slip ' + (list[0].tok || '') + ' - ' + UP(list[0].name || '') : list.length + ' OPD / ER slips';
     if (logo) d.setImage(logo.bytes, logo.w, logo.h);
     slipPages(list, paper).forEach(function (pg, pi) {
       if (pi) d.addPage();
+      if (q) {                                        // light dashed cutting lines
+        for (var cy = 0; cy < d.H; cy += 6) d.line(Q_W, cy, Q_W, Math.min(cy + 3, d.H), 0.4, 0.6);
+        for (var cx = 0; cx < d.W; cx += 6) d.line(cx, Q_H, Math.min(cx + 3, d.W), Q_H, 0.4, 0.6);
+      }
       pg.forEach(function (e, k) {
-        slipOps(e, dateYmd, k ? SLIP_W : 0).forEach(function (o) {
+        var qa = quarterAt(k);
+        (q ? slipOps6(e, dateYmd, qa.x, qa.y) : slipOps(e, dateYmd, k ? SLIP_W : 0)).forEach(function (o) {
           if (o.k === 't') { if (o.sw) d.textS(o.x, o.y, o.s, o.f, o.size, o.sw); else d.text(o.x, o.y, o.s, o.f, o.size); }
           else if (o.k === 'l') d.line(o.x1, o.y, o.x2, o.y, o.lw);
           else if (o.k === 'r') d.rect(o.x, o.y, o.w, o.h, null, 0, o.lw);
           else if (o.k === 'rr') d.rrect(o.x, o.y, o.w, o.h, o.r, o.lw);
           else if (o.k === 'img' && logo) d.image(o.x, o.y, o.w, o.h);
         });
-        if (DEMO.on) d.mark(k ? SLIP_W : 0, 0, SLIP_W, SLIP_H, [SLIP_TOP + 8, SLIP_H - 34]);     // each slip has its own mark (they are cut apart)
+        if (DEMO.on) { if (q) d.mark(qa.x, qa.y, Q_W, Q_H, Q_BANDS); else d.mark(k ? SLIP_W : 0, 0, SLIP_W, SLIP_H, [SLIP_TOP + 8, SLIP_H - 34]); }     // each slip has its own mark (they are cut apart)
       });
     });
     return d.output();
@@ -2082,10 +2140,12 @@ var CEC = (function () {
   /* The same slips as SVG pages for printing from the browser (sizes in points; text stretched to the exact PDF widths so it looks the same on every device). */
   var SVG_FONT = { B: "'Times New Roman',Times,'Liberation Serif','Nimbus Roman',Tinos,'Noto Serif',serif", H: "Helvetica,Arial,'Liberation Sans','Nimbus Sans',Arimo,Roboto,sans-serif" };
   function slipSvgPage(pg, logoUrl, paper, dateYmd) {
-    var a5 = paper === 'a5', W = a5 ? SLIP_W : 841.89, H = SLIP_H, x = function (v) { return Math.round(v * 100) / 100; };
-    var out = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="slipsvg" width="' + (a5 ? '148.5mm' : '297mm') + '" height="210mm" viewBox="0 0 ' + W + ' ' + H + '">';
+    var a5 = paper === 'a5', q = paper === 'a4q', W = a5 ? SLIP_W : q ? 595.28 : 841.89, H = q ? 841.89 : SLIP_H, x = function (v) { return Math.round(v * 100) / 100; };
+    var out = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="slipsvg" width="' + (a5 ? '148.5mm' : q ? '210mm' : '297mm') + '" height="' + (q ? '297mm' : '210mm') + '" viewBox="0 0 ' + W + ' ' + H + '">';
+    if (q) out += '<g stroke="#999" stroke-width="0.4" stroke-dasharray="3 3"><line x1="' + Q_W + '" y1="0" x2="' + Q_W + '" y2="' + H + '"/><line x1="0" y1="' + Q_H + '" x2="' + W + '" y2="' + Q_H + '"/></g>';
     pg.forEach(function (e, k) {
-      slipOps(e, dateYmd, k ? SLIP_W : 0).forEach(function (o) {
+      var qa = quarterAt(k);
+      (q ? slipOps6(e, dateYmd, qa.x, qa.y) : slipOps(e, dateYmd, k ? SLIP_W : 0)).forEach(function (o) {
         if (o.k === 't') {
           var fam = o.f === 'B' ? SVG_FONT.B : SVG_FONT.H, bold = o.f === 'B' || o.f === 'HB';
           out += '<text x="' + x(o.x) + '" y="' + x(o.y) + '" font-family="' + fam + '" font-size="' + o.size + '" font-weight="' + (bold ? 700 : 400) + '" textLength="' + x(o.w) +
@@ -2094,7 +2154,7 @@ var CEC = (function () {
         else if (o.k === 'r' || o.k === 'rr') out += '<rect x="' + x(o.x) + '" y="' + x(o.y) + '" width="' + x(o.w) + '" height="' + x(o.h) + '"' + (o.r ? ' rx="' + o.r + '"' : '') + ' fill="none" stroke="#000" stroke-width="' + o.lw + '"/>';
         else if (o.k === 'img' && logoUrl) out += '<image x="' + x(o.x) + '" y="' + x(o.y) + '" width="' + x(o.w) + '" height="' + x(o.h) + '" preserveAspectRatio="none" href="' + logoUrl + '" xlink:href="' + logoUrl + '"/>';
       });
-      out += demoSvg(k ? SLIP_W : 0, 0, SLIP_W, SLIP_H, [SLIP_TOP + 8, SLIP_H - 34]);
+      out += q ? demoSvg(qa.x, qa.y, Q_W, Q_H, Q_BANDS) : demoSvg(k ? SLIP_W : 0, 0, SLIP_W, SLIP_H, [SLIP_TOP + 8, SLIP_H - 34]);
     });
     return out + '</svg>';
   }
@@ -3799,7 +3859,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
       Object.keys(S.slipSel).forEach(function (id) { if (!shown[id]) delete S.slipSel[id]; });      // a slip that left the page is no longer chosen
       var nsel = selItems().length;                                  // (selItems also unticks a slip printed meanwhile, e.g. by autoprint)
       head += apCardHtml() + '<div class="sliptop">' + (apOn() ? '' : '<div class="seg" id="qPaper"><button type="button" data-act="q-paper" data-v="a5" class="' + (S.paperNow === 'a5' ? 'on' : '') + '">A5 (1 slip a page)</button>' +
-        '<button type="button" data-act="q-paper" data-v="a4" class="' + (S.paperNow === 'a4' ? 'on' : '') + '">A4 (2 slips a sheet)</button></div>') +
+        '<button type="button" data-act="q-paper" data-v="a4" class="' + (S.paperNow === 'a4' ? 'on' : '') + '">A4 (2 slips a sheet)</button>' +
+        '<button type="button" data-act="q-paper" data-v="a4q" class="' + (S.paperNow === 'a4q' ? 'on' : '') + '">A4 (4 slips a sheet)</button></div>') +
         '<div class="qpb"><button class="btn" data-act="q-printsel" id="qPrintSel"' + (nsel ? '' : ' disabled') + '>' + ICON.print + ' Print selected' + (nsel ? ' (' + nsel + ')' : '') + '</button>' +
         '<button class="btn pri" data-act="q-printall"' + (ready ? '' : ' disabled') + '>' + ICON.print + ' Print all' + (ready ? ' (' + ready + ')' : '') + '</button></div></div>';
     }
@@ -4035,7 +4096,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         if (!latest) throw x;
         if (VIT.every(function (k) { return String(latest[k[0]] || '') === String(vit[k[0]] || ''); })) return latest;   // already saved (the answer was lost on the way)
         return sendVitals(Q, sh, latest, tries + 1);
-      }, function () { throw x; });
+      }, function (y) { throw transient(y) ? y : x; });   // 13-11-2026: no answer while checking: kept on the device and sent again (never dropped)
     });
   }
   function failVitals(sh, e, x, vit) {
@@ -4691,12 +4752,16 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* Paper (11-11-2026): with autoprint on, the shift's setting; otherwise the slip page asks "A4 or A5?" every time it is opened (nothing is remembered),
      and printing from anywhere else asks too. */
   function shiftPaper() { return apOn() ? S.auto.paper : S.view === 'slipq' ? S.paperNow : null; }
+  /* Slip paper: 'a5' (1 slip a page), 'a4' (A4 sideways, 2 slips a sheet), 'a4q' (A4 upright, 4 A6 slips a sheet: 13-11-2026). */
+  function normPaper(p) { return p === 'a4' || p === 'a4q' ? p : 'a5'; }
+  function paperShort(p) { return p === 'a4q' ? 'A4 \u00d7 4' : p === 'a4' ? 'A4' : 'A5'; }
+  function paperPer(p) { return p === 'a4q' ? 4 : p === 'a4' ? 2 : 1; }
   function askPaper() {
-    return modal('A4 or A5?', '<p>Which paper is in the printer now?</p><p class="muted small" style="margin:0">A5: one slip on each page (the normal paper). A4: two slips on each sheet, cut in the middle.</p>',
-      [{ label: 'A5 (1 slip a page)', cls: 'pri', value: 'a5' }, { label: 'A4 (2 slips a sheet)', value: 'a4' }, { label: 'Not now', value: null }], true);
+    return modal('A4 or A5?', '<p>Which paper is in the printer now?</p><p class="muted small" style="margin:0">A5: one slip on each page. A4 &times; 2: two slips on each sheet, cut in the middle. A4 &times; 4: four small slips on each sheet, cut in four.</p>',
+      [{ label: 'A5 (1 slip a page)', cls: 'pri', value: 'a5' }, { label: 'A4 (2 slips a sheet)', value: 'a4' }, { label: 'A4 (4 slips a sheet)', value: 'a4q' }, { label: 'Not now', value: null }], true);
   }
   function withPaper(fn) {
-    if (isPhone() && apOn() && !apHere()) return fn(S.auto.paper === 'a4' ? 'a4' : 'a5');     // 13-11-2026: sent to the print desk, which uses its own paper
+    if (isPhone() && apOn() && !apHere()) return fn(normPaper(S.auto.paper));     // 13-11-2026: sent to the print desk, which uses its own paper
     var p = shiftPaper();
     if (p) return fn(p);
     askPaper().then(function (v) { if (!v) return; if (S.view === 'slipq') { S.paperNow = v; render(); } fn(v); });
@@ -4712,17 +4777,17 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* Blank OPD slips (12-11-2026): the standard slip with empty lines, A5 (one a sheet) or A4 (two a sheet), printed or as a PDF. */
   function askBlankSlips() { withDesk(askBlankSlips0); }
   function askBlankSlips0() {
-    var lastP = store_('cec_blankp') === 'a4' ? 'a4' : 'a5';
+    var lastP = normPaper(store_('cec_blankp'));
     modal('Blank OPD slips', '<p class="muted small">The standard OPD / ER slip with empty lines, to fill by hand.</p>' +
-      '<label class="lb" for="bsPaper">Paper</label><select class="in" id="bsPaper"><option value="a5"' + (lastP === 'a5' ? ' selected' : '') + '>A5: one slip a sheet</option><option value="a4"' + (lastP === 'a4' ? ' selected' : '') + '>A4: two slips a sheet (cut in the middle)</option></select>' +
+      '<label class="lb" for="bsPaper">Paper</label><select class="in" id="bsPaper"><option value="a5"' + (lastP === 'a5' ? ' selected' : '') + '>A5: one slip a sheet</option><option value="a4q"' + (lastP === 'a4q' ? ' selected' : '') + '>A4: four small slips a sheet (cut in four)</option><option value="a4"' + (lastP === 'a4' ? ' selected' : '') + '>A4: two slips a sheet (cut in the middle)</option></select>' +
       '<label class="lb" for="bsN">How many slips</label><input class="in" id="bsN" type="number" inputmode="numeric" min="1" max="200" value="20">',
       [{ label: 'Cancel', value: null }, { label: 'Download PDF', value: 'form:pdf' }, { label: 'Print', cls: 'pri', value: 'form:print' }]).then(function (v) {
       if (!v) return;
-      var n = Math.round(+v.bsN || 0), paper = v.bsPaper === 'a4' ? 'a4' : 'a5';
+      var n = Math.round(+v.bsN || 0), paper = normPaper(v.bsPaper);
       if (!(n >= 1 && n <= 200)) return toast('Type a number of slips from 1 to 200.');
       store_('cec_blankp', paper);
       var list = []; for (var i = 0; i < n; i++) list.push({ blank: true });
-      if (v._b === 'pdf') return offerFile('Blank_OPD_slips_' + n + '_' + paper.toUpperCase() + '.pdf', CEC.slipPdfMany(list, slipLogoBytes(), paper), 'application/pdf', false);
+      if (v._b === 'pdf') return offerFile('Blank_OPD_slips_' + n + '_' + (paper === 'a4q' ? 'A4x4' : paper.toUpperCase()) + '.pdf', CEC.slipPdfMany(list, slipLogoBytes(), paper), 'application/pdf', false);
       if (canDesk()) return deskJob({ kind: 'blankslips', n: n }, n + ' blank OPD slip' + (n === 1 ? '' : 's'));   // on the print desk's own paper
       phoneNoDesk(function () { printSlips(list.map(function (e) { return { e: e }; }), paper, { claimed: true, blank: true }); });
     });
@@ -4744,7 +4809,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* Prints slips at once (the numbers and details are already on the phone or PC). items: [{ e, sh }] (sh: the patient's shift, to record the printing).
      A4: two slips side by side on each sheet; A5: one slip on each sheet. opt.claimed: autoprint, already marked printed on the server. */
   function printSlips(items, paper, opt) {
-    opt = opt || {}; paper = paper === 'a4' ? 'a4' : 'a5';
+    opt = opt || {}; paper = normPaper(paper);
     var pa = $('printArea'), list = items.map(function (x) { return x.e; });
     if (!list.length) return;
     var fresh = opt.claimed ? [] : items.filter(function (x) { return !x.e.tokPr; }), again = opt.again ? items : opt.claimed ? [] : items.filter(function (x) { return !!x.e.tokPr; });
@@ -4754,7 +4819,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     pa.innerHTML = CEC.slipSvgMany(list, SLIP_LOGO, paper);
     var ps = $('pageSize');
     if (!ps) { ps = document.createElement('style'); ps.id = 'pageSize'; document.head.appendChild(ps); }
-    ps.textContent = '@page{size:' + (paper === 'a5' ? '148.5mm 210mm' : 'A4 landscape') + ';margin:0}';
+    ps.textContent = '@page{size:' + (paper === 'a5' ? '148.5mm 210mm' : paper === 'a4q' ? 'A4 portrait' : 'A4 landscape') + ';margin:0}';
     document.body.classList.add('printing');
     clearTimeout(printEnd);
     var end = function () { document.body.classList.remove('printing'); ps.textContent = ''; };
@@ -4763,9 +4828,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
     printEnd = setTimeout(end, 120000);
     markPrinted(fresh);                                    // marked first, so the list moves on at once (the print window may wait for a tap); a reprint keeps its time
     try { window.print(); sentOnce(); } catch (x) { done(); slipsPdfOffer(list, paper); }     // Chrome returns from print() once the job is sent (kiosk printing: at once)
-    var sheets = paper === 'a5' ? list.length : Math.ceil(list.length / 2);
+    var sheets = Math.ceil(list.length / paperPer(paper));
     if (opt.blank) return toast(list.length + ' blank slips sent to the printer (' + sheets + ' ' + (paper === 'a5' ? 'A5' : 'A4') + ' sheet' + (sheets === 1 ? '' : 's') + ').');
-    toast((opt.auto ? 'Autoprint: ' : again.length && again.length === list.length ? 'Printing again (same numbers): ' : '') + (list.length === 1 ? (list[0].tok || 'Slip') + ' sent to the printer.' + (paper === 'a4' ? ' It prints on the left half of the A4 sheet.' : '')
+    toast((opt.auto ? 'Autoprint: ' : again.length && again.length === list.length ? 'Printing again (same numbers): ' : '') + (list.length === 1 ? (list[0].tok || 'Slip') + ' sent to the printer.' + (paper === 'a4' ? ' It prints on the left half of the A4 sheet.' : paper === 'a4q' ? ' It prints in the top left quarter of the A4 sheet; the other three are blank slips.' : '')
       : list.length + ' slips sent to the printer (' + sheets + ' ' + (paper === 'a5' ? 'A5' : 'A4') + ' sheet' + (sheets === 1 ? '' : 's') + ').'));
   }
   function printSlip(e, sh, paper) { printSlips([{ e: e, sh: sh }], paper); }
@@ -4855,7 +4920,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     }, function () { S.jobBusy = false; });
   }
   function printJob(j) {
-    var paper = S.auto && S.auto.paper === 'a4' ? 'a4' : 'a5', list = [], i;
+    var paper = normPaper(S.auto && S.auto.paper), list = [], i;
     if (j.err) return toast('Print desk: ' + j.err);
     if (j.kind === 'blankslips') { for (i = 0; i < j.n; i++) list.push({ e: { blank: true } }); return printSlips(list, paper, { claimed: true, blank: true }); }
     if (j.kind === 'cert') return printPages(CEC.deathCertSvg(j.cert, S.settings, logoBytes()), 'Print desk: ' + j.what);
@@ -4918,7 +4983,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       S.reprinting = false;
       list = list || [];
       if (!list.length) return;
-      printSlips(list.map(function (en) { return { e: en, sh: S.open && S.open.id === en.shiftId ? S.open : { id: en.shiftId } }; }), S.auto && S.auto.paper === 'a4' ? 'a4' : 'a5', { again: true });
+      printSlips(list.map(function (en) { return { e: en, sh: S.open && S.open.id === en.shiftId ? S.open : { id: en.shiftId } }; }), normPaper(S.auto && S.auto.paper), { again: true });
     }, function () { S.reprinting = false; });
   }
   function deskAwake() { return !!S.apBeat && Date.now() - S.apBeat < 120000; }     // the print desk says it is on every 30 seconds: 4 missed in a row = asleep
@@ -5054,7 +5119,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function apOn() { return !!(S.auto && S.auto.on && S.open && S.auto.shift === S.open.id); }
   function apHere() { return apOn() && S.auto.dev === myDev(); }
   function apModeText(m) { return m === 'now' ? 'without vitals' : 'with vitals'; }
-  function apPaperText(p) { return p === 'a4' ? 'A4 (2 slips a sheet)' : 'A5 (1 slip a page)'; }
+  function apPaperText(p) { return p === 'a4q' ? 'A4 (4 slips a sheet)' : p === 'a4' ? 'A4 (2 slips a sheet)' : 'A5 (1 slip a page)'; }
   /* the slips this device would print now (the running shift only) */
   function apReady(sh) {
     sh = sh || S.open; if (!apOn() || !sh) return [];
@@ -5090,7 +5155,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (!apOn()) return '<section class="card apc off"><div class="apt"><div><b>Autoprint is off</b><div class="muted small">For short-staffed shifts: slips print by themselves on one device (as soon as they are ready, or every 30 seconds to 5 minutes).</div></div>' +
       '<button class="btn pri" data-act="ap-set">Switch on</button></div></section>';
     var A = S.auto, here = apHere();
-    return '<section class="card apc"><div class="apt"><div><b>Autoprint is on</b> <span class="pill open">' + h(apModeText(A.mode)) + '</span> <span class="pill open">' + (A.paper === 'a4' ? 'A4' : 'A5') + '</span> <span class="pill open">' + (apInstant() ? 'timer off' : h(AP_EVERY.filter(function (x) { return x[0] * 1000 === apEvery(); }).map(function (x) { return x[1]; })[0] || '5 min')) + '</span>' +
+    return '<section class="card apc"><div class="apt"><div><b>Autoprint is on</b> <span class="pill open">' + h(apModeText(A.mode)) + '</span> <span class="pill open">' + paperShort(A.paper) + '</span> <span class="pill open">' + (apInstant() ? 'timer off' : h(AP_EVERY.filter(function (x) { return x[0] * 1000 === apEvery(); }).map(function (x) { return x[1]; })[0] || '5 min')) + '</span>' +
       '<div class="muted small">' + (here ? 'Printing on <b>this device</b>. Keep the census open here; the ready slips print ' + h(apEveryText(A.every)) + '. Emergency / Resus slips print at once.' + (S.wake ? ' The screen is kept awake.' : '')
         : 'Printing on another device (switched on there by ' + h(A.devBy || A.by || 'someone') + '). This device does not print by itself, so no slip prints twice.' + (isPhone() ? ' Print and Print all here send the slips to that device.' : '') + ' ' + deskStatusHtml()) +
       ' Paper: ' + h(apPaperText(A.paper)) + '. Changed last by ' + h(A.by || '-') + (A.at ? ' at ' + CEC.hm(A.at) : '') + '. The next shift starts with autoprint off.</div></div>' +
@@ -5102,13 +5167,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var l = apReady(), n = l.length;
     if (!n) return 'no slip ready';
     var t = n + ' slip' + (n === 1 ? '' : 's') + ' ready';
-    if (S.auto.paper === 'a4' && n % 2 === 1) { var w = AP_PAIR_MS - (Date.now() - apReadyAt(l[n - 1].e)); if (w > 0) t += ' (one waits for a partner, at most ' + Math.ceil(w / 60000) + ' min)'; }
+    var per = paperPer(S.auto.paper), rest = n % per;
+    if (per > 1 && rest) { var w = AP_PAIR_MS - (Date.now() - apReadyAt(l[n - rest].e)); if (w > 0) t += ' (' + (rest === 1 ? 'one waits' : rest + ' wait') + ' to fill the sheet, at most ' + Math.ceil(w / 60000) + ' min)'; }
     return t;
   }
   /* The registration page: one line with the setting. */
   function apLineHtml() {
     if (!apOn()) return '<div class="apline"><span>Autoprint of slips: <b>off</b></span><button type="button" class="lnk" data-act="ap-set">Switch on</button></div>';
-    return '<div class="apline on"><span>Autoprint: <b>on</b>, ' + h(apModeText(S.auto.mode)) + ', ' + (S.auto.paper === 'a4' ? 'A4' : 'A5') + ' &middot; ' + (apHere() ? (apInstant() ? 'this device, each slip at once' : 'this device, next in <b class="apcdt">' +
+    return '<div class="apline on"><span>Autoprint: <b>on</b>, ' + h(apModeText(S.auto.mode)) + ', ' + paperShort(S.auto.paper) + ' &middot; ' + (apHere() ? (apInstant() ? 'this device, each slip at once' : 'this device, next in <b class="apcdt">' +
       mmss((S.apNext || Date.now() + apEvery()) - Date.now()) + '</b>') : 'another device ' + deskStatusHtml()) + '</span><span>' + (apHere() ? '<button type="button" class="lnk" data-act="ap-now">Print now</button> &middot; ' : '') +
       '<button type="button" class="lnk" data-act="ap-set">Change</button></span></div>';
   }
@@ -5122,7 +5188,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var body = '<p class="small" style="margin:0 0 6px">For this shift, for everyone. The next shift starts with it off.</p>' +
       '<label class="lb">Print each slip</label>' + seg('mode', [['vit', 'With vitals', 'prints once the vitals are saved'], ['now', 'Without vitals', 'prints as soon as the patient is registered']]) +
       '<p class="muted small" style="margin:4px 0 0">Short-staffed: without vitals. Enough staff: with vitals.</p>' +
-      '<label class="lb">Paper in the printer</label>' + seg('paper', [['a5', 'A5', '1 slip a page (normal)'], ['a4', 'A4', '2 slips a sheet, only when A5 runs short']]) +
+      '<label class="lb">Paper in the printer</label>' + seg('paper', [['a5', 'A5', '1 slip a page'], ['a4', 'A4 \u00d7 2', '2 slips a sheet, cut in the middle'], ['a4q', 'A4 \u00d7 4', '4 small slips a sheet, cut in four']]) +
       '<label class="lb">Timer: print the ready slips</label>' + seg('every', AP_EVERY.map(function (x) { return [String(x[0]), x[1], x[2]]; })) +
       '<p class="muted small" style="margin:4px 0 0">Off: each slip prints by itself as soon as it is ready (with vitals: once the vitals are saved). Emergency / Resus slips always print at once, without vitals.</p>' +
       (other ? '<label class="check" style="margin-top:12px"><input type="checkbox" id="apHereCk"> Print on this device from now on (instead of the other device)</label>'
@@ -5219,7 +5285,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
       var pend00 = store_('cec_apclaim'), owed = pend00 && pend00.got && pend00.shift === sh.id;
       if (why === 'check' && !instant && !er && !owed) { S.apBusy = false; return; }   // looked: no Emergency / Resus slip, the timer prints the rest
       var nextIn = instant ? AP_POLL : every;
-      if (!force && !er && A.paper === 'a4' && list.length % 2 === 1 && now - apReadyAt(list[list.length - 1].e) + nextIn <= AP_PAIR_MS) list = list.slice(0, -1);   // the newest waits for a partner (not with an ER slip)
+      var per = paperPer(A.paper), rest = list.length % per;          // A4: the last slips wait to fill the sheet, at most 5 minutes (not with an ER slip)
+      if (!force && !er && per > 1 && rest && now - apReadyAt(list[list.length - rest].e) + nextIn <= AP_PAIR_MS) list = list.slice(0, -rest);
       var pend0 = store_('cec_apclaim');
       if (!list.length && !(pend0 && pend0.shift === sh.id && (pend0.list || []).length)) { S.apBusy = false; if (force) toast('No slip is ready to print.'); apPaintCd(); return; }
       /* A claim whose answer never came (busy census, lost connection) is kept: the next round asks again with the same ID and its slips,
@@ -7027,7 +7094,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
           .then(function (ok) { if (ok) setUser({ id: id, reset: v }, v === 'approve' ? 'New password approved for ' + ru.name : 'Request rejected'); });
         break;
       }
-      case 'q-paper': S.paperNow = v === 'a4' ? 'a4' : 'a5'; toast(v === 'a4' ? 'A4: two slips on each sheet (cut in the middle)' : 'A5: one slip on each page'); render(); break;
+      case 'q-paper': S.paperNow = normPaper(v); toast(v === 'a4q' ? 'A4: four small slips on each sheet (cut in four)' : v === 'a4' ? 'A4: two slips on each sheet (cut in the middle)' : 'A5: one slip on each page'); render(); break;
       case 'sel-one': if (id) { var fe1 = findEntry(id); if (el.checked) S.slipSel[id] = { at: new Date().toISOString(), ready: !(fe1 && fe1.e.tokPr) }; else delete S.slipSel[id]; } selPaint(); break;
       case 'sel-all': qItems(Q_KINDS.slipq.lists[0][1]).forEach(function (x) { if (el.checked) S.slipSel[x.e.id] = { at: new Date().toISOString(), ready: true }; else delete S.slipSel[x.e.id]; }); selPaint(); break;
       case 'pr-round': { S.prOpen = S.prOpen || {}; var pro = printedRounds().map(function (r, i) { return r.key === v ? (S.prOpen[v] != null ? S.prOpen[v] : i === 0) : null; }).filter(function (x) { return x !== null; })[0]; S.prOpen[v] = !pro; render(); break; }
