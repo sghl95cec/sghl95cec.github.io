@@ -741,6 +741,25 @@ label.check.pwshow input{width:18px;height:18px;margin:0}
 /* MR register: Electronic slip / Manual slip */
 .modetabs.mrgo{margin:0 0 12px}.modetabs.mrgo .mtab{min-height:0;padding:12px 14px;border-radius:14px}.modetabs.mrgo .mtab .mti{width:38px;height:38px;border-radius:10px;margin-bottom:4px}.modetabs.mrgo .mtab b{font-size:17px}
 
+/* 14-11-2026: Registers, simple: category and shift buttons that fill with colour when chosen; Print by category closed until tapped */
+.lbchips{display:flex;flex-wrap:wrap;gap:8px}
+.lbc{min-height:42px;min-width:58px;padding:0 16px;border-radius:999px;border:1.5px solid #c9d3cd;background:#fff;color:#33403a;font:inherit;font-size:14.5px;font-weight:700;cursor:pointer;letter-spacing:.02em}
+.lbc.OPD{color:#14497e;border-color:#b9cfe6}.lbc.EMR{color:#8c1d1d;border-color:#ebc0c0}.lbc.ECHO{color:#5b3fa0;border-color:#d3c6ee}.lbc.ETT{color:#3f2777;border-color:#cbbfe6}.lbc.BD{color:#2b2b2b;border-color:#bdbdbd}
+.lbc.on{background:var(--g7);border-color:var(--g7);color:#fff}
+.lbc.OPD.on{background:#1f5f9e;border-color:#1f5f9e}.lbc.EMR.on{background:#b42318;border-color:#b42318}.lbc.ECHO.on{background:#6d4bb8;border-color:#6d4bb8}
+.lbc.ETT.on{background:#4b2f8a;border-color:#4b2f8a}.lbc.BD.on{background:#2b2b2b;border-color:#2b2b2b}
+.lbcols button{flex:1 1 40%}
+.lbmain .lbgo{margin-top:14px}
+details.card.lbmore>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--g7);min-height:28px}
+details.card.lbmore>summary::-webkit-details-marker{display:none}
+details.card.lbmore>summary::after{content:'';width:9px;height:9px;border-right:2px solid var(--g7);border-bottom:2px solid var(--g7);transform:rotate(45deg);margin:0 6px 4px 0;transition:transform .15s}
+details.card.lbmore[open]>summary::after{transform:rotate(-135deg);margin-bottom:-4px}
+details.card.lbmore[open]>summary{border-bottom:1px solid #e8ece9;padding-bottom:8px}
+details.card.lbmore .gh{margin-top:14px}
+.lbdays .btn{flex:0 0 auto;white-space:nowrap;min-height:36px;padding:0 12px}
+.lbrange{margin-top:10px}.lbrange button{flex:1 1 40%;min-height:40px}
+@media(max-width:420px){.lbchips{gap:6px}.lbc{min-width:0;padding:0 11px;font-size:14px}.lbdays .btn{padding:0 10px;font-size:13px}}
+
 </style>
 </head>
 <body>
@@ -6143,7 +6162,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function lbInit() {
     if (S.lb) return S.lb;
     var d = currentCensus();
-    S.lb = { preset: 'inflow', cfg: CEC.presetCfg('inflow'), from: d, to: d, data: null, dataKey: '', excl: {}, q: '', loading: false };
+    S.lb = { preset: '', cfg: CEC.listCfg({ group: 'none', cols: CEC.LIST_COLSETS.entry }), from: d, to: d, range: false, more: false, data: null, dataKey: '', excl: {}, q: '', loading: false };
     return S.lb;
   }
   function lbMine() { return store_('cec_lists_' + (S.me ? S.me.id : '')) || []; }
@@ -6162,8 +6181,36 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function lbDetails(title, n, body) {
     return '<details class="lbd"' + (n ? ' open' : '') + '><summary>' + h(title) + (n ? ' <span class="pill">' + n + ' ticked</span>' : ' <span class="muted small">(any)</span>') + '</summary><div class="lbgrid">' + body + '</div></details>';
   }
+  /* 14-11-2026: Registers made simple: dates, category and shift buttons (tap to colour; one or more), two column choices, then print.
+     Everything else (ready-made registers, saved lists, more filters and columns) is in the last part, Print by category, closed until tapped.
+     Petty OPD patients are OPD patients here (no separate choice). */
+  var LB_CATS = [['OPD', 'OPD', 'OPD'], ['EMR', 'ER', 'Emergency / Resus'], ['ECHO', 'Echo', 'Echo'], ['ETT', 'ETT', 'ETT'], ['BD', 'BD', 'Brought dead']];
+  function lbIs(k, v) {
+    var cur = S.lb.cfg[k] || [], all = lbAllOf(k), isAll = !cur.length || cur.length === all.length && all.every(function (x) { return cur.indexOf(x) >= 0; });
+    return v ? !isAll && cur.indexOf(v) >= 0 : isAll;
+  }
+  function lbChip(k, v) {
+    var all = lbAllOf(k), cur = (S.lb.cfg[k] || []).filter(function (x) { return all.indexOf(x) >= 0; });
+    if (lbIs(k, '')) cur = [];
+    if (!v) cur = [];
+    else if (cur.indexOf(v) >= 0) cur = cur.filter(function (x) { return x !== v; });
+    else cur = all.filter(function (x) { return x === v || cur.indexOf(x) >= 0; });
+    S.lb.cfg[k] = cur.length === all.length ? [] : cur; S.lb.preset = '';
+  }
+  function lbChips(k, opts) {
+    return '<div class="lbchips">' + [['', 'All', 'All']].concat(opts).map(function (o) {
+      var on = lbIs(k, o[0]);
+      return '<button type="button" class="lbc ' + (o[0] || 'ALL') + (on ? ' on' : '') + '" data-act="lb-chip" data-k="' + k + '" data-v="' + o[0] + '" aria-pressed="' + on + '" title="' + h(o[2]) + '">' + h(o[1]) + '</button>';
+    }).join('') + '</div>';
+  }
+  function lbColsIs(set) { var c = S.lb.cfg.cols || [], w = CEC.LIST_COLSETS[set]; return c.length === w.length && w.every(function (k) { return c.indexOf(k) >= 0; }); }
+  function lbButtons(more) {
+    return '<div class="sbtns lbgo"><button class="btn pri" data-act="lb-pdf">' + ICON.dl + ' PDF</button><button class="btn" data-act="lb-print">' + ICON.print + ' Print</button>' +
+      '<button class="btn" data-act="lb-csv">' + ICON.dl + ' Excel (CSV)</button>' + (more ? '<button class="btn" data-act="lb-save">Save this list</button>' : '<button class="btn" data-act="lb-text">Copy for WhatsApp</button>') + '</div>';
+  }
   function listsHtml() {
-    var L = lbInit(), f = L.cfg, clin = canClin(), who = lbWho(), DN = CEC.weekday, mine = lbMine(), shared = S.lists || [];
+    var L = lbInit(), f = L.cfg, clin = canClin(), who = lbWho(), DN = CEC.weekday, mine = lbMine(), shared = S.lists || [], dm = $('lbMore');
+    L.more = dm ? dm.open : false;                       // stays open while working on this page; closed when the page is opened again
     var pre = CEC.LIST_PRESETS.filter(function (p) { return !p.clin || clin; }).map(function (p) {
       return '<button type="button" class="lbp' + (L.preset === p.c ? ' on' : '') + '" data-act="lb-pre" data-v="' + p.c + '"><b>' + h(p.l) + '</b><small>' + h(p.d) + '</small></button>';
     }).join('');
@@ -6175,24 +6222,34 @@ if (typeof module !== 'undefined') module.exports = CEC;
         return '<span class="chip lbs' + (L.preset === 'm' + i ? ' on' : '') + '"><button type="button" class="lnk" data-act="lb-mine" data-v="' + i + '">' + h(x.name) + '</button>' +
           '<button type="button" data-act="lb-mine-del" data-v="' + i + '" aria-label="Delete ' + h(x.name) + '">&times;</button></span>';
       }).join('') + '</div>' : '');
-    var quick = [['today', 'Today'], ['yday', 'Yesterday'], ['opd', 'Last OPD day'], ['ett', 'Last ETT day'], ['echo', 'Last Echo day'], ['week', 'This week'], ['month', 'This month'], ['lmonth', 'Last month']]
+    var quick = [['today', 'Today'], ['yday', 'Yesterday'], ['week', 'This week'], ['month', 'This month'], ['lmonth', 'Last month'], ['opd', 'Last OPD day'], ['ett', 'Last ETT day'], ['echo', 'Last Echo day']]
       .map(function (q) { return '<button class="btn sm" data-act="lb-day" data-v="' + q[0] + '">' + q[1] + '</button>'; }).join('');
     var procOpts = [['BP', 'BP'], ['BSR', 'RBS'], ['ECG', 'ECG'], ['NEB', 'Nebulization']];
     if (clin) procOpts = procOpts.concat([['ETT', 'ETT'], ['ECHO', 'Echo'], ['*er', 'Any ER procedure']],
       CEC.PROCS.filter(function (p) { return p.g === 'er' && p.c !== 'NEB'; }).map(function (p) { return [p.c, p.l]; }), (S.custom.proc || []).map(function (x) { return [x, x]; }));
     var medOpts = [['*', 'Any medication']].concat(CEC.MEDS.concat(S.custom.med || []).map(function (m) { return [m, m]; }));
     var outOpts = CEC.OUTS.map(function (o) { return [o.c, o.l]; }).concat([['_', 'Awaiting doctor (no outcome yet)']]);
-    var cols = CEC.listColsFor(who);
+    var cols = CEC.listColsFor(who), sel = function (id, k, opts) {
+      return '<select class="in" id="' + id + '">' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (f[k] === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>'; };
     var html = '<div class="narrow lbw">' +
-      '<section class="card"><div class="ct">Registers</div><p class="muted small" style="margin:0 0 10px">Start from a ready-made register, change anything below, check the patients, then download. ' +
-      (clin ? '' : 'Diagnoses, outcomes and medications are for doctors and nursing staff only. ') + '</p><div class="lbpre">' + pre + '</div>' + saved + '</section>' +
-      '<section class="card"><div class="ct">1. Dates and shifts</div><div class="sbtns">' + quick + '</div>' +
-      '<div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><label class="lb" for="lbFrom">From <span class="muted">' + DN(L.from) + '</span></label><input class="in" type="date" id="lbFrom" value="' + L.from + '"></div>' +
-      '<div><label class="lb" for="lbTo">To <span class="muted">' + DN(L.to) + '</span></label><input class="in" type="date" id="lbTo" value="' + L.to + '"></div></div>' +
-      '<label class="lb">Shifts</label><div class="lbgrid three">' + CEC.SHIFTS.map(function (x) { return lbTick('shifts', x.c, x.l); }).join('') + '</div></section>' +
-      '<section class="card"><div class="ct">2. Which patients</div>' +
-      '<label class="lb" style="margin-top:0">Category</label><div class="lbgrid">' + CEC.CATS.map(function (c) { return lbTick('cats', c.c, c.l); }).join('') + '</div>' +
-      '<label class="lb">Gender</label>' + lbSeg('sex', [['', 'All'], ['M', 'Male'], ['F', 'Female']]) +
+      '<section class="card lbmain"><div class="ct">Registers</div>' +
+      '<label class="lb" style="margin-top:6px">Dates</label><div class="sbtns lbdays">' + quick + '</div>' +
+      '<div class="seg lbrange">' + [['0', 'One day'], ['1', 'Several days']].map(function (o) { var on = (L.range ? '1' : '0') === o[0];
+        return '<button type="button" data-act="lb-range" data-v="' + o[0] + '" class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + o[1] + '</button>'; }).join('') + '</div>' +
+      (L.range ? '<div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><label class="lb" for="lbFrom">From <span class="muted">' + DN(L.from) + '</span></label><input class="in" type="date" id="lbFrom" value="' + L.from + '"></div>' +
+        '<div><label class="lb" for="lbTo">To <span class="muted">' + DN(L.to) + '</span></label><input class="in" type="date" id="lbTo" value="' + L.to + '"></div></div>'
+        : '<label class="lb" for="lbDay">Date <span class="muted">' + DN(L.from) + '</span></label><input class="in" type="date" id="lbDay" value="' + L.from + '">') +
+      '<label class="lb">Category <span class="muted small">(tap one or more)</span></label>' + lbChips('cats', LB_CATS) +
+      '<label class="lb">Shift</label>' + lbChips('shifts', CEC.SHIFTS.map(function (x) { return [x.c, x.l, x.l + ' shift']; })) +
+      '<label class="lb">Columns</label><div class="seg lbcols">' + [['entry', 'Entry details only'], ['readings', 'Entry with vitals and ECG']].map(function (c) {
+        var on = lbColsIs(c[0]); return '<button type="button" data-act="lb-cols" data-v="' + c[0] + '" class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + c[1] + '</button>'; }).join('') + '</div>' +
+      lbButtons(false) + '</section>' +
+      '<section class="card"><div class="ct">Check the patients</div><div id="lbOut">' + lbOutHtml() + '</div></section>' +
+      '<details class="card lbmore" id="lbMore"' + (L.more ? ' open' : '') + '><summary>Print by category</summary>' +
+      '<p class="muted small" style="margin:8px 0 10px">Ready-made registers. Tap one, then PDF or Print. The dates above are used. ' +
+      (clin ? '' : 'Diagnoses, outcomes and medications are for doctors and nursing staff only. ') + '</p><div class="lbpre">' + pre + '</div>' + saved +
+      '<div class="gh">More choices</div>' +
+      '<label class="lb" style="margin-top:0">Gender</label>' + lbSeg('sex', [['', 'All'], ['M', 'Male'], ['F', 'Female']]) +
       '<label class="lb">Age (years)</label><div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><input class="in" id="lbAgeMin" inputmode="numeric" maxlength="3" placeholder="From, e.g. 40" value="' + h(f.ageMin) + '">' +
       '<input class="in" id="lbAgeMax" inputmode="numeric" maxlength="3" placeholder="To, e.g. 60" value="' + h(f.ageMax) + '"></div>' +
       '<label class="lb">Seen by a doctor</label>' + lbSeg('seen', [['', 'All'], ['yes', 'Signed off'], ['no', 'Waiting for doctor']]) +
@@ -6200,19 +6257,15 @@ if (typeof module !== 'undefined') module.exports = CEC;
       (clin ? lbDetails('ER medications given', f.meds.length, medOpts.map(function (m) { return lbTick('meds', m[0], m[1]); }).join('')) +
         lbDetails('Outcome', f.outs.length, outOpts.map(function (o) { return lbTick('outs', o[0], o[1]); }).join('')) +
         '<label class="lb" for="lbDx">Diagnosis <span class="muted">(any of these; separate with commas)</span></label><input class="in" id="lbDx" placeholder="e.g. ACS, Hypertension, DKA" value="' + h(f.dx) + '">' : '') +
-      '</section>' +
-      '<section class="card"><div class="ct">3. Columns and layout</div><div class="sbtns">' +
-      [['entry', 'Entry details only'], ['readings', 'With vitals and ECG']].concat(clin ? [['clinical', 'Clinical']] : [], [['all', 'All columns']]).map(function (c) {
+      '<details class="lbd"' + (lbColsIs('entry') || lbColsIs('readings') ? '' : ' open') + '><summary>Columns, one by one</summary><div class="sbtns">' + (clin ? [['clinical', 'Clinical']] : []).concat([['all', 'All columns']]).map(function (c) {
         return '<button class="btn sm" data-act="lb-cols" data-v="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div>' +
-      '<div class="lbgrid">' + cols.map(function (c) { return lbTick('cols', c.k, c.h, c.k === 'remarks' || c.k === 'sign' ? ' <span class="muted small">(blank)</span>' : ''); }).join('') + '</div>' +
-      '<div class="row2" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div><label class="lb" for="lbGroup">Group by</label><select class="in" id="lbGroup">' +
-      [['none', 'One list'], ['cat', 'Category'], ['shift', 'Shift'], ['date', 'Date']].concat(clin ? [['out', 'Outcome']] : []).map(function (o) { return '<option value="' + o[0] + '"' + (f.group === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>' +
-      '<div><label class="lb" for="lbSort">Order</label><select class="in" id="lbSort">' + [['time', 'Time'], ['mr', 'MR No.'], ['name', 'Name']].map(function (o) { return '<option value="' + o[0] + '"' + (f.sort === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>' +
-      '<div><label class="lb" for="lbPage">Page</label><select class="in" id="lbPage">' + [['auto', 'Automatic'], ['portrait', 'Portrait'], ['landscape', 'Landscape']].map(function (o) { return '<option value="' + o[0] + '"' + (f.page === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div></div>' +
-      '<label class="lb" for="lbTitle">Title on the list</label><input class="in" id="lbTitle" placeholder="' + h(CEC.listTitle(CEC.listCfg(Object.assign({}, f, { title: '' })))) + '" value="' + h(f.title) + '"></section>' +
-      '<section class="card"><div class="ct">4. Check and download</div><div id="lbOut">' + lbOutHtml() + '</div>' +
-      '<div class="sbtns"><button class="btn pri" data-act="lb-pdf">' + ICON.dl + ' PDF</button><button class="btn" data-act="lb-print">' + ICON.print + ' Print</button><button class="btn" data-act="lb-csv">' + ICON.dl + ' Excel (CSV)</button>' +
-      '<button class="btn" data-act="lb-text">Copy for WhatsApp</button><button class="btn" data-act="lb-save">Save this list</button></div></section></div>';
+      '<div class="lbgrid">' + cols.map(function (c) { return lbTick('cols', c.k, c.h, c.k === 'remarks' || c.k === 'sign' ? ' <span class="muted small">(blank)</span>' : ''); }).join('') + '</div></details>' +
+      '<div class="row2" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div><label class="lb" for="lbGroup">Group by</label>' +
+      sel('lbGroup', 'group', [['none', 'One list'], ['cat', 'Category'], ['shift', 'Shift'], ['date', 'Date']].concat(clin ? [['out', 'Outcome']] : [])) + '</div>' +
+      '<div><label class="lb" for="lbSort">Order</label>' + sel('lbSort', 'sort', [['time', 'Time'], ['mr', 'MR No.'], ['name', 'Name']]) + '</div>' +
+      '<div><label class="lb" for="lbPage">Page</label>' + sel('lbPage', 'page', [['auto', 'Automatic'], ['portrait', 'Portrait'], ['landscape', 'Landscape']]) + '</div></div>' +
+      '<label class="lb" for="lbTitle">Title on the list</label><input class="in" id="lbTitle" placeholder="' + h(CEC.listTitle(CEC.listCfg(Object.assign({}, f, { title: '' })))) + '" value="' + h(f.title) + '">' +
+      lbButtons(true) + '</details></div>';
     return html;
   }
   function lbKey() { return S.lb.from + '|' + S.lb.to; }
@@ -6284,6 +6337,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function lbSetDays(v) {
     var L = S.lb, d = currentCensus(), p = d.split('-');
+    L.range = ['week', 'month', 'lmonth'].indexOf(v) >= 0;
     if (v === 'today') { L.from = L.to = d; }
     else if (v === 'yday') { L.from = L.to = CEC.addDays(d, -1); }
     else if (v === 'opd') { var m = lastWeekday(1), t = lastWeekday(4); L.from = L.to = m > t ? m : t; }
@@ -7652,6 +7706,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
           api('apiSaveLists', JSON.stringify(sl)).then(function (r) { S.lists = r || []; S.lb.preset = ''; toast('Deleted'); render(); }, function (e) { toast(errText(e)); });
         }); break; }
       case 'lb-day': lbSetDays(v); render(); break;
+      case 'lb-chip': lbChip(el.getAttribute('data-k'), v); render(); break;
+      case 'lb-range': S.lb.range = v === '1'; if (!S.lb.range) S.lb.to = S.lb.from; else if (S.lb.to < S.lb.from) S.lb.to = S.lb.from; render(); break;
       case 'lb-set': S.lb.cfg[el.getAttribute('data-k')] = v; S.lb.preset = '';
         Array.prototype.forEach.call(el.parentNode.querySelectorAll('button'), function (b) { b.classList.toggle('on', b === el); }); lbRefresh(); break;
       case 'lb-cols': {
@@ -7844,6 +7900,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       lbRefresh();
     }
     else if (t.getAttribute && t.getAttribute('data-lbx') && S.lb) { S.lb.excl[t.getAttribute('data-lbx')] = !t.checked; lbRefresh(); }
+    else if (t.id === 'lbDay' && S.lb) { if (t.value) S.lb.from = S.lb.to = t.value; render(); }
     else if ((t.id === 'lbFrom' || t.id === 'lbTo') && S.lb) { if (t.value) { S.lb[t.id === 'lbFrom' ? 'from' : 'to'] = t.value; if (t.id === 'lbFrom' && S.lb.to < t.value) S.lb.to = t.value; } render(); }
     else if ((t.id === 'lbGroup' || t.id === 'lbSort' || t.id === 'lbPage') && S.lb) { S.lb.cfg[{ lbGroup: 'group', lbSort: 'sort', lbPage: 'page' }[t.id]] = t.value; S.lb.preset = ''; lbRefresh(); }
     else if (t.id === 'lKind') { readList(); var kk = CEC.LIST_KINDS.filter(function (x) { return x.c === t.value; })[0]; if (kk && kk.cats && t.value !== 'custom') S.lst.cats = kk.cats.slice(); render(); }
