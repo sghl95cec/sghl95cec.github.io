@@ -2103,6 +2103,18 @@ var CEC = (function () {
   }
   var Q_BANDS = [112, Q_H - 30];                      // practice copy: the DEMO bands of each quarter
   function quarterAt(k) { return { x: (k % 2) * Q_W, y: Math.floor(k / 2) * Q_H }; }
+  /* 13-11-2026 evening: printers cannot print right up to the paper's edge (HP LaserJets about 5 mm; their drivers keep 18 pt at the
+     sides and 14 pt at the top and bottom). The slip headings started 3.5 mm from the top edge and were cut. Every slip on an A4 sheet is
+     now moved in, so nothing printed is closer than about 7 mm (20 pt) to the edge. The slips themselves are unchanged. */
+  var EDGE2_DY = 12, EDGE4_DY = 10, EDGE4_DX = 3;
+  function shiftOps(ops, dx, dy) {
+    ops.forEach(function (o) { if (o.x != null) o.x += dx; if (o.x1 != null) { o.x1 += dx; o.x2 += dx; } if (o.y != null) o.y += dy; });
+    return ops;
+  }
+  function sheetOps(e, dateYmd, paper, k) {
+    if (paper === 'a4q') { var qa = quarterAt(k); return shiftOps(slipOps6(e, dateYmd, qa.x, qa.y), k % 2 ? -EDGE4_DX : EDGE4_DX, EDGE4_DY); }
+    return shiftOps(slipOps(e, dateYmd, k ? SLIP_W : 0), 0, paper === 'a5' ? 0 : EDGE2_DY);
+  }
   /* Pages of slips. paper 'a4' (A4 sideways: two slips side by side), 'a4q' (A4 upright: four A6 slips) or 'a5' (one slip on each A5 sheet).
      The last A4 sheet is filled up with blank standard slips (12-11-2026: kept for writing by hand). */
   function slipPages(list, paper) {
@@ -2124,7 +2136,7 @@ var CEC = (function () {
       }
       pg.forEach(function (e, k) {
         var qa = quarterAt(k);
-        (q ? slipOps6(e, dateYmd, qa.x, qa.y) : slipOps(e, dateYmd, k ? SLIP_W : 0)).forEach(function (o) {
+        sheetOps(e, dateYmd, paper, k).forEach(function (o) {
           if (o.k === 't') { if (o.sw) d.textS(o.x, o.y, o.s, o.f, o.size, o.sw); else d.text(o.x, o.y, o.s, o.f, o.size); }
           else if (o.k === 'l') d.line(o.x1, o.y, o.x2, o.y, o.lw);
           else if (o.k === 'r') d.rect(o.x, o.y, o.w, o.h, null, 0, o.lw);
@@ -2145,7 +2157,7 @@ var CEC = (function () {
     if (q) out += '<g stroke="#999" stroke-width="0.4" stroke-dasharray="3 3"><line x1="' + Q_W + '" y1="0" x2="' + Q_W + '" y2="' + H + '"/><line x1="0" y1="' + Q_H + '" x2="' + W + '" y2="' + Q_H + '"/></g>';
     pg.forEach(function (e, k) {
       var qa = quarterAt(k);
-      (q ? slipOps6(e, dateYmd, qa.x, qa.y) : slipOps(e, dateYmd, k ? SLIP_W : 0)).forEach(function (o) {
+      sheetOps(e, dateYmd, paper, k).forEach(function (o) {
         if (o.k === 't') {
           var fam = o.f === 'B' ? SVG_FONT.B : SVG_FONT.H, bold = o.f === 'B' || o.f === 'HB';
           out += '<text x="' + x(o.x) + '" y="' + x(o.y) + '" font-family="' + fam + '" font-size="' + o.size + '" font-weight="' + (bold ? 700 : 400) + '" textLength="' + x(o.w) +
@@ -2925,7 +2937,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (byUser && S.token && S.me && !S.me.demo) { try { call('apiSignOut', [S.token]).then(null, function () { }); } catch (e) { } }   // frees this device's place (one ID: at most 2 devices)
     if (APP_BUILD && byUser) { store_('cec_cache', ''); var off = store_('cec_off'); if (off) { off.token = ''; store_('cec_off', off); } }
     if (!APP_BUILD) store_('cec_cache', '');              // website: nothing of the census stays on the PC after signing out
-    S.token = null; S.me = null; S.form = null; S.cert = null; S.view = 'home'; S.users = null; S.log = null; S.docs = null; S.certs = null;
+    S.token = null; S.me = null; S.deskPaperLocal = null; S.form = null; S.cert = null; S.view = 'home'; S.users = null; S.log = null; S.docs = null; S.certs = null;
     S.wel = null; S.cen = { mode: null }; S.wedit = null; S.lastNav = null; S.recent = null; menu(false); applyDemo();
     store_('cec_token', '');
     $('sheet').classList.add('hidden'); $('sheet').innerHTML = ''; document.body.style.overflow = '';
@@ -4752,7 +4764,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function slipLogoBytes() { var bin = atob(SLIP_LOGO.split(',')[1]), a = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return { bytes: a, w: 300, h: 368 }; }
   /* Paper (11-11-2026): with autoprint on, the shift's setting; otherwise the slip page asks "A4 or A5?" every time it is opened (nothing is remembered),
      and printing from anywhere else asks too. */
-  function shiftPaper() { return apOn() ? S.auto.paper : S.view === 'slipq' ? S.paperNow : null; }
+  function shiftPaper() { return S.deskPaperLocal || (apOn() ? S.auto.paper : S.view === 'slipq' ? S.paperNow : null); }
+  /* The paper autoprint uses on this device. 13-11-2026 evening: the CEC Printer app's choice counts from the moment it arrives (S.deskPaperLocal),
+     also during the few seconds before the census has saved it, so nothing prints on the old paper meanwhile. */
+  function apPaper() { return normPaper(S.deskPaperLocal || (S.auto && S.auto.paper)); }
   /* Slip paper: 'a5' (1 slip a page), 'a4' (A4 sideways, 2 slips a sheet), 'a4q' (A4 upright, 4 A6 slips a sheet: 13-11-2026). */
   function normPaper(p) { return p === 'a4q' ? 'a4q' : 'a4'; }      // 13-11-2026: A4 only (A5 jammed); an old A5 setting prints 2 slips a sheet
   function paperShort(p) { return p === 'a4q' ? 'A4 \u00d7 4' : p === 'a4' ? 'A4' : 'A5'; }
@@ -4921,7 +4936,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     }, function () { S.jobBusy = false; });
   }
   function printJob(j) {
-    var paper = normPaper(S.auto && S.auto.paper), list = [], i;
+    var paper = apPaper(), list = [], i;
     if (j.err) return toast('Print desk: ' + j.err);
     if (j.kind === 'blankslips') { for (i = 0; i < j.n; i++) list.push({ e: { blank: true } }); return printSlips(list, paper, { claimed: true, blank: true }); }
     if (j.kind === 'cert') return printPages(CEC.deathCertSvg(j.cert, S.settings, logoBytes()), 'Print desk: ' + j.what);
@@ -4984,7 +4999,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       S.reprinting = false;
       list = list || [];
       if (!list.length) return;
-      printSlips(list.map(function (en) { return { e: en, sh: S.open && S.open.id === en.shiftId ? S.open : { id: en.shiftId } }; }), normPaper(S.auto && S.auto.paper), { again: true });
+      printSlips(list.map(function (en) { return { e: en, sh: S.open && S.open.id === en.shiftId ? S.open : { id: en.shiftId } }; }), apPaper(), { again: true });
     }, function () { S.reprinting = false; });
   }
   function deskAwake() { return !!S.apBeat && Date.now() - S.apBeat < 120000; }     // the print desk says it is on every 30 seconds: 4 missed in a row = asleep
@@ -5156,10 +5171,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (!apOn()) return '<section class="card apc off"><div class="apt"><div><b>Autoprint is off</b><div class="muted small">For short-staffed shifts: slips print by themselves on one device (as soon as they are ready, or every 30 seconds to 5 minutes).</div></div>' +
       '<button class="btn pri" data-act="ap-set">Switch on</button></div></section>';
     var A = S.auto, here = apHere();
-    return '<section class="card apc"><div class="apt"><div><b>Autoprint is on</b> <span class="pill open">' + h(apModeText(A.mode)) + '</span> <span class="pill open">' + paperShort(A.paper) + '</span> <span class="pill open">' + (apInstant() ? 'timer off' : h(AP_EVERY.filter(function (x) { return x[0] * 1000 === apEvery(); }).map(function (x) { return x[1]; })[0] || '5 min')) + '</span>' +
+    return '<section class="card apc"><div class="apt"><div><b>Autoprint is on</b> <span class="pill open">' + h(apModeText(A.mode)) + '</span> <span class="pill open">' + paperShort(apPaper()) + '</span> <span class="pill open">' + (apInstant() ? 'timer off' : h(AP_EVERY.filter(function (x) { return x[0] * 1000 === apEvery(); }).map(function (x) { return x[1]; })[0] || '5 min')) + '</span>' +
       '<div class="muted small">' + (here ? 'Printing on <b>this device</b>. Keep the census open here; the ready slips print ' + h(apEveryText(A.every)) + '. Emergency / Resus slips print at once.' + (S.wake ? ' The screen is kept awake.' : '')
         : 'Printing on another device (switched on there by ' + h(A.devBy || A.by || 'someone') + '). This device does not print by itself, so no slip prints twice.' + (isPhone() ? ' Print and Print all here send the slips to that device.' : '') + ' ' + deskStatusHtml()) +
-      ' Paper: ' + h(apPaperText(A.paper)) + '. Changed last by ' + h(A.by || '-') + (A.at ? ' at ' + CEC.hm(A.at) : '') + '. The next shift starts with autoprint off.</div></div>' +
+      ' Paper: ' + h(apPaperText(apPaper())) + '. Changed last by ' + h(A.by || '-') + (A.at ? ' at ' + CEC.hm(A.at) : '') + '. The next shift starts with autoprint off.</div></div>' +
       '<div class="apb"><button class="btn sm" data-act="ap-set">Change</button><button class="btn sm dan" data-act="ap-off">Switch off</button></div></div>' +
       (here ? '<div class="apcd"><span>' + (apInstant() ? 'Prints each slip as soon as it is ready' : 'Next print in <b class="apcdt">' + mmss((S.apNext || Date.now() + apEvery()) - Date.now()) + '</b>') + ' &middot; <span class="apcnt">' + apCountText() + '</span></span>' +
         '<button class="btn pri sm" data-act="ap-now">Print now</button></div>' : '') + '</section>';
@@ -5168,14 +5183,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var l = apReady(), n = l.length;
     if (!n) return 'no slip ready';
     var t = n + ' slip' + (n === 1 ? '' : 's') + ' ready';
-    var per = paperPer(S.auto.paper), rest = n % per;
+    var per = paperPer(apPaper()), rest = n % per;
     if (per > 1 && rest) { var w = AP_PAIR_MS - (Date.now() - apReadyAt(l[n - rest].e)); if (w > 0) t += ' (' + (rest === 1 ? 'one waits' : rest + ' wait') + ' to fill the sheet, at most ' + Math.ceil(w / 60000) + ' min)'; }
     return t;
   }
   /* The registration page: one line with the setting. */
   function apLineHtml() {
     if (!apOn()) return '<div class="apline"><span>Autoprint of slips: <b>off</b></span><button type="button" class="lnk" data-act="ap-set">Switch on</button></div>';
-    return '<div class="apline on"><span>Autoprint: <b>on</b>, ' + h(apModeText(S.auto.mode)) + ', ' + paperShort(S.auto.paper) + ' &middot; ' + (apHere() ? (apInstant() ? 'this device, each slip at once' : 'this device, next in <b class="apcdt">' +
+    return '<div class="apline on"><span>Autoprint: <b>on</b>, ' + h(apModeText(S.auto.mode)) + ', ' + paperShort(apPaper()) + ' &middot; ' + (apHere() ? (apInstant() ? 'this device, each slip at once' : 'this device, next in <b class="apcdt">' +
       mmss((S.apNext || Date.now() + apEvery()) - Date.now()) + '</b>') : 'another device ' + deskStatusHtml()) + '</span><span>' + (apHere() ? '<button type="button" class="lnk" data-act="ap-now">Print now</button> &middot; ' : '') +
       '<button type="button" class="lnk" data-act="ap-set">Change</button></span></div>';
   }
@@ -5203,6 +5218,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function apSend(d) {
     if (d.on) store_('cec_deskpaper', normPaper(d.paper));
+    S.deskPaperLocal = null;                                        // a choice made here in the census replaces the CEC Printer app's
     toast(d.on ? 'Saving autoprint…' : 'Switching autoprint off…');
     api('apiAutoprint', JSON.stringify(d)).then(function (a) {
       var wasHere = apHere();
@@ -5218,13 +5234,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
      opens the census with ?paper=a4 / a4q, or (window already open) calls cecDesk.setPaper() in this window. Either way autoprint is switched on
      here with that paper and the last settings (with / without vitals, timer). The window is never closed by the app, so no print is missed. */
   function deskPaperApply(p) {
-    p = normPaper(p);
+    p = normPaper(p); S.deskPaperLocal = p; S.paperNow = p;
+    if (!S.form) try { render(); } catch (x) { }
     return new Promise(function (res) {
       if (!S.me || !S.token) { S.deskPaperWant = p; return res({ ok: false, text: 'Sign in with the Print ID: the paper is set right after signing in.' }); }
       if (!canEnter()) return res({ ok: false, text: 'This ID cannot print slips. Sign in with the Print ID.' });
       if (isOff()) { S.deskPaperWant = p; return res({ ok: false, text: 'No internet: the paper is set when the internet is back.' }); }
       api('apiDeskPaper', JSON.stringify({ paper: p, dev: myDev() })).then(function (a) {
-        S.auto = a || null; S.apSeen = null; S.paperNow = p; store_('cec_deskpaper', p);
+        S.auto = a || null; S.apSeen = null; S.paperNow = p; store_('cec_deskpaper', p); if (S.auto && normPaper(S.auto.paper) === p) S.deskPaperLocal = null;
         if (apHere()) { S.apNext = Date.now() + (apInstant() ? AP_POLL : apEvery()); apSaveNext(); }
         var t = 'A4, ' + (p === 'a4q' ? '4' : '2') + ' slips a sheet. Autoprint is on here (' + (a && a.mode === 'now' ? 'without vitals' : 'with vitals') + ', ' + apEveryText(a ? a.every : 300) + ').';
         toast('Set by the CEC Printer app: ' + t);
@@ -5239,7 +5256,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       var p = q && q.paper;
       if (p !== 'a4' && p !== 'a4q') return;
       try { if (sessionStorage.getItem('cec_deskparam') === p) return; sessionStorage.setItem('cec_deskparam', p); } catch (x) { }
-      S.deskPaperWant = p;
+      S.deskPaperWant = p; S.deskPaperLocal = p; S.paperNow = p;
       if (S.me && S.token) { S.deskPaperWant = null; deskPaperApply(p); }
     };
     try {
@@ -5320,7 +5337,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       var pend00 = store_('cec_apclaim'), owed = pend00 && pend00.got && pend00.shift === sh.id;
       if (why === 'check' && !instant && !er && !owed) { S.apBusy = false; return; }   // looked: no Emergency / Resus slip, the timer prints the rest
       var nextIn = instant ? AP_POLL : every;
-      var per = paperPer(A.paper), rest = list.length % per;          // A4: the last slips wait to fill the sheet, at most 5 minutes (not with an ER slip)
+      var per = paperPer(apPaper()), rest = list.length % per;          // A4: the last slips wait to fill the sheet, at most 5 minutes (not with an ER slip)
       if (!force && !er && per > 1 && rest && now - apReadyAt(list[list.length - rest].e) + nextIn <= AP_PAIR_MS) list = list.slice(0, -rest);
       var pend0 = store_('cec_apclaim');
       if (!list.length && !(pend0 && pend0.shift === sh.id && (pend0.list || []).length)) { S.apBusy = false; if (force) toast('No slip is ready to print.'); apPaintCd(); return; }
@@ -5341,7 +5358,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
            Chromebook stops before that, the round is kept: on opening again the same slips come back (same claim ID) and are printed. */
         pend.list = got.map(function (en) { return { shiftId: sh.id, id: en.id }; }); pend.got = 1; store_('cec_apclaim', pend);
         var cidNow = pend.cid;
-        printSlips(got.map(function (en) { return { e: en, sh: sh }; }), A.paper, { auto: true, claimed: true, sent: function () {
+        printSlips(got.map(function (en) { return { e: en, sh: sh }; }), apPaper(), { auto: true, claimed: true, sent: function () {
           var p0 = store_('cec_apclaim'); if (p0 && p0.cid === cidNow) store_('cec_apclaim', '');
         } });
         if (instant || why !== 'check') { S.apNext = Date.now() + (instant ? AP_POLL : every); apSaveNext(); }   // the timer starts again when the print was sent
@@ -7129,7 +7146,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
           .then(function (ok) { if (ok) setUser({ id: id, reset: v }, v === 'approve' ? 'New password approved for ' + ru.name : 'Request rejected'); });
         break;
       }
-      case 'q-paper': S.paperNow = normPaper(v); toast(v === 'a4q' ? 'A4: four small slips on each sheet (cut in four)' : 'A4: two slips on each sheet (cut in the middle)'); render(); break;
+      case 'q-paper': S.paperNow = normPaper(v); S.deskPaperLocal = null; toast(v === 'a4q' ? 'A4: four small slips on each sheet (cut in four)' : 'A4: two slips on each sheet (cut in the middle)'); render(); break;
       case 'sel-one': if (id) { var fe1 = findEntry(id); if (el.checked) S.slipSel[id] = { at: new Date().toISOString(), ready: !(fe1 && fe1.e.tokPr) }; else delete S.slipSel[id]; } selPaint(); break;
       case 'sel-all': qItems(Q_KINDS.slipq.lists[0][1]).forEach(function (x) { if (el.checked) S.slipSel[x.e.id] = { at: new Date().toISOString(), ready: true }; else delete S.slipSel[x.e.id]; }); selPaint(); break;
       case 'pr-round': { S.prOpen = S.prOpen || {}; var pro = printedRounds().map(function (r, i) { return r.key === v ? (S.prOpen[v] != null ? S.prOpen[v] : i === 0) : null; }).filter(function (x) { return x !== null; })[0]; S.prOpen[v] = !pro; render(); break; }
