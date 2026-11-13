@@ -759,6 +759,7 @@ details.card.lbmore .gh{margin-top:14px}
 .lbdays .btn{flex:0 0 auto;white-space:nowrap;min-height:36px;padding:0 12px}
 .lbrange{margin-top:10px}.lbrange button{flex:1 1 40%;min-height:40px}
 @media(max-width:420px){.lbchips{gap:6px}.lbc{min-width:0;padding:0 11px;font-size:14px}.lbdays .btn{padding:0 10px;font-size:13px}}
+.verwarn{border-color:#e3a3a3;background:#fdf1f1;color:#7a1f1f;font-size:14px;line-height:1.45}.vbad{color:#b42318;font-weight:600}
 
 </style>
 </head>
@@ -2753,6 +2754,16 @@ if (typeof module !== 'undefined') module.exports = CEC;
     return null;
   }
   var IDLE_MS = 4 * 3600000;
+  /* 14-11-2026: the version of this page (Index.html / phone app) and of the server (Code.gs). Both come from the same build, so they must be the same. */
+  var APP_VER = '14-11-2026 03:00';
+  function verSame() { return S.serverVer === APP_VER; }
+  function verKey(v) { v = String(v || ''); return v.slice(6, 10) + v.slice(3, 5) + v.slice(0, 2) + v.slice(11); }   // DD-MM-YYYY HH:MM in time order
+  function verText() { return 'Version ' + APP_VER + (verSame() ? '' : ' (server: ' + (S.serverVer || 'older') + ')'); }
+  function verWarn() {
+    if (verSame() || S.serverVer == null) return '';
+    return '<section class="card verwarn"><b>Update not complete.</b> This page is version ' + h(APP_VER) + ' but the server (Code.gs) is ' + h(S.serverVer ? 'version ' + S.serverVer : 'older') + '. ' +
+      (S.serverVer && verKey(S.serverVer) > verKey(APP_VER) ? 'Close the app or page and open it again.' : 'In Apps Script replace Code.gs, then Deploy &gt; Manage deployments &gt; Edit &gt; Version: New version &gt; Deploy.') + '</section>';
+  }
   var IDLE_MSG = 'You were signed out after 4 hours without activity. Please sign in again.';
   function idleOut() { if (APP_BUILD || store_('cec_counter') || isPrintId() || store_('cec_printid')) return false; if (S.me && S.lastAct && Date.now() - S.lastAct > IDLE_MS) { signOut(IDLE_MSG); return true; } return false; }
   function touch() {
@@ -2893,8 +2904,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function applyDemo() { var on = isDemo(); CEC.setDemo(on); document.body.classList.toggle('demo', on); }
 
   function applyState(st) {
-    if (st.off) { S.me = st.me; S.settings = mergeSettings(st.settings); S.offHours = st.off; S.synced = new Date(); return; }   // a student after the morning shift
-    S.offHours = null;
+    if (st.off) { S.me = st.me; S.serverVer = st.ver || ''; S.settings = mergeSettings(st.settings); S.offHours = st.off; S.synced = new Date(); return; }   // a student after the morning shift
+    S.offHours = null; S.serverVer = st.ver || '';
     var oldOpen = S.open ? S.open.id : null;
     S.me = st.me; store_('cec_printid', st.me && st.me.print ? 1 : ''); S.settings = mergeSettings(st.settings); S.open = st.open; S.openEnds = st.openEnds; S.prevShift = st.prev; S.prevUntil = st.prevUntil;
     S.handover = st.handover; S.pendingUsers = st.pendingUsers || 0; S.pendingResets = st.pendingResets || 0; S.synced = new Date(); S.mr = st.mr || null; S.opdc = st.opdc || null; S.apBeat = st.apBeatAge != null ? (st.apBeatAge >= 0 ? Date.now() - st.apBeatAge : 0) : (st.apBeat || 0); S.pendCerts = st.pendingCerts || 0;
@@ -3147,6 +3158,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (v !== 'letter' && v !== 'detail') S.prev = v;
     S.view = v; menu(false); render(); window.scrollTo(0, 0);
     if (v === 'petty') pettyLoad(); else if (v === 'mrreg') mrRegLoad();
+    if (v === 'lists' && S.lb && S.lb.data && S.lb.dataKey === lbKey()) lbFetch(true).then(null, function () { });   // the list shown before: read again
     if (v === 'settings' && isAdmin()) api('apiState').then(function (st) { applyCustom(st.custom); if (S.view === 'settings' && !typing()) render(); }, function () { });   // latest options added by users
   }
   /* ---------- main menu: a drop-down on phones, a bar with a census submenu on computers ---------- */
@@ -3522,7 +3534,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<div class="sbtns"><button class="btn sm dan" data-act="sign-out">Sign out</button></div>' +
       (APP_BUILD ? '<p class="muted small" style="margin:12px 0 0;word-break:break-all">Census link: ' + h(apiUrl()) + ' <button class="lnk" data-act="app-relink">Change</button></p>' : '') + '</section>'
       : '<section class="card"><div class="ct">My account</div><div class="kv" style="margin:0"><b>' + h(me.name) + '</b> &middot; ' + h(me.roleLabel) +
-      '<div class="muted small">Login ID: ' + h(me.login) + ' &middot; Rights: ' + h(rightsText(me)) + '</div></div>' +
+      '<div class="muted small">Login ID: ' + h(me.login) + ' &middot; Rights: ' + h(rightsText(me)) + '</div><div class="small' + (verSame() ? ' muted' : ' vbad') + '" id="verLine">' + h(verText()) + '</div></div>' +
       '<label class="lb" for="pOld">Current password</label><input class="in" id="pOld" type="password" autocomplete="current-password">' +
       '<div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><label class="lb" for="pNew">New password</label><input class="in" id="pNew" type="password" autocomplete="new-password"></div>' +
       '<div><label class="lb" for="pNew2">Repeat</label><input class="in" id="pNew2" type="password" autocomplete="new-password"></div></div>' +
@@ -6268,6 +6280,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       lbButtons(true) + '</details></div>';
     return html;
   }
+  var LB_FRESH_MS = 30000;
   function lbKey() { return S.lb.from + '|' + S.lb.to; }
   function lbSpec(withExcl) {
     var L = S.lb, cfg = Object.assign({}, L.cfg, { exclude: withExcl ? Object.keys(L.excl).filter(function (k) { return L.excl[k]; }) : [] });
@@ -6315,25 +6328,35 @@ if (typeof module !== 'undefined') module.exports = CEC;
     });
   }
   function lbRefresh() { var o = $('lbOut'); if (o) o.innerHTML = lbOutHtml(); var t = $('lbTitle'); if (t) t.placeholder = CEC.listTitle(CEC.listCfg(Object.assign({}, S.lb.cfg, { title: '' }))); }
-  function lbFetch() {
+  function lbFetch(force) {
     var L = S.lb, key = lbKey();
-    if (L.data && L.dataKey === key) return Promise.resolve(L.data);
+    /* 14-11-2026: a list loaded earlier is used for 30 seconds only; after that the patients are read again (new patients come in all the time),
+       so the page, PDF, Print and Excel always have every patient. Patients unticked stay unticked. */
+    if (!force && L.data && L.dataKey === key && Date.now() - (L.dataAt || 0) < LB_FRESH_MS) return Promise.resolve(L.data);
+    if (L.busy && L.busyKey === key) return L.busy;
     if (!L.from || !L.to) { toast('Choose the dates'); return Promise.reject(); }
     if (L.to < L.from) { toast('"To" date is before the "From" date'); return Promise.reject(); }
     if ((CEC.parseYmd(L.to) - CEC.parseYmd(L.from)) / 86400000 > 366) { toast('Choose one year at most'); return Promise.reject(); }
     var parts = [], a = L.from, out = [];
     while (a <= L.to) { var b = CEC.addDays(a, 59); if (b > L.to) b = L.to; parts.push([a, b]); a = CEC.addDays(b, 1); }
-    L.loading = true; lbRefresh();
-    return parts.reduce(function (p, r) { return p.then(function () { return api('apiPatientList', r[0], r[1]).then(function (l) { out = out.concat(l || []); }); }); }, Promise.resolve())
-      .then(function () { L.loading = false; L.data = out; L.dataKey = key; L.excl = {}; lbRefresh(); return out; },
-        function (e) { L.loading = false; lbRefresh(); toast(errText(e)); throw e; });
+    var keep = L.data && L.dataKey === key;
+    if (!keep) { L.loading = true; lbRefresh(); }                // a list already on the page stays there while it is read again
+    L.busyKey = key;
+    return (L.busy = parts.reduce(function (p, r) { return p.then(function () { return api('apiPatientList', r[0], r[1]).then(function (l) { out = out.concat(l || []); }); }); }, Promise.resolve())
+      .then(function () { if (L.busyKey !== key) return out; L.busy = null; L.loading = false; if (lbKey() !== key) { lbRefresh(); return out; } L.data = out; L.dataKey = key; L.dataAt = Date.now(); if (!keep) L.excl = {}; lbRefresh(); return out; },
+        function (e) { if (L.busyKey === key) { L.busy = null; L.loading = false; lbRefresh(); } toast(errText(e)); throw e; }));
   }
   function lbReady(cb) {
-    lbFetch().then(function () {
+    var L = S.lb, go = function () {
       var sp = lbSpec(true);
       if (!sp.n) return toast('No patients in the list. Change the dates or choices, or tick some patients.');
       cb(sp);
-    }, function () { });
+    };
+    lbFetch().then(go, function () {
+      if (!L.data || L.dataKey !== lbKey()) return;                // no list yet: the error is already shown
+      toast('No connection: this list has the patients read at ' + CEC.hm(new Date(L.dataAt || Date.now()).toISOString()) + '. Newer patients are not in it.');
+      go();
+    });
   }
   function lbSetDays(v) {
     var L = S.lb, d = currentCensus(), p = d.split('-');
@@ -6773,7 +6796,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     // the admin and the Print desk keep it.
     var noDash = !isAdmin() && S.me && (S.me.role === 'doctor' || S.me.role === 'nurse' || S.me.role === 'student');
     var doctor = canEdit() || isAdmin(), dash = noDash ? '' : dashCardHtml(), tiles = tilesHtml();
-    return '<div class="home1">' + endNoticeHtml() + (doctor ? dash + tiles : tiles + dash) + pendAlertHtml() + '</div>';
+    return '<div class="home1">' + (isAdmin() ? verWarn() : '') + endNoticeHtml() + (doctor ? dash + tiles : tiles + dash) + pendAlertHtml() + '</div>';
   }
   /* A week before the 3-month account period ends. */
   function endNoticeHtml() {
