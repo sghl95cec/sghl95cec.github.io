@@ -390,6 +390,7 @@ input.in[readonly]{background:#eef1ef;color:#3d4741}
 .lblist{max-height:60vh;overflow:auto;border:1px solid #e3e8e5;border-radius:8px;margin-top:8px}
 .lbrow{display:flex;gap:9px;align-items:flex-start;padding:8px 10px;border-bottom:1px solid #edf0ee;font-size:13.5px;line-height:1.35;cursor:pointer}
 .lbrow input{width:19px;height:19px;flex:0 0 auto;margin-top:1px;accent-color:var(--g7)}.lbrow.off{opacity:.5}.lbrow.off b{text-decoration:line-through}
+.lbdel{margin-top:12px;padding-top:10px;border-top:1px dashed #e3c9c9}.lbdel .btn{margin-bottom:4px}
 .lblist .gh{position:sticky;top:0;background:#f4f7f5;padding:6px 10px;margin:0;z-index:1}
 section.card > .gh{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:14px 0 6px}
 @media (min-width:900px) and (max-width:1299px){.nav{gap:0;padding:0 4px}.nav .ni>button{padding:13px 9px 11px;font-size:13.5px;gap:6px}.nav .ni>button svg:not(.caret){display:none}}
@@ -664,8 +665,8 @@ label.check.pwshow input{width:18px;height:18px;margin:0}
 .mtab>span:last-child{font-size:13px;opacity:.85;line-height:1.35}
 .mtab .mti{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;margin-bottom:6px}
 .mtab.mblue{border-color:#93c5fd;background:#eff6ff;color:#1e3a8a}.mtab.mblue .mti{background:#2563eb}
-.mtab.mred{border-color:#fca5a5;background:#fef2f2;color:#991b1b}.mtab.mred .mti{background:#dc2626}
-.mtab.mblue:hover,.mtab.mblue:active{box-shadow:inset 0 0 0 2px #2563eb}.mtab.mred:hover,.mtab.mred:active{box-shadow:inset 0 0 0 2px #dc2626}
+.mtab.mred{border-color:#d8b4bb;background:#f9f0f1;color:#5c1620}.mtab.mred .mti{background:#7b1e2b}
+.mtab.mblue:hover,.mtab.mblue:active{box-shadow:inset 0 0 0 2px #2563eb}.mtab.mred:hover,.mtab.mred:active{box-shadow:inset 0 0 0 2px #7b1e2b}
 .chgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .chbtn{display:flex;flex-direction:column;gap:6px;text-align:left;border:0;border-radius:14px;padding:18px 14px;font:inherit;color:#fff;cursor:pointer;min-height:110px}
 .chbtn b{font-size:18px}.chbtn span{font-size:12.5px;line-height:1.35;opacity:.92}
@@ -690,10 +691,10 @@ label.check.pwshow input{width:18px;height:18px;margin:0}
 .stiles .stile.mode.mblue .sti{background:#2563eb;color:#fff}
 .stiles .stile.mode.mblue b{color:#1e3a8a}
 .stiles .stile.mode.mblue:hover,.stiles .stile.mode.mblue:active{border-color:#2563eb;box-shadow:inset 0 0 0 2px #2563eb}
-.stiles .stile.mode.mred{border-color:#fca5a5;background:#fef2f2}
-.stiles .stile.mode.mred .sti{background:#dc2626;color:#fff}
-.stiles .stile.mode.mred b{color:#991b1b}
-.stiles .stile.mode.mred:hover,.stiles .stile.mode.mred:active{border-color:#dc2626;box-shadow:inset 0 0 0 2px #dc2626}
+.stiles .stile.mode.mred{border-color:#d8b4bb;background:#f9f0f1}
+.stiles .stile.mode.mred .sti{background:#7b1e2b;color:#fff}
+.stiles .stile.mode.mred b{color:#5c1620}
+.stiles .stile.mode.mred:hover,.stiles .stile.mode.mred:active{border-color:#7b1e2b;box-shadow:inset 0 0 0 2px #7b1e2b}
 /* automatic numbering box (12-11-2026 evening) */
 #fDay .numbox{display:flex;align-items:center;gap:12px;margin:10px 0 4px;padding:10px 12px;border:1px solid #b7d7c2;background:#f1f8f3;border-radius:12px}
 #fDay .numbox.miss{border-color:#f0c36d;background:#fff8e6}
@@ -729,6 +730,16 @@ label.check.pwshow input{width:18px;height:18px;margin:0}
 .sh-foot.ppf{flex-wrap:wrap}
 .imgjob img{display:block;max-width:100%;max-height:277mm;margin:0 auto;object-fit:contain}
 .pgsvg{display:block}
+
+/* 14-11-2026: manual slips in maroon (was bright red): the one-staff page when it registers for a manual slip */
+#sheet.mans .sh-head.soloh{background:#7b1e2b}
+#sheet.mans .sh-body.solob .fsec,#sheet.mans .sh-body.solob .tog,#sheet.mans .sh-body.solob .mrinfo .lnk{color:#7b1e2b}
+#sheet.mans .sh-body.solob .in:focus{border-color:#7b1e2b;box-shadow:0 0 0 3px rgba(123,30,43,.18)}
+#sheet.mans .sh-body.solob .seg button.on,#sheet.mans .sh-foot.solof .btn.pri,#sheet.mans .sh-body.solob .tog input:checked,#sheet.mans .sh-body.solob #fDay .numbox .nbi{background:#7b1e2b;border-color:#7b1e2b}
+#sheet.mans .soloopt .tk{border-color:#7b1e2b}#sheet.mans .soloopt.on{border-color:#7b1e2b;background:#f9f0f1}#sheet.mans .soloopt.on .tk{background:#7b1e2b}#sheet.mans .soloopt b{color:#5c1620}
+#sheet.mans .solosteps{color:#5c1620}#sheet.mans .solosteps i.on{background:#7b1e2b}#sheet.mans .solokv{border-left-color:#7b1e2b}
+/* MR register: Electronic slip / Manual slip */
+.modetabs.mrgo{margin:0 0 12px}.modetabs.mrgo .mtab{min-height:0;padding:12px 14px;border-radius:14px}.modetabs.mrgo .mtab .mti{width:38px;height:38px;border-radius:10px;margin-bottom:4px}.modetabs.mrgo .mtab b{font-size:17px}
 
 </style>
 </head>
@@ -2117,12 +2128,20 @@ var CEC = (function () {
   }
   /* Pages of slips. paper 'a4' (A4 sideways: two slips side by side), 'a4q' (A4 upright: four A6 slips) or 'a5' (one slip on each A5 sheet).
      The last A4 sheet is filled up with blank standard slips (12-11-2026: kept for writing by hand). */
+  /* 14-11-2026: an Emergency / Resus slip prints alone on a whole A4 page (no blank spare slips beside it); the other slips 2 or 4 a sheet. */
+  function isErSlip(e) { return !!e && !e.blank && e.cat === 'EMR'; }
   function slipPages(list, paper) {
-    var per = paper === 'a5' ? 1 : paper === 'a4q' ? 4 : 2, pages = [];
-    for (var i = 0; i < list.length; i += per) pages.push(list.slice(i, i + per));
-    if (per > 1 && pages.length) { var last = pages[pages.length - 1]; while (last.length < per) last.push({ blank: true }); }
+    var per = paper === 'a5' ? 1 : paper === 'a4q' ? 4 : 2, pages = [], er = [], rest = list;
+    if (per > 1) { er = list.filter(isErSlip); rest = list.filter(function (e) { return !isErSlip(e); }); }
+    er.forEach(function (e) { var pg = [e]; pg.er = true; pages.push(pg); });
+    var first = pages.length;
+    for (var i = 0; i < rest.length; i += per) pages.push(rest.slice(i, i + per));
+    if (per > 1 && pages.length > first) { var last = pages[pages.length - 1]; while (last.length < per) last.push({ blank: true }); }
     return pages;
   }
+  function slipSheets(list, paper) { return slipPages(list, paper).length; }
+  /* The A5 slip enlarged to fill an A4 page (portrait), at least 20 pt from every edge. On a sideways (2 a sheet) print the page is turned. */
+  var ER_S = 1.36, ER_OX = (595.28 - SLIP_W * 1.36) / 2, ER_OY = 20;
   function slipPdfMany(list, logo, paper, dateYmd) {
     var P = PDFGen, q = paper === 'a4q', d = new P.Doc(!q), a5 = paper === 'a5';
     if (a5) d.W = SLIP_W;
@@ -2130,6 +2149,20 @@ var CEC = (function () {
     if (logo) d.setImage(logo.bytes, logo.w, logo.h);
     slipPages(list, paper).forEach(function (pg, pi) {
       if (pi) d.addPage();
+      if (pg.er) {                                    // Emergency / Resus: one slip on the whole page
+        var Hd = d.H, c1 = 841.89 - ER_S * Hd - ER_OY;
+        d.op('q ' + (q ? [ER_S, 0, 0, ER_S, ER_OX, c1] : [0, -ER_S, ER_S, 0, c1, 595.28 - ER_OX]).map(function (v) { return Math.round(v * 10000) / 10000; }).join(' ') + ' cm');
+        slipOps(pg[0], dateYmd, 0).forEach(function (o) {
+          if (o.k === 't') { if (o.sw) d.textS(o.x, o.y, o.s, o.f, o.size, o.sw); else d.text(o.x, o.y, o.s, o.f, o.size); }
+          else if (o.k === 'l') d.line(o.x1, o.y, o.x2, o.y, o.lw);
+          else if (o.k === 'r') d.rect(o.x, o.y, o.w, o.h, null, 0, o.lw);
+          else if (o.k === 'rr') d.rrect(o.x, o.y, o.w, o.h, o.r, o.lw);
+          else if (o.k === 'img' && logo) d.image(o.x, o.y, o.w, o.h);
+        });
+        if (DEMO.on) d.mark(0, 0, SLIP_W, SLIP_H, [SLIP_TOP + 8, SLIP_H - 34]);
+        d.op('Q');
+        return;
+      }
       if (q) {                                        // light dashed cutting lines
         for (var cy = 0; cy < d.H; cy += 6) d.line(Q_W, cy, Q_W, Math.min(cy + 3, d.H), 0.4, 0.6);
         for (var cx = 0; cx < d.W; cx += 6) d.line(cx, Q_H, Math.min(cx + 3, d.W), Q_H, 0.4, 0.6);
@@ -2154,10 +2187,22 @@ var CEC = (function () {
   function slipSvgPage(pg, logoUrl, paper, dateYmd) {
     var a5 = paper === 'a5', q = paper === 'a4q', W = a5 ? SLIP_W : q ? 595.28 : 841.89, H = q ? 841.89 : SLIP_H, x = function (v) { return Math.round(v * 100) / 100; };
     var out = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="slipsvg" width="' + (a5 ? '148.5mm' : q ? '210mm' : '297mm') + '" height="' + (q ? '297mm' : '210mm') + '" viewBox="0 0 ' + W + ' ' + H + '">';
+    if (pg.er) {                                      // Emergency / Resus: one slip on the whole page (turned on a sideways sheet)
+      out += '<g class="erpage" transform="' + (q ? '' : 'translate(841.89 0) rotate(90) ') + 'translate(' + x(ER_OX) + ' ' + ER_OY + ') scale(' + ER_S + ')">' +
+        opsSvg(slipOps(pg[0], dateYmd, 0), logoUrl) + demoSvg(0, 0, SLIP_W, SLIP_H, [SLIP_TOP + 8, SLIP_H - 34]) + '</g>';
+      return out + '</svg>';
+    }
     if (q) out += '<g stroke="#999" stroke-width="0.4" stroke-dasharray="3 3"><line x1="' + Q_W + '" y1="0" x2="' + Q_W + '" y2="' + H + '"/><line x1="0" y1="' + Q_H + '" x2="' + W + '" y2="' + Q_H + '"/></g>';
     pg.forEach(function (e, k) {
       var qa = quarterAt(k);
-      sheetOps(e, dateYmd, paper, k).forEach(function (o) {
+      out += opsSvg(sheetOps(e, dateYmd, paper, k), logoUrl);
+      out += q ? demoSvg(qa.x, qa.y, Q_W, Q_H, Q_BANDS) : demoSvg(k ? SLIP_W : 0, 0, SLIP_W, SLIP_H, [SLIP_TOP + 8, SLIP_H - 34]);
+    });
+    return out + '</svg>';
+  }
+  function opsSvg(ops, logoUrl) {
+    var out = '', x = function (v) { return Math.round(v * 100) / 100; };
+      ops.forEach(function (o) {
         if (o.k === 't') {
           var fam = o.f === 'B' ? SVG_FONT.B : SVG_FONT.H, bold = o.f === 'B' || o.f === 'HB';
           out += '<text x="' + x(o.x) + '" y="' + x(o.y) + '" font-family="' + fam + '" font-size="' + o.size + '" font-weight="' + (bold ? 700 : 400) + '" textLength="' + x(o.w) +
@@ -2166,9 +2211,7 @@ var CEC = (function () {
         else if (o.k === 'r' || o.k === 'rr') out += '<rect x="' + x(o.x) + '" y="' + x(o.y) + '" width="' + x(o.w) + '" height="' + x(o.h) + '"' + (o.r ? ' rx="' + o.r + '"' : '') + ' fill="none" stroke="#000" stroke-width="' + o.lw + '"/>';
         else if (o.k === 'img' && logoUrl) out += '<image x="' + x(o.x) + '" y="' + x(o.y) + '" width="' + x(o.w) + '" height="' + x(o.h) + '" preserveAspectRatio="none" href="' + logoUrl + '" xlink:href="' + logoUrl + '"/>';
       });
-      out += q ? demoSvg(qa.x, qa.y, Q_W, Q_H, Q_BANDS) : demoSvg(k ? SLIP_W : 0, 0, SLIP_W, SLIP_H, [SLIP_TOP + 8, SLIP_H - 34]);
-    });
-    return out + '</svg>';
+    return out;
   }
   function slipSvgMany(list, logoUrl, paper, dateYmd) {
     return slipPages(list, paper).map(function (pg) { return slipSvgPage(pg, logoUrl, paper, dateYmd); }).join('');
@@ -2600,7 +2643,7 @@ var CEC = (function () {
     CATS: CATS, OUTS: OUTS, outExtra: outExtra, PROCS: PROCS, SHIFTS: SHIFTS, DEFAULTS: DEFAULTS, label: label, short: short, shiftName: shiftName, ymd: ymd, addDays: addDays,
     dmy: dmy, hm: hm, hm12: hm12, dxOf: dxOf, mainDx: mainDx, shiftTimes: shiftTimes, censusDateFor: censusDateFor, suggestShift: suggestShift, sexCount: sexCount, monthName: monthName,
     shiftModel: shiftModel, dayModel: dayModel, monthModel: monthModel, letterHtml: letterHtml, letterPdf: letterPdf, summaryText: summaryText, esc: h,
-    EXAMS: EXAMS, deathCertPdf: deathCertPdf, deathCertSvg: deathCertSvg, svgOf: svgOf, listPlain: listPlain, listPlainPdf: listPlainPdf, opdSlipPdf: opdSlipPdf, slipOps: slipOps, slipPdf: slipPdf, slipPdfMany: slipPdfMany, slipSvg: slipSvg, slipSvgMany: slipSvgMany, slipVitals: slipVitals, SLIP_TOP: SLIP_TOP, STAFF_PROCS: STAFF_PROCS, listPdf: listPdf, listCsv: listCsv,
+    EXAMS: EXAMS, deathCertPdf: deathCertPdf, deathCertSvg: deathCertSvg, svgOf: svgOf, listPlain: listPlain, listPlainPdf: listPlainPdf, opdSlipPdf: opdSlipPdf, slipOps: slipOps, slipPdf: slipPdf, slipPdfMany: slipPdfMany, slipSvg: slipSvg, slipSvgMany: slipSvgMany, slipSheets: slipSheets, isErSlip: isErSlip, slipVitals: slipVitals, SLIP_TOP: SLIP_TOP, STAFF_PROCS: STAFF_PROCS, listPdf: listPdf, listCsv: listCsv,
     certHtml: certHtml, setDemo: setDemo, DEMO_LINE: DEMO_LINE, weekday: weekday, MEDS: MEDS, DX_GROUPS: DX_GROUPS, DX_LIST: DX_LIST, DXKW: DXKW, FREQ_DX: FREQ_DX, canonDx: canonDx, canonList: canonList, dxMatch: dxMatch, dxKey: dxKey, LIST_KINDS: LIST_KINDS, listSpec: listSpec, LIST_COLS: LIST_COLS, LIST_COLSETS: LIST_COLSETS, LIST_PRESETS: LIST_PRESETS, LIST_DEF: LIST_DEF,
     listCfg: listCfg, presetCfg: presetCfg, listColsFor: listColsFor, buildList: buildList, listText: listText, listTitle: listTitle, APPTS: APPTS, APPT_STATUS: APPT_STATUS, apptType: apptType,
     apptSpec: apptSpec, apptSlipPdf: apptSlipPdf, apptMessage: apptMessage, parseYmd: parseYmd, yearModel: yearModel, yearSummary: yearSummary, MONTHS: MONTHS, sexCountOf: sexCount
@@ -2669,6 +2712,22 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function closeModal() { var m = $('modal'); m.classList.add('hidden'); m.innerHTML = ''; m.onclick = null; }
   function confirmBox(title, text, okLabel, danger) {
     return modal(title, '<p>' + text + '</p>', [{ label: 'Cancel', value: false }, { label: okLabel, cls: danger ? 'danf' : 'pri', value: true }]);
+  }
+  /* 14-11-2026: admin deletes need three checks; the last one asks for the word DELETE. What is deleted stays in the recycle bin for ever. */
+  var BIN_NOTE = 'It stays in the recycle bin for ever and can be put back at any time with one button (Account &amp; admin &gt; Data protection &gt; Recycle bin).';
+  function confirm3(title, text) {
+    return confirmBox(title, text + ' ' + BIN_NOTE, 'Delete', true).then(function (ok) {
+      if (!ok) return false;
+      return confirmBox('Are you sure?', 'Second check: ' + text, 'Yes, delete', true);
+    }).then(function (ok) {
+      if (!ok) return false;
+      return modal('Last check', '<p>Type <b>DELETE</b> to delete. ' + text + '</p><input class="in" id="del3" autocomplete="off" autocapitalize="characters">',
+        [{ label: 'Cancel', value: false }, { label: 'Delete', cls: 'danf', value: 'form' }]).then(function (v) {
+          if (!v) return false;
+          if (String(v.del3 || '').trim().toUpperCase() !== 'DELETE') { toast('Not deleted: DELETE was not typed.'); return false; }
+          return true;
+        });
+    });
   }
   function store_(k, v) {
     try { if (v === undefined) return JSON.parse(localStorage.getItem(k)); localStorage.setItem(k, JSON.stringify(v)); } catch (e) { }
@@ -2767,7 +2826,11 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function api(fn) {
     var args = [S.token].concat(Array.prototype.slice.call(arguments, 1));
-    return call(fn, args).then(function (v) { if (S.offline || S.slow) { S.offline = false; S.slow = false; renderBanner(); if (S.form) syncMr(); } return v; },
+    return call(fn, args).then(function (v) {
+      if (S.offline || S.slow) { S.offline = false; S.slow = false; renderBanner(); if (S.form) syncMr(); }
+      if (/^api(Delete|BinRestore)/.test(fn)) S.bin = null;              // 14-11-2026: the admin page shows the recycle bin as it is now after any delete or restore
+      return v;
+    },
       function (e) {
         if (e && e.offline) { if (navigator.onLine === false) { if (!S.offline) { S.offline = true; renderBanner(); } } else if (!S.slow) { S.slow = true; renderBanner(); } } else if (isAuthErr(e)) signOut(errText(e));
         else if (/OFFHOURS:/.test((e && e.message) || String(e)) && !S.offHours && fn !== 'apiState') setTimeout(function () { loadState().then(function () { if (S.offHours) { S.form = null; closeModal(); render(); } }, function () { }); }, 300);
@@ -3515,6 +3578,15 @@ if (typeof module !== 'undefined') module.exports = CEC;
     S.binLoading = true;
     api('apiBin').then(function (r) { S.binLoading = false; S.bin = r; if (S.view === 'settings') render(); }, function (e) { S.binLoading = false; S.bin = { err: errText(e) }; if (S.view === 'settings') render(); });
   }
+  /* Recycle bin rows, with the patients of one deletion from Registers together (newest first). */
+  function binGroups(items) {
+    var out = [], at = {};
+    items.forEach(function (x) {
+      if (x.batch) { if (at[x.batch] == null) { at[x.batch] = out.length; out.push([]); } out[at[x.batch]].push(x); }
+      else out.push([x]);
+    });
+    return out;
+  }
   function securityHtml() {
     var b = S.bin;
     if (!b) { setTimeout(loadBin, 0); return '<section class="card"><div class="ct">Data protection</div><div class="center muted"><span class="spin"></span>Loading&hellip;</div></section>'; }
@@ -3530,11 +3602,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
       (warn.length ? '<div class="warn" style="margin:0 0 10px">' + warn.join('<br>') + '</div>' : '<p class="small" style="margin:0 0 8px">&#10003; Tabs protected &middot; nightly backup on &middot; sign-in lock after 5 wrong passwords.</p>') +
       '<div class="kv small" style="margin:0 0 8px">Last backup copy: <b>' + (b.lastBackup ? h(fmtTime(b.lastBackup)) : 'none yet') + '</b> (Drive folder \u201cCEC Census Backups\u201d)</div>' +
       '<div class="sbtns"><button class="btn sm" data-act="sec-backup">Back up now</button><button class="btn sm" data-act="sec-reload">Reload everybody (new version)</button><button class="btn sm dan" data-act="sec-all">Sign out everybody</button><button class="btn sm" data-act="sec-load">&#8635; Refresh</button></div>' +
-      '<div class="gh">Recycle bin (' + items.length + ')</div><p class="muted small" style="margin:0 0 6px">Deleted patients, certificates, photos, appointments and documents are kept encrypted for ' + b.days +
-      ' days and then removed for ever; nobody can remove them sooner. ' + (b.versions ? b.versions + ' earlier version' + (b.versions === 1 ? '' : 's') + ' of changed patient entries are also kept (open a patient and tap Earlier versions).' : '') + '</p>' +
-      (items.length ? '<div class="plist">' + items.slice(0, 200).map(function (x) {
+      '<div class="gh">Recycle bin (' + items.length + ')</div><p class="muted small" style="margin:0 0 6px">Deleted patients, certificates, photos, appointments and documents are kept encrypted <b>for ever</b> and can be put back at any time; nobody can remove them. ' +
+      (b.versions ? b.versions + ' earlier version' + (b.versions === 1 ? '' : 's') + ' of changed patient entries are also kept for ' + b.days + ' days (open a patient and tap Earlier versions).' : '') + '</p>' +
+      (items.length ? '<div class="plist">' + binGroups(items).slice(0, 300).map(function (g) {
+        var x = g[0];
+        if (g.length > 1) return '<div class="urow"><div><b>' + g.length + ' patients deleted together</b><div class="muted small">' + h(g.slice(0, 3).map(function (y) { return y.title; }).join('; ')) + (g.length > 3 ? '; \u2026' : '') +
+          '</div><div class="muted small">Deleted ' + h(fmtTime(x.at)) + (x.by ? ' by ' + h(x.by) : '') + ' &middot; kept for ever</div></div><button class="btn sm" data-act="bin-restore-batch" data-id="' + h(x.batch) + '">Restore all ' + g.length + '</button></div>';
         return '<div class="urow"><div><b>' + h(x.title) + '</b><div class="muted small">' + h(x.label) + (x.sub ? ' &middot; ' + h(x.sub) : '') + '</div><div class="muted small">Deleted ' + h(fmtTime(x.at)) +
-          (x.by ? ' by ' + h(x.by) : '') + ' &middot; kept until ' + h(CEC.dmy(String(x.until).slice(0, 10))) + '</div></div><button class="btn sm" data-act="bin-restore" data-id="' + h(x.id) + '">Restore</button></div>';
+          (x.by ? ' by ' + h(x.by) : '') + ' &middot; ' + (x.until ? 'kept until ' + h(CEC.dmy(String(x.until).slice(0, 10))) : 'kept for ever') + '</div></div><button class="btn sm" data-act="bin-restore" data-id="' + h(x.id) + '">Restore</button></div>';
       }).join('') + '</div>' : '<p class="muted small" style="margin:0">Empty.</p>') + '</section>';
   }
   function showVersions(entryId) {
@@ -4511,7 +4586,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function soloDress() {
     var el = $('sheet'), hd = el.querySelector('.sh-head'), bd = el.querySelector('.sh-body'), ft = el.querySelector('.sh-foot'), pf = $('pf');
     if (!hd || !pf || !ft) return;
-    hd.classList.add('soloh'); bd.classList.add('solob'); ft.classList.add('solof');
+    hd.classList.add('soloh'); bd.classList.add('solob'); ft.classList.add('solof'); el.classList.toggle('mans', !!S.form.man);   // 14-11-2026: manual in maroon
     var t = hd.querySelector('h3'); if (t) t.textContent = S.form.man ? 'Manual slip: register & vitals' : 'Register & vitals';
     var p = soloPref(), opt = function (v, b, d) { return '<button type="button" class="soloopt' + (p === v ? ' on' : '') + '" data-act="solo-pick" data-v="' + v + '"><span class="tk">' + (p === v ? '&#10003;' : '') + '</span><span><b>' + b + '</b><span class="d">' + d + '</span></span></button>'; };
     pf.insertAdjacentHTML('afterbegin', '<div id="soloTop">' + soloSteps(1) + (S.form.man ? '<p class="muted small" style="margin:8px 0 0">Manual slip: no slip is printed. After the vitals the <b>MR No.</b> shows in large letters, with the name and details, for writing the paper slip.</p>' :
@@ -4715,7 +4790,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function deletePatient() {
     var f = S.form, sh = targetShift(), e = sh.entries.filter(function (x) { return x.id === f.editId; })[0];
-    confirmBox('Delete this entry?', '' + mrTagH(e) + ', ' + h(e.name) + ' will be removed from the ' + h(CEC.shiftName(sh.shift)) + ' shift. This is recorded in the activity log.', 'Delete', true).then(function (ok) {
+    confirm3('Delete this entry?', '' + mrTagH(e) + ', ' + h(e.name) + ' will be removed from the ' + h(CEC.shiftName(sh.shift)) + ' shift. This is recorded in the activity log.').then(function (ok) {
       if (!ok) return;
       sh.entries = sh.entries.filter(function (x) { return x.id !== e.id; });
       api('apiDeleteEntry', sh.id, e.id).then(function () { toast('Entry deleted'); }, function (err) { toast('Not deleted: ' + errText(err)); refresh(); });
@@ -4844,9 +4919,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
     printEnd = setTimeout(end, 120000);
     markPrinted(fresh);                                    // marked first, so the list moves on at once (the print window may wait for a tap); a reprint keeps its time
     try { window.print(); sentOnce(); } catch (x) { done(); slipsPdfOffer(list, paper); }     // Chrome returns from print() once the job is sent (kiosk printing: at once)
-    var sheets = Math.ceil(list.length / paperPer(paper));
+    var sheets = CEC.slipSheets(list, paper);                // 14-11-2026: an Emergency / Resus slip has a whole A4 page
     if (opt.blank) return toast(list.length + ' blank slips sent to the printer (' + sheets + ' ' + (paper === 'a5' ? 'A5' : 'A4') + ' sheet' + (sheets === 1 ? '' : 's') + ').');
-    toast((opt.auto ? 'Autoprint: ' : again.length && again.length === list.length ? 'Printing again (same numbers): ' : '') + (list.length === 1 ? (list[0].tok || 'Slip') + ' sent to the printer.' + (paper === 'a4' ? ' It prints on the left half of the A4 sheet.' : paper === 'a4q' ? ' It prints in the top left quarter of the A4 sheet; the other three are blank slips.' : '')
+    toast((opt.auto ? 'Autoprint: ' : again.length && again.length === list.length ? 'Printing again (same numbers): ' : '') + (list.length === 1 ? (list[0].tok || 'Slip') + ' sent to the printer.' + (CEC.isErSlip(list[0]) && paper !== 'a5' ? ' Emergency / Resus: it prints alone on a whole A4 page.' : paper === 'a4' ? ' It prints on the left half of the A4 sheet.' : paper === 'a4q' ? ' It prints in the top left quarter of the A4 sheet; the other three are blank slips.' : '')
       : list.length + ' slips sent to the printer (' + sheets + ' ' + (paper === 'a5' ? 'A5' : 'A4') + ' sheet' + (sheets === 1 ? '' : 's') + ').'));
   }
   function printSlip(e, sh, paper) { printSlips([{ e: e, sh: sh }], paper); }
@@ -5183,8 +5258,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var l = apReady(), n = l.length;
     if (!n) return 'no slip ready';
     var t = n + ' slip' + (n === 1 ? '' : 's') + ' ready';
-    var per = paperPer(apPaper()), rest = n % per;
-    if (per > 1 && rest) { var w = AP_PAIR_MS - (Date.now() - apReadyAt(l[n - rest].e)); if (w > 0) t += ' (' + (rest === 1 ? 'one waits' : rest + ' wait') + ' to fill the sheet, at most ' + Math.ceil(w / 60000) + ' min)'; }
+    var nl = l.filter(function (x) { return !apIsEr(x.e); }), per = paperPer(apPaper()), rest = nl.length % per;
+    if (per > 1 && rest) { var w = AP_PAIR_MS - (Date.now() - apReadyAt(nl[nl.length - rest].e)); if (w > 0) t += ' (' + (rest === 1 ? 'one waits' : rest + ' wait') + ' to fill the sheet, at most ' + Math.ceil(w / 60000) + ' min)'; }
     return t;
   }
   /* The registration page: one line with the setting. */
@@ -5337,8 +5412,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
       var pend00 = store_('cec_apclaim'), owed = pend00 && pend00.got && pend00.shift === sh.id;
       if (why === 'check' && !instant && !er && !owed) { S.apBusy = false; return; }   // looked: no Emergency / Resus slip, the timer prints the rest
       var nextIn = instant ? AP_POLL : every;
-      var per = paperPer(apPaper()), rest = list.length % per;          // A4: the last slips wait to fill the sheet, at most 5 minutes (not with an ER slip)
-      if (!force && !er && per > 1 && rest && now - apReadyAt(list[list.length - rest].e) + nextIn <= AP_PAIR_MS) list = list.slice(0, -rest);
+      /* A4: the last slips wait to fill the sheet, at most 5 minutes. 14-11-2026: an Emergency / Resus slip prints at once on its own whole A4 page,
+         so it no longer takes the waiting slips with it; "Save & print" slips never wait. */
+      var per = paperPer(apPaper()), norm = list.filter(function (x) { return !apIsEr(x.e); }), rest = norm.length % per;
+      if (!force && per > 1 && rest && !norm.some(function (x) { return x.e.relNow; }) && now - apReadyAt(norm[norm.length - rest].e) + nextIn <= AP_PAIR_MS) {
+        var hold = norm.slice(-rest); list = list.filter(function (x) { return hold.indexOf(x) < 0; });
+      }
       var pend0 = store_('cec_apclaim');
       if (!list.length && !(pend0 && pend0.shift === sh.id && (pend0.list || []).length)) { S.apBusy = false; if (force) toast('No slip is ready to print.'); apPaintCd(); return; }
       /* A claim whose answer never came (busy census, lost connection) is kept: the next round asks again with the same ID and its slips,
@@ -5721,7 +5800,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var R = S.mrreg;
     var html = '<div class="narrow"><div class="listhead"><h3>MR register' + (R ? ' &middot; census day ' + h(CEC.dmy(R.date)) : '') + '</h3><button class="btn sm" data-act="mr-reload" aria-label="Refresh">&#8635; ' +
       (R && R.at ? CEC.hm(new Date(R.at).toISOString()) : 'Refresh') + '</button></div>' +
-      '<p class="muted small" style="margin:0 0 8px">Every MR number given today, newest on top; on an OPD day the OPD numbers too (marked OPD, for the OPD register). The list updates by itself.</p>';
+      '<p class="muted small" style="margin:0 0 8px">Every MR number given today, newest on top; on an OPD day the OPD numbers too (marked OPD, for the OPD register). The list updates by itself.</p>' +
+      (canEnter() ? '<div class="modetabs mrgo">' +             // 14-11-2026: register the next patient from here (same as the home tiles)
+        '<button class="mtab mblue" data-act="mode" data-v="e"><span class="mti" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg></span><b>Electronic slip</b><span>The system prints the OPD / ER slip</span></button>' +
+        '<button class="mtab mred" data-act="mode" data-v="m"><span class="mti" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg></span><b>Manual slip</b><span>The staff write the paper slip by hand</span></button></div>' : '');
     if (!R) return html + '<section class="card center muted"><span class="spin"></span>Loading&hellip;</section></div>';
     html += '<div class="mrsum">' + (R.mr ? '<span>Last MR given: <b>' + h(R.mr) + '</b></span>' : '') + (R.opd ? '<span>Last OPD No. given: <b>' + h(R.opd) + '</b></span>' : '') +
       (canEnter() ? '<span><button class="lnk" data-act="nums-set">Set numbers</button></span>' : '') + '<span>Today: <b>' + R.rows.length + '</b></span></div>';
@@ -6159,7 +6241,25 @@ if (typeof module !== 'undefined') module.exports = CEC;
     }).join('');
     return '<div class="lbsum"><b>' + (sp.n - off) + '</b> of ' + sp.n + ' patient' + (sp.n === 1 ? '' : 's') + ' will be in the list' + (off ? ' (' + off + ' unticked)' : '') + '</div>' +
       '<div class="addrow"><input class="in" id="lbQ" placeholder="Find MR or name" value="' + h(L.q || '') + '"><button class="btn sm" data-act="lb-all">Tick all</button><button class="btn sm" data-act="lb-none">Untick all</button></div>' +
-      '<div class="lblist">' + rows + (shown > 400 ? '<p class="muted small">Showing the first 400 here; the download has all ' + (sp.n - off) + '.</p>' : '') + '</div>';
+      '<div class="lblist">' + rows + (shown > 400 ? '<p class="muted small">Showing the first 400 here; the download has all ' + (sp.n - off) + '.</p>' : '') + '</div>' +
+      (isAdmin() && sp.n - off ? '<div class="lbdel"><button class="btn sm dan" data-act="lb-del">Admin: delete the ' + (sp.n - off) + ' ticked patient' + (sp.n - off === 1 ? '' : 's') + '</button>' +
+        '<div class="muted small">For old or test entries. Three checks first; they stay in the recycle bin for ever and come back with one button.</div></div>' : '');
+  }
+  /* 14-11-2026: admin deletes the ticked patients of the register list (old or test entries), in parts of 200, all as one deletion. */
+  function lbDelete() {
+    var L = S.lb, sp = lbSpec(false), list = sp.list.filter(function (e) { return !L.excl[e.id]; });
+    if (!list.length) return toast('No patients ticked.');
+    var n = list.length, d1 = list.map(function (e) { return e._date; }).sort(), span = CEC.dmy(d1[0]) + (d1[0] !== d1[n - 1] ? ' to ' + CEC.dmy(d1[n - 1]) : '');
+    confirm3('Delete ' + n + ' patient' + (n === 1 ? '' : 's') + '?', '<b>' + n + ' patient' + (n === 1 ? '' : 's') + '</b> (' + h(span) + ') will be removed from the census, the dashboard, registers and letters. This is recorded in the activity log.').then(function (ok) {
+      if (!ok) return;
+      var batch = 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), ids = list.map(function (e) { return e.id; }), parts = [], done = 0;
+      for (var i = 0; i < ids.length; i += 200) parts.push(ids.slice(i, i + 200));
+      toast('Deleting ' + n + ' patient' + (n === 1 ? '' : 's') + '\u2026');
+      parts.reduce(function (p, part) { return p.then(function () { return api('apiDeleteEntries', JSON.stringify({ ids: part, batch: batch })).then(function (r) { done += r && r.n || 0; }); }); }, Promise.resolve())
+        .then(function () { toast(done + ' patient' + (done === 1 ? '' : 's') + ' deleted. To put them back: Account & admin > Data protection > Recycle bin > Restore all.'); },
+          function (e) { toast((done ? done + ' deleted, then stopped: ' : 'Not deleted: ') + errText(e)); })
+        .then(function () { L.data = null; L.dataKey = ''; S.bin = null; lbRefresh(); refresh(true); });
+    });
   }
   function lbRefresh() { var o = $('lbOut'); if (o) o.innerHTML = lbOutHtml(); var t = $('lbTitle'); if (t) t.placeholder = CEC.listTitle(CEC.listCfg(Object.assign({}, S.lb.cfg, { title: '' }))); }
   function lbFetch() {
@@ -6615,7 +6715,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   /* Home: only the buttons, the live dashboard and pending certificates (About has its own page), so it opens at once and asks the server for nothing extra. */
   function homeHtml() {
-    var doctor = canEdit() || isAdmin(), dash = dashCardHtml(), tiles = tilesHtml();
+    // 14-11-2026: no live patient dashboard on the home page of doctors, nursing staff and students (Menu > Patient dashboard is unchanged);
+    // the admin and the Print desk keep it.
+    var noDash = !isAdmin() && S.me && (S.me.role === 'doctor' || S.me.role === 'nurse' || S.me.role === 'student');
+    var doctor = canEdit() || isAdmin(), dash = noDash ? '' : dashCardHtml(), tiles = tilesHtml();
     return '<div class="home1">' + endNoticeHtml() + (doctor ? dash + tiles : tiles + dash) + pendAlertHtml() + '</div>';
   }
   /* A week before the 3-month account period ends. */
@@ -7451,7 +7554,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'pp-close': closePaper(); break;
       case 'pp-save': savePaper(); break;
       case 'pp-view': viewPaper(id); break;
-      case 'pp-del': confirmBox('Delete this photo record?', 'It is kept encrypted in the recycle bin for 90 days and can be restored by the admin.', 'Delete', true).then(function (ok) {
+      case 'pp-del': confirm3('Delete this photo record?', 'This photo record of a paper death certificate will be removed.').then(function (ok) {
         if (ok) api('apiDeletePaperCert', id).then(function () { S.papers = (S.papers || []).filter(function (x) { return x.id !== id; }); S.certs = null; toast('Deleted'); render(); }, function (e) { toast(errText(e)); });
       }); break;
       case 'new-reg': if (S.work) openReg(false); break;
@@ -7557,6 +7660,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         S.lb.preset = ''; render(); break;
       }
       case 'lb-show': lbFetch().then(null, function () { }); break;
+      case 'lb-del': lbDelete(); break;
       case 'lb-all': S.lb.excl = {}; lbRefresh(); break;
       case 'lb-none': lbSpec(false).list.forEach(function (e) { S.lb.excl[e.id] = true; }); lbRefresh(); break;
       case 'lb-pdf': lbReady(function (sp) { offerFile(sp.file + '.pdf', CEC.listPdf({ title: sp.title, sub: sp.sub, cols: sp.cols, groups: sp.groups, portrait: sp.portrait, empty: 'No patients.' }, logoBytes()), 'application/pdf', false); }); break;
@@ -7576,7 +7680,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'cert-saveprint': certSave(true); break;
       case 'cert-del': {
         var cid = S.cert.data.id, cno = S.cert.data.no;
-        confirmBox('Delete certificate ' + h(cno) + '?', 'It will be removed from the system. This is recorded in the activity log.', 'Delete', true).then(function (ok) {
+        confirm3('Delete certificate ' + h(cno) + '?', 'Death certificate ' + h(cno) + ' will be removed from the system. This is recorded in the activity log.').then(function (ok) {
           if (!ok) return;
           api('apiDeleteCert', cid).then(function () { toast('Certificate deleted'); closeCert(); S.certs = null; render(); }, function (e) { toast(errText(e)); });
         });
@@ -7656,6 +7760,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
       }); break;
       case 'sec-backup': toast('Making a backup copy\u2026 this can take a minute'); api('apiBackupNow').then(function (r) { toast('Backup saved: ' + r.name); S.bin = null; render(); }, function (e) { toast(errText(e)); }); break;
       case 'sec-load': S.bin = null; loadBin(); break;
+      case 'bin-restore-batch': {
+        var bg = binGroups(S.bin && S.bin.items || []).filter(function (g) { return g[0].batch === id; })[0] || [];
+        confirmBox('Restore all ' + bg.length + ' patients?', 'The ' + bg.length + ' patients deleted together go back where they were.', 'Restore all', false).then(function (ok) {
+          if (!ok) return;
+          api('apiBinRestoreBatch', id).then(function (r) { toast((r && r.n || bg.length) + ' patients restored'); S.bin = null; loadBin(); refresh(true); }, function (e) { toast(errText(e)); });
+        }); break;
+      }
       case 'bin-restore': {
         var bi = (S.bin && S.bin.items || []).filter(function (x) { return x.id === id; })[0];
         confirmBox('Restore this?', '<b>' + h(bi ? bi.title : '') + '</b><br>' + h(bi ? bi.label : '') + '. It goes back to where it was.', 'Restore', false).then(function (ok) {
