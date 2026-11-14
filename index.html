@@ -760,6 +760,23 @@ details.card.lbmore .gh{margin-top:14px}
 .lbrange{margin-top:10px}.lbrange button{flex:1 1 40%;min-height:40px}
 @media(max-width:420px){.lbchips{gap:6px}.lbc{min-width:0;padding:0 11px;font-size:14px}.lbdays .btn{padding:0 10px;font-size:13px}}
 .verwarn{border-color:#e3a3a3;background:#fdf1f1;color:#7a1f1f;font-size:14px;line-height:1.45}.vbad{color:#b42318;font-weight:600}
+/* 14-11-2026 (night): Vitals page: Pending vitals / Vitals done */
+.vtabs{margin:0 0 10px}.vtabs button{flex:1 1 45%;min-height:42px;font-weight:600}.vtabs .cnt{display:inline-block;min-width:20px;padding:0 6px;border-radius:999px;background:rgba(0,0,0,.08);font-size:12px;margin-left:4px}
+.vtabs button.on .cnt{background:rgba(255,255,255,.25)}
+.vdone .vbig{font-size:15px;font-weight:700;color:var(--g9,#0b3d24);margin-top:5px;line-height:1.35;white-space:normal}
+/* 14-11-2026 (night): echo report sheet */
+.echof .eg{font-size:12px;font-weight:700;color:var(--g7,#0f6b3a);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 4px}
+.echof .erow{display:flex;align-items:flex-start;gap:6px;padding:6px 8px;border:1px solid #e3e9e5;border-radius:10px;margin:4px 0;background:#fff}
+.echof .erow.on{background:#eef7f1;border-color:#9fcdb1}
+.echof .erow label{display:flex;align-items:flex-start;gap:9px;flex:1;cursor:pointer;font-size:14px;line-height:1.45}
+.echof .erow input[type=checkbox]{width:20px;height:20px;margin-top:1px;flex:0 0 auto;accent-color:var(--g7,#0f6b3a)}
+.echof .erow.auto.on{background:#f3f8ff;border-color:#b9cfe6}
+.echof .eblank{width:64px;padding:2px 6px;margin:0 3px;border:1px solid #9fb3a8;border-radius:6px;font:inherit;font-size:14px;text-align:center}
+.echof .eadd{display:flex;gap:8px;margin:8px 0 2px}.echof .eadd .in{flex:1}
+.echof .emeas.eab{border-color:#b42318;color:#b42318;font-weight:700}
+.echof .eaval{min-height:42px;display:flex;align-items:center;font-weight:700;font-size:16px}
+.echof .in.ro{background:#f4f6f5;color:#33403a;display:flex;align-items:center}
+.echof .ex{color:#b42318;font-size:18px;padding:0 6px}
 
 </style>
 </head>
@@ -793,14 +810,14 @@ var PDFGen = (function () {
 
   function clean(s) {
     s = String(s == null ? '' : s);
-    return s.replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
+    return s.replace(/[‘’′]/g, "'").replace(/[“”]/g, '"')
       .replace(/[–—−]/g, '-').replace(/→/g, '->').replace(/·/g, '-')
-      .replace(/[^\x20-\x7E\xB0]/g, '?');
+      .replace(/[^\x20-\x7E\xB0\xB2]/g, '?');                 // 14-11-2026: ² kept (cm², ml/m² in echo reports; WinAnsi twosuperior)
   }
   function width(s, f, size) {
     s = clean(s);
     var t = WIDTHS[FONTS[f]], w = 0;
-    for (var i = 0; i < s.length; i++) w += t[s.charCodeAt(i) - 32] || 500;
+    for (var i = 0; i < s.length; i++) { var ch = s.charCodeAt(i); w += ch === 0xB2 ? (f === 'H' || f === 'HB' ? 333 : 300) : t[ch - 32] || 500; }
     return w * size / 1000;
   }
   function esc(s) { return clean(s).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)'); }
@@ -2142,8 +2159,62 @@ var CEC = (function () {
     ops.forEach(function (o) { if (o.x != null) o.x += dx; if (o.x1 != null) { o.x1 += dx; o.x2 += dx; } if (o.y != null) o.y += dy; });
     return ops;
   }
+  /* 14-11-2026 (night): paper 'a4h' = an A4 sheet cut in half across (210 x 148.5 mm), fed long side first. The print is still a plain
+     A4 page (the printer is told A4, so nothing about the printer changes); everything is printed on the TOP half of that page, the half
+     that goes into the printer first and lands on the half-cut sheet. The bottom half is empty, so nothing is printed where there is no paper.
+     Two slips side by side, the same size and place as the top two of 4 a sheet. An Emergency / Resus slip fills the half alone,
+     with its own layout made for the wide half sheet (read the usual way up; a small logo; the rest of the sheet free for notes). */
+  function portraitPaper(p) { return p === 'a4q' || p === 'a4h'; }
+  var HALF_W = 595.28, HALF_H = 420.945, HER_TOP = 200;
+  function slipOpsHalfEr(e, dateYmd) {
+    var P = PDFGen, ops = [], L = 30, R = HALF_W - 30;
+    function T(x, y, s, f, size, sw, align) { var w = P.width(s, f, size); ops.push({ k: 't', x: align === 'c' ? x - w / 2 : x, y: y, s: P.clean(s), f: f, size: size, sw: sw || 0, w: w }); }
+    function Ln(x1, x2, y, lw) { ops.push({ k: 'l', x1: x1, x2: x2, y: y, lw: lw }); }
+    function fitSize(s, f, size, maxW, min) { while (size > min && P.width(s, f, size) > maxW) size -= 0.25; return size; }
+    var kind = String(e.tok || '').split(' ')[0] === 'OPD' ? 'OPD' : 'ER', num = String(e.tok || '').split(' ')[1] || '';
+    var bw = 78, bh = 48, bx = R - bw, by = 22;                                   // number box, top right
+    ops.push({ k: 'rr', x: bx, y: by, w: bw, h: bh, r: 6, lw: 2 });
+    T(bx + bw / 2, by + 14, kind + ' No.', 'HB', 9.5, 0.15, 'c');
+    T(bx + bw / 2, by + 40, num, 'HB', fitSize(num, 'HB', 26, bw - 10, 12), 0.45, 'c');
+    ops.push({ k: 'img', x: L, y: 24, w: 33, h: 33 * 33.15 / 27 });                 // the logo, small
+    var hl = L + 42, hr = bx - 8, hc = (hl + hr) / 2, hw = hr - hl;
+    var h1 = 'SINDH GOVERNMENT HOSPITAL LIAQUATABAD', h2 = 'Cardiac Emergency Centre (C.E.C)';
+    T(hc, 44, h1, 'B', fitSize(h1, 'B', 14, hw, 9), 0.5, 'c');
+    T(hc, 62, h2, 'B', 12, 0.45, 'c');
+    Ln(L, R, 80, 1);
+    var op = !!e.opd, lx = L + (op ? 64 : 58), vx = lx + 3, mid = 332, rx = 346, dl = 380, rl = 398;
+    T(L, 102, op ? 'OPD No.:' : 'MR No.:', 'HB', 10.5, 0.3); Ln(lx, mid, 103.4, 0.45);
+    T(rx, 102, 'Date:', 'HB', 10.5, 0.3); Ln(dl, R, 103.4, 0.45);
+    T(L, 124, 'Name:', 'HB', 10.5, 0.3); Ln(lx, mid, 125.4, 0.45);
+    T(rx, 124, 'Age/Sex:', 'HB', 10.5, 0.3); Ln(rl, R, 125.4, 0.45);
+    Ln(L, R, 133, 0.55);
+    T(L, 154, 'Vitals:', 'HB', 10.5, 0.3); Ln(lx, R, 155.4, 0.45);
+    ops.push({ k: 'r', x: L, y: 162, w: R - L, h: HER_TOP - 162, lw: 0.9 });
+    T(L + 8, 177, 'Working Diagnosis:', 'HB', 10.5, 0.3);
+    function val(x, y, s, size, maxW) { s = P.clean(s || ''); if (!s) return; size = fitSize(s, 'H', size, maxW, 8); T(x, y, P.fit(s, 'H', size, maxW), 'H', size); }
+    var mw = mid - vx - 2;
+    val(vx, 101, UP(e.mr), 12, mw);
+    var when = e.t && !isNaN(Date.parse(e.t)) ? new Date(e.t) : new Date();
+    val(dl + 2, 101, dmy(dateYmd || ymd(when)) + '  ' + hm12(when.toISOString()), 11, R - dl - 2);
+    val(vx, 123, UP(e.name), 12, mw);
+    val(rl + 2, 123, (e.age !== '' && e.age != null ? e.age : '-') + ' / ' + (e.sex || '-'), 12, R - rl - 2);
+    var parts = slipVitals(e), vw = R - vx, gap = '    ';
+    if (parts.length) {
+      var one = parts.join(gap), size = fitSize(one, 'HB', 11.5, vw, 8.5);
+      if (P.width(one, 'HB', size) <= vw) T(vx, 153, one, 'HB', size, 0.15);
+      else {                                          // too many vitals for one line: two lines just above the Vitals line
+        var a = [], b = parts.slice();
+        while (b.length > 1 && P.width(a.concat(b[0]).join(gap), 'HB', 8.5) <= vw && P.width(a.concat(b[0]).join(gap), 'HB', 8.5) < P.width(b.slice(1).join(gap), 'HB', 8.5) + vw * 0.3) a.push(b.shift());
+        if (!a.length) a.push(b.shift());
+        var s1 = a.join(gap), s2 = b.join(gap), z = Math.min(fitSize(s1, 'HB', 8.5, vw, 7), fitSize(s2, 'HB', 8.5, vw, 7));
+        T(vx, 153 - z - 0.8, s1, 'HB', z, 0.12); T(vx, 153, s2, 'HB', z, 0.12);
+      }
+    }
+    return ops;
+  }
+  var HER_BANDS = [HER_TOP + 8, HALF_H - 34];
   function sheetOps(e, dateYmd, paper, k) {
-    if (paper === 'a4q') { var qa = quarterAt(k); return shiftOps(slipOps6(e, dateYmd, qa.x, qa.y), k % 2 ? -EDGE4_DX : EDGE4_DX, EDGE4_DY); }
+    if (paper === 'a4q' || paper === 'a4h') { var qa = quarterAt(k); return shiftOps(slipOps6(e, dateYmd, qa.x, qa.y), k % 2 ? -EDGE4_DX : EDGE4_DX, EDGE4_DY); }
     return shiftOps(slipOps(e, dateYmd, k ? SLIP_W : 0), 0, paper === 'a5' ? 0 : EDGE2_DY);
   }
   /* Pages of slips. paper 'a4' (A4 sideways: two slips side by side), 'a4q' (A4 upright: four A6 slips) or 'a5' (one slip on each A5 sheet).
@@ -2151,7 +2222,7 @@ var CEC = (function () {
   /* 14-11-2026: an Emergency / Resus slip prints alone on a whole A4 page (no blank spare slips beside it); the other slips 2 or 4 a sheet. */
   function isErSlip(e) { return !!e && !e.blank && e.cat === 'EMR'; }
   function slipPages(list, paper) {
-    var per = paper === 'a5' ? 1 : paper === 'a4q' ? 4 : 2, pages = [], er = [], rest = list;
+    var per = paper === 'a5' ? 1 : paper === 'a4q' ? 4 : 2, pages = [], er = [], rest = list;      // 'a4h': 2 on each half sheet
     if (per > 1) { er = list.filter(isErSlip); rest = list.filter(function (e) { return !isErSlip(e); }); }
     er.forEach(function (e) { var pg = [e]; pg.er = true; pages.push(pg); });
     var first = pages.length;
@@ -2163,12 +2234,23 @@ var CEC = (function () {
   /* The A5 slip enlarged to fill an A4 page (portrait), at least 20 pt from every edge. On a sideways (2 a sheet) print the page is turned. */
   var ER_S = 1.36, ER_OX = (595.28 - SLIP_W * 1.36) / 2, ER_OY = 20;
   function slipPdfMany(list, logo, paper, dateYmd) {
-    var P = PDFGen, q = paper === 'a4q', d = new P.Doc(!q), a5 = paper === 'a5';
+    var P = PDFGen, q = portraitPaper(paper), half = paper === 'a4h', d = new P.Doc(!q), a5 = paper === 'a5';
     if (a5) d.W = SLIP_W;
     d.title = list.length === 1 ? (String(list[0].tok || 'OPD').split(' ')[0] === 'ER' ? 'ER' : 'OPD') + ' slip ' + (list[0].tok || '') + ' - ' + UP(list[0].name || '') : list.length + ' OPD / ER slips';
     if (logo) d.setImage(logo.bytes, logo.w, logo.h);
     slipPages(list, paper).forEach(function (pg, pi) {
       if (pi) d.addPage();
+      if (pg.er && half) {                            // half-cut A4: the Emergency / Resus slip made for the half sheet (top half of the page)
+        slipOpsHalfEr(pg[0], dateYmd).forEach(function (o) {
+          if (o.k === 't') { if (o.sw) d.textS(o.x, o.y, o.s, o.f, o.size, o.sw); else d.text(o.x, o.y, o.s, o.f, o.size); }
+          else if (o.k === 'l') d.line(o.x1, o.y, o.x2, o.y, o.lw);
+          else if (o.k === 'r') d.rect(o.x, o.y, o.w, o.h, null, 0, o.lw);
+          else if (o.k === 'rr') d.rrect(o.x, o.y, o.w, o.h, o.r, o.lw);
+          else if (o.k === 'img' && logo) d.image(o.x, o.y, o.w, o.h);
+        });
+        if (DEMO.on) d.mark(0, 0, HALF_W, HALF_H, HER_BANDS);
+        return;
+      }
       if (pg.er) {                                    // Emergency / Resus: one slip on the whole page
         var Hd = d.H, c1 = 841.89 - ER_S * Hd - ER_OY;
         d.op('q ' + (q ? [ER_S, 0, 0, ER_S, ER_OX, c1] : [0, -ER_S, ER_S, 0, c1, 595.28 - ER_OX]).map(function (v) { return Math.round(v * 10000) / 10000; }).join(' ') + ' cm');
@@ -2183,9 +2265,10 @@ var CEC = (function () {
         d.op('Q');
         return;
       }
-      if (q) {                                        // light dashed cutting lines
-        for (var cy = 0; cy < d.H; cy += 6) d.line(Q_W, cy, Q_W, Math.min(cy + 3, d.H), 0.4, 0.6);
-        for (var cx = 0; cx < d.W; cx += 6) d.line(cx, Q_H, Math.min(cx + 3, d.W), Q_H, 0.4, 0.6);
+      if (q) {                                        // light dashed cutting lines (half sheet: only the middle line of the top half)
+        var cyEnd = half ? Q_H : d.H;
+        for (var cy = 0; cy < cyEnd; cy += 6) d.line(Q_W, cy, Q_W, Math.min(cy + 3, cyEnd), 0.4, 0.6);
+        if (!half) for (var cx = 0; cx < d.W; cx += 6) d.line(cx, Q_H, Math.min(cx + 3, d.W), Q_H, 0.4, 0.6);
       }
       pg.forEach(function (e, k) {
         var qa = quarterAt(k);
@@ -2205,14 +2288,15 @@ var CEC = (function () {
   /* The same slips as SVG pages for printing from the browser (sizes in points; text stretched to the exact PDF widths so it looks the same on every device). */
   var SVG_FONT = { B: "'Times New Roman',Times,'Liberation Serif','Nimbus Roman',Tinos,'Noto Serif',serif", H: "Helvetica,Arial,'Liberation Sans','Nimbus Sans',Arimo,Roboto,sans-serif" };
   function slipSvgPage(pg, logoUrl, paper, dateYmd) {
-    var a5 = paper === 'a5', q = paper === 'a4q', W = a5 ? SLIP_W : q ? 595.28 : 841.89, H = q ? 841.89 : SLIP_H, x = function (v) { return Math.round(v * 100) / 100; };
+    var a5 = paper === 'a5', q = portraitPaper(paper), half = paper === 'a4h', W = a5 ? SLIP_W : q ? 595.28 : 841.89, H = q ? 841.89 : SLIP_H, x = function (v) { return Math.round(v * 100) / 100; };
     var out = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="slipsvg" width="' + (a5 ? '148.5mm' : q ? '210mm' : '297mm') + '" height="' + (q ? '297mm' : '210mm') + '" viewBox="0 0 ' + W + ' ' + H + '">';
+    if (pg.er && half) return out + '<g class="erpage erhalf">' + opsSvg(slipOpsHalfEr(pg[0], dateYmd), logoUrl) + demoSvg(0, 0, HALF_W, HALF_H, HER_BANDS) + '</g></svg>';
     if (pg.er) {                                      // Emergency / Resus: one slip on the whole page (turned on a sideways sheet)
       out += '<g class="erpage" transform="' + (q ? '' : 'translate(841.89 0) rotate(90) ') + 'translate(' + x(ER_OX) + ' ' + ER_OY + ') scale(' + ER_S + ')">' +
         opsSvg(slipOps(pg[0], dateYmd, 0), logoUrl) + demoSvg(0, 0, SLIP_W, SLIP_H, [SLIP_TOP + 8, SLIP_H - 34]) + '</g>';
       return out + '</svg>';
     }
-    if (q) out += '<g stroke="#999" stroke-width="0.4" stroke-dasharray="3 3"><line x1="' + Q_W + '" y1="0" x2="' + Q_W + '" y2="' + H + '"/><line x1="0" y1="' + Q_H + '" x2="' + W + '" y2="' + Q_H + '"/></g>';
+    if (q) out += '<g stroke="#999" stroke-width="0.4" stroke-dasharray="3 3"><line x1="' + Q_W + '" y1="0" x2="' + Q_W + '" y2="' + (half ? Q_H : H) + '"/>' + (half ? '' : '<line x1="0" y1="' + Q_H + '" x2="' + W + '" y2="' + Q_H + '"/>') + '</g>';
     pg.forEach(function (e, k) {
       var qa = quarterAt(k);
       out += opsSvg(sheetOps(e, dateYmd, paper, k), logoUrl);
@@ -2633,7 +2717,254 @@ var CEC = (function () {
     var cols = (p.cols || []).map(function (c, k) { var o = { h: c.h, f: function (r) { return r[k]; } }; if (c.a) o.a = c.a; if (c.m) o.m = c.m; if (c.wt) o.wt = c.wt; if (c.w) o.w = c.w; return o; });
     return listPdf({ title: p.title, sub: p.sub, portrait: p.portrait, empty: p.empty, cols: cols, groups: (p.groups || []).map(function (g) { return { h: g.h, plain: g.plain, list: g.rows || [] }; }) }, logo);
   }
-  var SVG_DOCS = { letterPdf: letterPdf, listPdf: listPdf, listPlainPdf: listPlainPdf, apptSlipPdf: apptSlipPdf, deathCertPdf: deathCertPdf };
+  /* ---------- Echocardiography report (14-11-2026 night): the CEC's report (Miss Erum / Dr. Maheen Alvi), made by ticking lines ----------
+     Each line: k key, s part (st Structural interpretation, dp Doppler colour flow, nt Note, fin Final report only), g heading in the form,
+     t the printed line ("__" = a value typed in the form), fin the line it adds to the FINAL ECHO REPORT (o = its place there),
+     x lines that exclude each other (ticking one unticks the others), def ticked in a new report (the CEC's template). */
+  var ECHO_LIB = [
+    { k: 'la_n', s: 'st', g: 'Left atrium', t: 'Normal size left atrium (LA).', x: 'la', def: 1 },
+    { k: 'la_m', s: 'st', g: 'Left atrium', t: 'Mildly dilated left atrium (LA).', fin: 'Mildly dilated left atrium (LA).', o: 10, x: 'la' },
+    { k: 'la_mv', s: 'st', g: 'Left atrium', t: 'Mildly dilated left atrium (LA) with left atrial volume index (LAVI) of __ ml/m².', fin: 'Mildly dilated left atrium (LA).', o: 10, x: 'la' },
+    { k: 'la_mo', s: 'st', g: 'Left atrium', t: 'Moderately dilated left atrium (LA) with left atrial volume index (LAVI) of __ ml/m².', fin: 'Moderately dilated left atrium (LA).', o: 10, x: 'la' },
+    { k: 'la_s', s: 'st', g: 'Left atrium', t: 'Severely dilated left atrium (LA) with left atrial volume index (LAVI) of __ ml/m².', fin: 'Severely dilated left atrium (LA).', o: 10, x: 'la' },
+    { k: 'la_thr', s: 'st', g: 'Left atrium', t: 'Thrombus seen in the left atrium (LA) / left atrial appendage (LAA).', fin: 'Left atrial (LA) thrombus.', o: 90 },
+    { k: 'lvh_m', s: 'st', g: 'Left ventricle', t: 'Mild concentric left ventricular hypertrophy (LVH).', fin: 'Mild concentric left ventricular hypertrophy (LVH).', o: 20, x: 'lvh' },
+    { k: 'lvh_mo', s: 'st', g: 'Left ventricle', t: 'Moderate concentric left ventricular hypertrophy (LVH).', fin: 'Moderate concentric left ventricular hypertrophy (LVH).', o: 20, x: 'lvh' },
+    { k: 'lvh_s', s: 'st', g: 'Left ventricle', t: 'Severe concentric left ventricular hypertrophy (LVH).', fin: 'Severe concentric left ventricular hypertrophy (LVH).', o: 20, x: 'lvh' },
+    { k: 'lvh_asym', s: 'st', g: 'Left ventricle', t: 'Asymmetric septal hypertrophy.', fin: 'Asymmetric septal hypertrophy (hypertrophic cardiomyopathy to be excluded).', o: 20, x: 'lvh' },
+    { k: 'lv_n', s: 'st', g: 'Left ventricle', t: 'Normal size left ventricle (LV) with normal systolic function.', fin: 'Normal left ventricular (LV) size and systolic function.', o: 30, x: 'lv', def: 1 },
+    { k: 'lv_mild', s: 'st', g: 'Left ventricle', t: 'Normal size left ventricle (LV) with mildly reduced systolic function (EF __%).', fin: 'Mild left ventricular (LV) systolic dysfunction (EF __%).', o: 30, x: 'lv' },
+    { k: 'lv_mod', s: 'st', g: 'Left ventricle', t: 'Moderately reduced left ventricular (LV) systolic function (EF __%).', fin: 'Moderate left ventricular (LV) systolic dysfunction (EF __%).', o: 30, x: 'lv' },
+    { k: 'lv_sev', s: 'st', g: 'Left ventricle', t: 'Severely reduced left ventricular (LV) systolic function (EF __%).', fin: 'Severe left ventricular (LV) systolic dysfunction (EF __%).', o: 30, x: 'lv' },
+    { k: 'lv_dil', s: 'st', g: 'Left ventricle', t: 'Dilated left ventricle (LV) with globally reduced systolic function (EF __%).', fin: 'Dilated left ventricle (LV) with severe systolic dysfunction (EF __%): dilated cardiomyopathy picture.', o: 30, x: 'lv' },
+    { k: 'lv_thr', s: 'st', g: 'Left ventricle', t: 'Thrombus seen at the left ventricular (LV) apex.', fin: 'Left ventricular (LV) apical thrombus.', o: 90 },
+    { k: 'wm_n', s: 'st', g: 'Wall motion', t: 'No segmental wall motion abnormality seen.', x: 'wm', def: 1 },
+    { k: 'wm_lad', s: 'st', g: 'Wall motion', t: 'Regional wall motion abnormality (RWMA) in the left anterior descending (LAD) artery territory.', fin: 'Regional wall motion abnormality (RWMA) in the LAD territory.', o: 35, x: 'wm' },
+    { k: 'wm_rca', s: 'st', g: 'Wall motion', t: 'Regional wall motion abnormality (RWMA) in the right coronary artery (RCA) territory.', fin: 'Regional wall motion abnormality (RWMA) in the RCA territory.', o: 35, x: 'wm' },
+    { k: 'wm_lcx', s: 'st', g: 'Wall motion', t: 'Regional wall motion abnormality (RWMA) in the left circumflex (LCx) artery territory.', fin: 'Regional wall motion abnormality (RWMA) in the LCx territory.', o: 35, x: 'wm' },
+    { k: 'wm_glob', s: 'st', g: 'Wall motion', t: 'Global hypokinesia of the left ventricle (LV).', fin: 'Global left ventricular (LV) hypokinesia.', o: 35, x: 'wm' },
+    { k: 'wm_apex', s: 'st', g: 'Wall motion', t: 'Akinetic left ventricular (LV) apex.', fin: 'Akinetic left ventricular (LV) apex.', o: 35 },
+    { k: 'wm_sept', s: 'st', g: 'Wall motion', t: 'Paradoxical septal motion.', o: 35 },
+    { k: 'rv_n', s: 'st', g: 'Right heart', t: 'Normal size right ventricle (RV) with normal systolic function.', fin: 'Normal right ventricular (RV) size and systolic function.', o: 40, x: 'rv', def: 1 },
+    { k: 'rv_dil', s: 'st', g: 'Right heart', t: 'Dilated right ventricle (RV) with normal systolic function.', fin: 'Dilated right ventricle (RV) with normal systolic function.', o: 40, x: 'rv' },
+    { k: 'rv_dys', s: 'st', g: 'Right heart', t: 'Dilated right ventricle (RV) with reduced systolic function.', fin: 'Dilated right ventricle (RV) with systolic dysfunction.', o: 40, x: 'rv' },
+    { k: 'rv_red', s: 'st', g: 'Right heart', t: 'Normal size right ventricle (RV) with reduced systolic function.', fin: 'Right ventricular (RV) systolic dysfunction.', o: 40, x: 'rv' },
+    { k: 'tapse', s: 'st', g: 'Right heart', t: 'Tricuspid annular plane systolic excursion (TAPSE) = __ mm.', def: 1 },
+    { k: 'ra_dil', s: 'st', g: 'Right heart', t: 'Dilated right atrium (RA).', fin: 'Dilated right atrium (RA).', o: 40 },
+    { k: 'v_thick', s: 'st', g: 'Valves', t: 'Thickened mitral and aortic valves.', x: 'vma', def: 1 },
+    { k: 'v_mthick', s: 'st', g: 'Valves', t: 'Mildly thickened mitral and aortic valves.', x: 'vma' },
+    { k: 'v_norm', s: 'st', g: 'Valves', t: 'Normal mitral and aortic valves.', x: 'vma' },
+    { k: 'v_tp', s: 'st', g: 'Valves', t: 'Normal tricuspid and pulmonic valves.', def: 1 },
+    { k: 'mv_rh', s: 'st', g: 'Mitral valve', t: 'Thickened mitral valve (MV): domed anterior mitral leaflet (AML), fixed posterior mitral leaflet (PML).' },
+    { k: 'ms_m', s: 'st', g: 'Mitral valve', t: 'Mild mitral stenosis (MS).', fin: 'Mild mitral stenosis (MS).', o: 61, x: 'ms' },
+    { k: 'ms_mo', s: 'st', g: 'Mitral valve', t: 'Moderate mitral stenosis (MS).', fin: 'Moderate mitral stenosis (MS).', o: 61, x: 'ms' },
+    { k: 'ms_s', s: 'st', g: 'Mitral valve', t: 'Severe mitral stenosis (MS).', fin: 'Severe mitral stenosis (MS).', o: 61, x: 'ms' },
+    { k: 'mv_ppg', s: 'st', g: 'Mitral valve', t: 'Mitral valve peak pressure gradient (PPG) = __ mmHg.' },
+    { k: 'mv_mpg', s: 'st', g: 'Mitral valve', t: 'Mitral valve mean pressure gradient (MPG) = __ mmHg.' },
+    { k: 'mva_pl', s: 'st', g: 'Mitral valve', t: 'Mitral valve area (MVA) by planimetry = __ cm².' },
+    { k: 'mva_pht', s: 'st', g: 'Mitral valve', t: 'Mitral valve area (MVA) by pressure half-time (PHT) = __ cm².' },
+    { k: 'mvp', s: 'st', g: 'Mitral valve', t: 'Mitral valve prolapse (MVP).', fin: 'Mitral valve prolapse (MVP).', o: 60 },
+    { k: 'mac', s: 'st', g: 'Mitral valve', t: 'Mitral annular calcification (MAC).', fin: 'Mitral annular calcification (MAC).', o: 60 },
+    { k: 'av_th', s: 'st', g: 'Aortic valve', t: 'Thickened aortic valve (AV).', o: 62 },
+    { k: 'av_scl', s: 'st', g: 'Aortic valve', t: 'Sclerotic aortic valve (AV) without stenosis.', fin: 'Aortic valve (AV) sclerosis without stenosis.', o: 62 },
+    { k: 'av_bic', s: 'st', g: 'Aortic valve', t: 'Bicuspid aortic valve (AV).', fin: 'Bicuspid aortic valve (AV).', o: 62 },
+    { k: 'as_m', s: 'st', g: 'Aortic valve', t: 'Mild aortic stenosis (AS).', fin: 'Mild aortic stenosis (AS).', o: 63, x: 'as' },
+    { k: 'as_mo', s: 'st', g: 'Aortic valve', t: 'Moderate aortic stenosis (AS).', fin: 'Moderate aortic stenosis (AS).', o: 63, x: 'as' },
+    { k: 'as_s', s: 'st', g: 'Aortic valve', t: 'Severe aortic stenosis (AS).', fin: 'Severe aortic stenosis (AS).', o: 63, x: 'as' },
+    { k: 'av_ppg', s: 'st', g: 'Aortic valve', t: 'Aortic valve peak pressure gradient (PPG) = __ mmHg.' },
+    { k: 'av_mpg', s: 'st', g: 'Aortic valve', t: 'Aortic valve mean pressure gradient (MPG) = __ mmHg.' },
+    { k: 'ava', s: 'st', g: 'Aortic valve', t: 'Aortic valve area (AVA) = __ cm².' },
+    { k: 'pmv', s: 'st', g: 'Prosthetic valves', t: 'Prosthetic mitral valve (MVR) with normal function.', fin: 'Normally functioning prosthetic mitral valve (MVR).', o: 64 },
+    { k: 'pav', s: 'st', g: 'Prosthetic valves', t: 'Prosthetic aortic valve (AVR) with normal function.', fin: 'Normally functioning prosthetic aortic valve (AVR).', o: 64 },
+    { k: 'veg_mv', s: 'st', g: 'Vegetation', t: 'Vegetation seen on the mitral valve (MV), measuring __ mm.', fin: 'Mitral valve (MV) vegetation: infective endocarditis to be excluded.', o: 91 },
+    { k: 'veg_av', s: 'st', g: 'Vegetation', t: 'Vegetation seen on the aortic valve (AV), measuring __ mm.', fin: 'Aortic valve (AV) vegetation: infective endocarditis to be excluded.', o: 91 },
+    { k: 'veg_tv', s: 'st', g: 'Vegetation', t: 'Vegetation seen on the tricuspid valve (TV), measuring __ mm.', fin: 'Tricuspid valve (TV) vegetation: infective endocarditis to be excluded.', o: 91 },
+    { k: 'ias_n', s: 'st', g: 'Septa', t: 'Intact inter atrial septum.', x: 'ias', def: 1 },
+    { k: 'asd', s: 'st', g: 'Septa', t: 'Atrial septal defect (ASD), secundum type, with left-to-right shunt.', fin: 'Atrial septal defect (ASD) with left-to-right shunt.', o: 92, x: 'ias' },
+    { k: 'pfo', s: 'st', g: 'Septa', t: 'Patent foramen ovale (PFO).', fin: 'Patent foramen ovale (PFO).', o: 92, x: 'ias' },
+    { k: 'vsd', s: 'st', g: 'Septa', t: 'Ventricular septal defect (VSD) with left-to-right shunt.', fin: 'Ventricular septal defect (VSD) with left-to-right shunt.', o: 92 },
+    { k: 'ivc_n', s: 'st', g: 'IVC', t: 'Inferior vena cava (IVC) normal size and collapsing.', x: 'ivc', def: 1 },
+    { k: 'ivc_d', s: 'st', g: 'IVC', t: 'Dilated inferior vena cava (IVC) with less than 50% collapse.', fin: 'Dilated inferior vena cava (IVC) with reduced collapse (raised right atrial pressure).', o: 93, x: 'ivc' },
+    { k: 'ivc_p', s: 'st', g: 'IVC', t: 'Plethoric, non-collapsing inferior vena cava (IVC).', fin: 'Plethoric inferior vena cava (IVC).', o: 93, x: 'ivc' },
+    { k: 'pe_none', s: 'st', g: 'Pericardium and masses', t: 'No evidence of intra cardiac mass, vegetation or pericardial effusion.', x: 'pe', def: 1 },
+    { k: 'pe_m', s: 'st', g: 'Pericardium and masses', t: 'Mild pericardial effusion without haemodynamic compromise.', fin: 'Mild pericardial effusion.', o: 94, x: 'pe' },
+    { k: 'pe_mo', s: 'st', g: 'Pericardium and masses', t: 'Moderate pericardial effusion without haemodynamic compromise.', fin: 'Moderate pericardial effusion.', o: 94, x: 'pe' },
+    { k: 'pe_l', s: 'st', g: 'Pericardium and masses', t: 'Large pericardial effusion.', fin: 'Large pericardial effusion.', o: 94, x: 'pe' },
+    { k: 'pe_tamp', s: 'st', g: 'Pericardium and masses', t: 'Pericardial effusion with features of cardiac tamponade (right atrial / right ventricular diastolic collapse).', fin: 'Pericardial effusion with features of cardiac tamponade.', o: 94, x: 'pe' },
+    { k: 'ao_dil', s: 'st', g: 'Aorta', t: 'Dilated aortic root.', fin: 'Dilated aortic root.', o: 95 },
+    { k: 'dp_none', s: 'dp', g: 'Flow abnormality (colour flow mapping)', t: 'No significant valvular regurgitation.', x: 'dpn' },
+    { k: 'mr_t', s: 'dp', g: 'Mitral regurgitation', t: 'Trace mitral regurgitation (MR).', x: 'mr' },
+    { k: 'mr_m', s: 'dp', g: 'Mitral regurgitation', t: 'Mild mitral regurgitation (MR).', fin: 'Mild mitral regurgitation (MR).', o: 70, x: 'mr' },
+    { k: 'mr_mo', s: 'dp', g: 'Mitral regurgitation', t: 'Moderate mitral regurgitation (MR).', fin: 'Moderate mitral regurgitation (MR).', o: 70, x: 'mr' },
+    { k: 'mr_s', s: 'dp', g: 'Mitral regurgitation', t: 'Severe mitral regurgitation (MR).', fin: 'Severe mitral regurgitation (MR).', o: 70, x: 'mr' },
+    { k: 'ar_t', s: 'dp', g: 'Aortic regurgitation', t: 'Trace aortic regurgitation (AR).', x: 'ar' },
+    { k: 'ar_m', s: 'dp', g: 'Aortic regurgitation', t: 'Mild aortic regurgitation (AR).', fin: 'Mild aortic regurgitation (AR).', o: 70, x: 'ar' },
+    { k: 'ar_mo', s: 'dp', g: 'Aortic regurgitation', t: 'Moderate aortic regurgitation (AR).', fin: 'Moderate aortic regurgitation (AR).', o: 70, x: 'ar' },
+    { k: 'ar_s', s: 'dp', g: 'Aortic regurgitation', t: 'Severe aortic regurgitation (AR).', fin: 'Severe aortic regurgitation (AR).', o: 70, x: 'ar' },
+    { k: 'tr_t', s: 'dp', g: 'Tricuspid regurgitation', t: 'Trace tricuspid regurgitation (TR).', x: 'tr' },
+    { k: 'tr_m', s: 'dp', g: 'Tricuspid regurgitation', t: 'Mild tricuspid regurgitation (TR).', fin: 'Mild tricuspid regurgitation (TR).', o: 70, x: 'tr' },
+    { k: 'tr_mo', s: 'dp', g: 'Tricuspid regurgitation', t: 'Moderate tricuspid regurgitation (TR).', fin: 'Moderate tricuspid regurgitation (TR).', o: 70, x: 'tr' },
+    { k: 'tr_s', s: 'dp', g: 'Tricuspid regurgitation', t: 'Severe tricuspid regurgitation (TR).', fin: 'Severe tricuspid regurgitation (TR).', o: 70, x: 'tr' },
+    { k: 'pr_t', s: 'dp', g: 'Pulmonary regurgitation', t: 'Trace pulmonary regurgitation (PR).', x: 'pr' },
+    { k: 'pr_m', s: 'dp', g: 'Pulmonary regurgitation', t: 'Mild pulmonary regurgitation (PR).', fin: 'Mild pulmonary regurgitation (PR).', o: 70, x: 'pr' },
+    { k: 'pr_mo', s: 'dp', g: 'Pulmonary regurgitation', t: 'Moderate pulmonary regurgitation (PR).', fin: 'Moderate pulmonary regurgitation (PR).', o: 70, x: 'pr' },
+    { k: 'dp_shunt', s: 'dp', g: 'Other flow', t: 'Left-to-right shunt across the inter atrial septum on colour flow.', o: 92 },
+    { k: 'dp_lvot', s: 'dp', g: 'Other flow', t: 'Left ventricular outflow tract (LVOT) gradient = __ mmHg.', fin: 'Left ventricular outflow tract (LVOT) obstruction (gradient __ mmHg).', o: 96 },
+    { k: 'f_norm', s: 'fin', g: 'Final report', t: 'Normal echocardiographic study.', o: 1 },
+    { k: 'f_clin', s: 'fin', g: 'Final report', t: 'Clinical correlation is advised.', o: 98 },
+    { k: 'nt_tachy', s: 'nt', g: 'Note', t: 'Patient was tachycardic during the study.' },
+    { k: 'nt_hr', s: 'nt', g: 'Note', t: 'Heart rate (HR): __ beats per minute (bpm).' },
+    { k: 'nt_af', s: 'nt', g: 'Note', t: 'Patient was in atrial fibrillation (AF) during the study.' },
+    { k: 'nt_poor', s: 'nt', g: 'Note', t: 'Poor echo windows.' },
+    { k: 'nt_diff', s: 'nt', g: 'Note', t: 'Technically difficult study.' },
+    { k: 'nt_body', s: 'nt', g: 'Note', t: 'Suboptimal images due to body habitus.' },
+    { k: 'nt_fu', s: 'nt', g: 'Note', t: 'Follow-up echocardiography is advised after __ months.' }
+  ];
+  var ECHO_BY = {}; ECHO_LIB.forEach(function (x, i) { x.i = i; ECHO_BY[x.k] = x; });
+  var ECHO_MEAS = [['lvs', 'Systolic', '25-41'], ['lvd', 'Diastolic', '<55'], ['ef', 'EF', '>55%'], ['ivs', 'Septal Thickness', '<11'], ['pw', 'Post. Wall Thickness', '<11'],
+    ['la', 'Left Atrium', '<40'], ['rv', 'Right Ventricle', '<25'], ['ao', 'Aortic', '<40']];
+  var ECHO_DD = { N: '', 1: 'Grade I left ventricular diastolic dysfunction (LVDD).', 2: 'Grade II left ventricular diastolic dysfunction (LVDD).', 3: 'Grade III left ventricular diastolic dysfunction (LVDD), restrictive filling pattern.' };
+  /* A new report: the CEC's template lines ticked. */
+  function echoNew(st) {
+    var sel = {}; ECHO_LIB.forEach(function (x) { if (x.def) sel[x.k] = []; });
+    return { date: '', name: '', age: '', sex: '', mr: '', ref: '', m: {}, sel: sel, cus: { st: [], dp: [], fin: [], nt: [] }, finOff: [], inflow: { mode: 'val', e: '', a: '', ee: '', hr: '' },
+      dd: '', rvsp: '', rvspNa: false, ph: '', tech: 'Miss Erum', phys: (st && st.hod) || DEFAULTS.hod };
+  }
+  function echoFill(t, vals) { var i = 0; return String(t).replace(/__/g, function () { var v = (vals || [])[i++]; return v != null && String(v).trim() !== '' ? String(v).trim() : '__'; }); }
+  function echoNum(v) { var n = parseFloat(String(v || '').replace(',', '.')); return isNaN(n) ? null : n; }
+  function echoEA(r) { var e = echoNum(r.inflow && r.inflow.e), a = echoNum(r.inflow && r.inflow.a); return e != null && a ? (Math.round(e / a * 100 + 1e-7) / 100).toFixed(2) : ''; }      // 0.69 / 1.20 = 0.575 -> 0.58
+  /* Pulmonary hypertension from the RVSP, as the CEC reports it: 35 to 45 mild, 46 to 60 moderate, above 60 severe. */
+  function echoPh(r) {
+    var v = echoNum(r.rvsp); if (v == null || r.rvspNa) return '';
+    var g = v > 60 ? 'Severe' : v > 45 ? 'Moderate' : v >= 35 ? 'Mild' : '';
+    return g ? g + ' pulmonary hypertension (PH) with right ventricular systolic pressure (RVSP) of ' + String(r.rvsp).trim() + ' mmHg.' : '';
+  }
+  /* The final report lines that come from the ticked findings, in the CEC's order (chambers, diastolic function, valves, pressure, the rest). */
+  function echoAutoFin(r) {
+    var out = [], sel = r.sel || {}, pos = 0;
+    ECHO_LIB.forEach(function (x) { if (x.fin && sel[x.k] && x.s !== 'fin') out.push({ t: echoFill(x.fin, sel[x.k]), o: x.o || 97, p: pos++ }); });
+    if (ECHO_DD[r.dd]) out.push({ t: ECHO_DD[r.dd], o: 50, p: pos++ });
+    var ph = r.ph === 'off' ? '' : echoPh(r); if (ph) out.push({ t: ph, o: 80, p: pos++ });
+    ECHO_LIB.forEach(function (x) { if (x.s === 'fin' && sel[x.k]) out.push({ t: x.t, o: x.o || 97, p: pos++ }); });
+    out.sort(function (a, b) { return a.o - b.o || a.p - b.p; });
+    var seen = {};
+    return out.filter(function (x) { if (seen[x.t]) return false; seen[x.t] = 1; return true; }).map(function (x) { return x.t; });
+  }
+  /* Everything that is printed, part by part. */
+  function echoLines(r) {
+    var sel = r.sel || {}, cus = r.cus || {}, off = r.finOff || [];
+    var part = function (s) { return ECHO_LIB.filter(function (x) { return x.s === s && sel[x.k]; }).map(function (x) { return echoFill(x.t, sel[x.k]); }).concat(cus[s] || []); };
+    var f = r.inflow || {}, ifl = [];
+    if (f.mode === 'fused') ifl = ['Cannot comment on diastolic function due to fused E/A velocities at a heart rate (HR) of ' + (String(f.hr || '').trim() || '__') + ' beats per minute (bpm).'];
+    else if (f.mode !== 'none' && (f.e || f.a || f.ee)) ifl = ['E = ' + (f.e || '__') + ' m/s|A = ' + (f.a || '__') + ' m/s', 'E/A = ' + (echoEA(r) || '__') + "|E/e' = " + (f.ee || '__')];
+    var rv = r.rvspNa ? ['RVSP could not be estimated (no adequate tricuspid regurgitation jet).'] : String(r.rvsp || '').trim() ? ['RVSP = ' + String(r.rvsp).trim() + ' mmHg'] : [];
+    var fin = echoAutoFin(r).filter(function (t) { return off.indexOf(t) < 0; }).concat(cus.fin || []);
+    return { st: part('st'), dp: part('dp'), ifl: ifl, rv: rv, fin: fin, nt: part('nt') };
+  }
+  /* The printed report: A4, the CEC heading with the Sindh Government logo (like the death certificate), then the CEC's own report layout. */
+  function echoDoc(r, st, logo) {
+    st = st || DEFAULTS; r = r || {};
+    var P = PDFGen, d = new P.Doc(), L = 50, R = 545, W = R - L, Lx = echoLines(r), m = r.m || {};
+    d.title = 'Echo report' + (r.name ? ' - ' + UP(r.name) : '');
+    if (logo) d.setImage(logo.bytes, logo.w, logo.h);
+    function frame() { d.rect(22, 22, d.W - 44, d.H - 44, null, 0, 1.6); d.rect(25.5, 25.5, d.W - 51, d.H - 51, null, 0, 0.5); }
+    function U(x, y, s, f, size) { var w = d.text(x, y, s, f, size); d.line(x, y + 1.6, x + w, y + 1.6, 0.6); return w; }
+    frame();
+    if (logo) d.image(46, 36, 54, 54 * logo.h / logo.w);
+    var cx = 324, t1 = 15.5;
+    while (P.width('SINDH GOVERNMENT HOSPITAL LIAQUATABAD', 'B', t1) > 400) t1 -= 0.5;
+    d.text(cx, 54, 'SINDH GOVERNMENT HOSPITAL LIAQUATABAD', 'B', t1, 'center');
+    d.text(cx, 72, 'CARDIAC EMERGENCY CENTRE (CEC)', 'B', 13, 'center');
+    d.text(cx, 88, 'Karachi    |    Phone No. ' + (st.phone || '021-99334317') + '    |    Email: ' + (st.email || 'sghlliaquatabad10no@gmail.com'), 'B', 8.3, 'center');
+    d.line(44, 100, 551, 100, 1.6); d.line(44, 103.5, 551, 103.5, 0.5);
+    d.rect(162, 112, 271, 27, null, 0, 1.2); d.rect(165, 115, 265, 21, null, 0, 0.5);
+    d.text(297.6, 130, 'ECHOCARDIOGRAPHY REPORT', 'HB', 12, 'center', 0, 2.4);
+    var date = r.date ? dmy(r.date).replace(/-/g, '/') : '', age = String(r.age || '').trim();
+    var y = 160;
+    d.text(L, y, 'Name:', 'B', 10); d.text(L + 36, y, P.fit(UP(r.name || ''), 'B', 10.5, 200), 'B', 10.5);
+    d.text(300, y, 'Date:', 'B', 10); d.text(330, y, date, 'B', 10.5);
+    d.text(430, y, 'Age:', 'B', 10); d.text(456, y, age ? age + (/^\d+$/.test(age) ? ' yrs' : '') : '', 'B', 10.5);
+    y += 17;
+    d.text(L, y, 'Ref Physician:', 'B', 10); d.text(L + 70, y, P.fit(r.ref || '', 'B', 10.5, 220), 'B', 10.5);
+    if (r.mr) { d.text(300, y, 'MR No.:', 'B', 10); d.text(342, y, P.fit(UP(r.mr), 'B', 10.5, 120), 'B', 10.5); }
+    if (r.sex) { d.text(430, y, 'Gender:', 'B', 10); d.text(470, y, r.sex === 'M' ? 'Male' : 'Female', 'B', 10.5); }
+    y += 19;
+    U(L, y, 'M. Mode 2/D', 'B', 10);
+    y += 17;
+    U(L, y, 'Measurements in mm', 'R', 9.5); d.text(R, y, 'Figures in bracket indicate normal values in mm', 'R', 9.5, 'right');
+    /* the measurement table, as on the CEC's report */
+    var ty = y + 6, rh = 15, c1 = 158, c2 = 345, mv = function (k) { return String(m[k] || '').trim(); };
+    d.line(L, ty, R, ty, 0.9);
+    for (var ri = 1; ri <= 5; ri++) d.line(ri <= 2 ? c1 : L, ty + ri * rh, R, ty + ri * rh, ri === 5 ? 0.9 : 0.5);
+    d.line(L, ty, L, ty + 5 * rh, 0.6); d.line(R, ty, R, ty + 5 * rh, 0.6); d.line(c1, ty, c1, ty + 3 * rh, 0.5); d.line(c2, ty, c2, ty + 5 * rh, 0.5);
+    d.text((L + c1) / 2, ty + 1.5 * rh + 4, 'Left Ventricle', 'R', 10.5, 'center');
+    function cell(x, yy, lab, v, unit, vx) { d.text(x + 5, yy - 4.2, lab, 'R', 9.5); if (v) d.text(vx, yy - 4.2, v + (unit || ''), 'B', 9.5); }
+    cell(c1, ty + rh, 'Systolic   (25-41)', mv('lvs'), '', c1 + 118);
+    cell(c1, ty + 2 * rh, 'Diastolic   (<55)', mv('lvd'), '', c1 + 118);
+    cell(c2, ty + 2 * rh, 'EF (>55%)', mv('ef'), mv('ef') && !/%$/.test(mv('ef')) ? ' %' : '', c2 + 140);
+    cell(c1, ty + 3 * rh, 'Septal Thickness (<11)', mv('ivs'), '', c1 + 118);
+    cell(c2, ty + 3 * rh, 'Post. Wall Thickness (<11)', mv('pw'), '', c2 + 140);
+    cell(L, ty + 4 * rh, 'Left Atrium   (<40)', mv('la'), '', L + 108);
+    cell(L, ty + 5 * rh, 'Right Ventricle  (<25)', mv('rv'), '', L + 108);
+    cell(c2, ty + 5 * rh, 'Aortic (<40)', mv('ao'), '', c2 + 140);
+    y = ty + 5 * rh + 22;
+    /* the written parts: the size is made smaller (down to 9 pt) so that a long report still fits on one page */
+    var sizes = [[10.5, 13.4], [10, 12.6], [9.5, 11.8], [9, 11]], Z = sizes[0];
+    function linesOf(arr, z, f, ind) { var n = 0; arr.forEach(function (t) { n += P.wrap(t, f || 'R', z[0], W - (ind || 0)).length; }); return n; }
+    function need(z) {
+      var h = 0, hd = z[1] + 4;
+      if (Lx.st.length) h += hd + linesOf(Lx.st, z) * z[1];
+      h += hd + z[1] + linesOf(Lx.dp, z, 'B') * z[1] + 4;
+      if (Lx.ifl.length) h += hd + linesOf(Lx.ifl, z) * z[1];
+      if (Lx.rv.length) h += hd + z[1];
+      if (Lx.fin.length) h += hd + 6 + linesOf(Lx.fin, z, 'R', 18) * z[1];
+      if (Lx.nt.length) h += hd + linesOf(Lx.nt, z) * z[1];
+      return h;
+    }
+    var SIGN = 92, BOTTOM = d.H - 34 - SIGN;
+    for (var zi = 0; zi < sizes.length; zi++) { Z = sizes[zi]; if (y + need(Z) <= BOTTOM) break; }
+    var fs = Z[0], lh = Z[1];
+    function room(hh) {                               // a new page when the next line would run into the bottom border
+      if (y + hh <= d.H - 52) return;
+      if (DEMO.on) d.mark(0, 0, d.W, d.H, [786]);
+      d.addPage(); frame(); y = 58;
+      d.text(L, 44, 'ECHOCARDIOGRAPHY REPORT (continued)  -  ' + UP(r.name || '') + (date ? '  -  ' + date : ''), 'B', 9.5);
+    }
+    function head(t) { room(lh * 2 + 4); U(L, y, t, 'B', fs + 0.5); y += lh + 3; }
+    function para(arr, f, numbered) {
+      arr.forEach(function (t, i) {
+        var ind = numbered ? 18 : 0, ws = P.wrap(t, f || 'R', fs, W - ind);
+        room(ws.length * lh);
+        if (numbered) d.text(L + 2, y, (i + 1) + '.', f || 'R', fs);
+        ws.forEach(function (w) { d.text(L + ind, y, w, f || 'R', fs); y += lh; });
+      });
+    }
+    function cols(arr) {                              // "E = 1.05 m/s|A = 1.20 m/s": two columns
+      arr.forEach(function (t) {
+        room(lh); var p = t.split('|');
+        if (p.length > 1) { d.text(L, y, p[0], 'R', fs); d.text(L + 170, y, p[1], 'R', fs); } else P.wrap(t, 'R', fs, W).forEach(function (w, k) { if (k) { y += lh; room(lh); } d.text(L, y, w, 'R', fs); });
+        y += lh;
+      });
+    }
+    if (Lx.st.length) { head('Structural Interpretation:'); para(Lx.st); y += 4; }
+    head('Doppler:'); room(lh); d.text(L, y, 'Flow Abnormality (Color Flow Mapping)', 'R', fs - 0.5); y += lh;
+    para(Lx.dp, 'B'); y += 6;
+    if (Lx.ifl.length) { head('Mitral Inflow Show'); cols(Lx.ifl); y += 4; }
+    if (Lx.rv.length) { head('Estimation RV/MPA Pressure (mmHg)'); cols(Lx.rv); y += 6; }
+    if (Lx.fin.length) { head('FINAL ECHO REPORT:'); y += 2; para(Lx.fin, 'R', true); y += 6; }
+    if (Lx.nt.length) { head('Note:'); para(Lx.nt); }
+    /* signatures: the echo cardiographer, and the reporting physician (the HOD) */
+    var sy = Math.max(y + 34, d.H - 34 - SIGN + 40);
+    if (sy > d.H - 60) { if (DEMO.on) d.mark(0, 0, d.W, d.H, [786]); d.addPage(); frame(); sy = 120; }
+    d.text(L, sy, r.tech || 'Miss Erum', 'R', 10.5); d.text(L, sy + 14, 'Echo cardiographer', 'R', 10.5);
+    d.line(R - 165, sy - 18, R, sy - 18, 0.7);
+    d.text(R - 165, sy, 'Reporting Physician', 'R', 10.5); d.text(R - 165, sy + 14, r.phys || st.hod || DEFAULTS.hod, 'R', 10.5);
+    if (DEMO.on) { d.stamp(R - 175, sy - 50, 185, 46, 'NOT VALID', 'DEMONSTRATION - PRACTICE ONLY'); d.mark(0, 0, d.W, d.H, [786]); }
+    return d;
+  }
+  function echoPdf(r, st, logo) { return echoDoc(r, st, logo).output(); }
+  function echoFileName(r) { return 'Echo_Report_' + String(r.name || 'patient').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '') + '_' + (r.date ? dmy(r.date) : '') + '.pdf'; }
+  var SVG_DOCS = { letterPdf: letterPdf, listPdf: listPdf, listPlainPdf: listPlainPdf, apptSlipPdf: apptSlipPdf, deathCertPdf: deathCertPdf, echoPdf: echoPdf };
   function svgOf(fn, args) {
     var f = SVG_DOCS[fn];
     if (!f) throw new Error('This cannot be printed.');
@@ -2666,6 +2997,8 @@ var CEC = (function () {
     EXAMS: EXAMS, deathCertPdf: deathCertPdf, deathCertSvg: deathCertSvg, svgOf: svgOf, listPlain: listPlain, listPlainPdf: listPlainPdf, opdSlipPdf: opdSlipPdf, slipOps: slipOps, slipPdf: slipPdf, slipPdfMany: slipPdfMany, slipSvg: slipSvg, slipSvgMany: slipSvgMany, slipSheets: slipSheets, isErSlip: isErSlip, slipVitals: slipVitals, SLIP_TOP: SLIP_TOP, STAFF_PROCS: STAFF_PROCS, listPdf: listPdf, listCsv: listCsv,
     certHtml: certHtml, setDemo: setDemo, DEMO_LINE: DEMO_LINE, weekday: weekday, MEDS: MEDS, DX_GROUPS: DX_GROUPS, DX_LIST: DX_LIST, DXKW: DXKW, FREQ_DX: FREQ_DX, canonDx: canonDx, canonList: canonList, dxMatch: dxMatch, dxKey: dxKey, LIST_KINDS: LIST_KINDS, listSpec: listSpec, LIST_COLS: LIST_COLS, LIST_COLSETS: LIST_COLSETS, LIST_PRESETS: LIST_PRESETS, LIST_DEF: LIST_DEF,
     listCfg: listCfg, presetCfg: presetCfg, listColsFor: listColsFor, buildList: buildList, listText: listText, listTitle: listTitle, APPTS: APPTS, APPT_STATUS: APPT_STATUS, apptType: apptType,
+    ECHO_LIB: ECHO_LIB, ECHO_BY: ECHO_BY, ECHO_MEAS: ECHO_MEAS, ECHO_DD: ECHO_DD, echoNew: echoNew, echoFill: echoFill, echoEA: echoEA, echoPh: echoPh, echoAutoFin: echoAutoFin, echoLines: echoLines,
+    echoPdf: echoPdf, echoFileName: echoFileName,
     apptSpec: apptSpec, apptSlipPdf: apptSlipPdf, apptMessage: apptMessage, parseYmd: parseYmd, yearModel: yearModel, yearSummary: yearSummary, MONTHS: MONTHS, sexCountOf: sexCount
   };
 })();
@@ -2755,7 +3088,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   var IDLE_MS = 4 * 3600000;
   /* 14-11-2026: the version of this page (Index.html / phone app) and of the server (Code.gs). Both come from the same build, so they must be the same. */
-  var APP_VER = '14-11-2026 03:00';
+  var APP_VER = '14-11-2026 23:23';
   function verSame() { return S.serverVer === APP_VER; }
   function verKey(v) { v = String(v || ''); return v.slice(6, 10) + v.slice(3, 5) + v.slice(0, 2) + v.slice(11); }   // DD-MM-YYYY HH:MM in time order
   function verText() { return 'Version ' + APP_VER + (verSame() ? '' : ' (server: ' + (S.serverVer || 'older') + ')'); }
@@ -2801,7 +3134,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function mrTag(e) { return (e && e.opd ? 'OPD No. ' : 'MR ') + (e && e.mr || ''); }
   function mrTagH(e) { return (e && e.opd ? 'OPD No. ' : 'MR ') + h(e && e.mr || ''); }
   function shOpd(sh) { return !!(sh && sh.opdDay); }
-  function formCat(e) { return e.only === 'BP' ? 'BPO' : e.only === 'ECG' ? 'ECGO' : e.cat || ''; }
+  function formCat(e) { return e.only ? 'OPD' : e.cat || ''; }
   function b64(bytes) {
     var s = '', chunk = 0x8000;
     for (var i = 0; i < bytes.length; i += chunk) s += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
@@ -3043,7 +3376,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       var r = S.reg || {};
       return '<section class="card narrow"><div class="ct">Request an account</div><p class="muted small" style="margin:0">After you send the request, the admin approves your account and sets your rights. You can sign in only after approval.</p>' +
         '<label class="lb" for="rName">Full name</label><input class="in" id="rName" autocapitalize="words" placeholder="e.g. Dr. Sana Ahmed" value="' + h(r.name || '') + '">' +
-        '<label class="lb">Profession</label><div class="seg" id="rRole">' + [['doctor', 'Doctor'], ['nurse', 'Nursing staff'], ['student', 'Student']].concat(S.printFree === false ? [] : [['print', 'Print desk']]).map(function (x) {
+        '<label class="lb">Profession</label><div class="seg" id="rRole">' + [['doctor', 'Doctor'], ['nurse', 'Nursing staff'], ['student', 'Student'], ['echo', 'Echo technician']].concat(S.printFree === false ? [] : [['print', 'Print desk']]).map(function (x) {
           return '<button type="button" data-act="r-role" data-v="' + x[0] + '" class="' + (r.role === x[0] ? 'on' : '') + '">' + x[1] + '</button>';
         }).join('') + '</div>' +
         '<label class="lb" for="rLogin">Choose a login ID</label><input class="in" id="rLogin" autocapitalize="none" autocomplete="username" placeholder="e.g. sana.ahmed" value="' + h(r.login || '') + '">' +
@@ -3171,6 +3504,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     rosters: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M7 13h4M7 17h7"/>',
     lists: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="3" stroke-linecap="round"/>',
     appt: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M9 15l2 2 4-4"/>',
+    echo: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M8.5 15h2l1.2-3 1.6 5 1.2-2h1"/>',
     settings: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/>',
     bulk: '<path d="M3 6h11M3 12h8M3 18h6"/><path d="M14 15l3 3 5-6"/>',
     petty: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h3M8 12h3M8 16h3M13 8h3M13 12h3M13 16h3"/>',
@@ -3181,8 +3515,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function navIcon(k) { return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">' + NAV_ICON[k] + '</svg>'; }
   var CEN_MODES = [['shift', 'Per shift data'], ['day', 'Daily data (24 hours)'], ['month', 'Monthly data'], ['year', 'Annual data']];
   function navItems() {
+    if (isEchoId()) return [{ v: 'home', l: 'Home' }, { v: 'appt', l: 'Echo appointments', act: 'ap-type', v2: 'ECHO' }, { v: 'echo', l: 'Echo reports' }, { v: 'about', l: 'About' },
+      { v: 'settings', l: 'Account' }, { v: 'signout', l: 'Sign out', act: 'sign-out', cls: 'so' }];      // 14-11-2026: the Echo technician
     var a = [{ v: 'home', l: 'Home' }, { v: 'shift', l: 'Patient dashboard' }];
-    if (canAppt()) a.push({ v: 'appt', l: 'Appointments', sub: CEC.APPTS.map(function (t) { return [t.c, t.c === 'ECHO' ? 'Echocardiography' : t.l]; }), subAct: 'ap-type' });
+    if (canAppt()) a.push({ v: 'appt', l: 'Appointments', sub: CEC.APPTS.map(function (t) { return [t.c, t.c === 'ECHO' ? 'Echocardiography' : t.l]; }).concat(canEchoSee() ? [['EREP', 'Echo reports']] : []), subAct: 'ap-type' });
     if (canRosters()) a.push({ v: 'rosters', l: 'Shifts & rosters', sub: CEC.SHIFTS.map(function (x) { return [x.c, x.l + ' shift']; }), subAct: 'roster' });
     if (canCert()) a.push({ v: 'certs', l: 'Death certificate', badge: S.pendCerts || 0, blink: true });
     if (canClin() || isPrintId()) a.push({ v: 'forms', l: 'Download forms' });              // not for students
@@ -3202,6 +3538,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (v === 'letter') return S.prev === 'detail' ? 'census' : S.prev;
     if (v === 'roster') return 'rosters';
     if (v === 'wedit') return 'about';
+    if (v === 'echo' && !isEchoId()) return 'appt';
     if (Q_KINDS[v] || ER_KINDS[v]) return 'home';
     return v;
   }
@@ -3212,7 +3549,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         var cur = it.v === 'census' ? S.cen.mode : it.v === 'rosters' ? (S.view === 'roster' ? S.rosterShift : '') : S.ap.type;
         return '<button role="menuitem" data-act="' + (it.subAct || 'cen') + '" data-v="' + x[0] + '" class="' + (on === it.v && cur === x[0] ? 'on' : '') + '">' + h(x[1]) + '</button>';
       }).join('') + '</div>' : '';
-      return '<div class="ni' + (it.cls ? ' ' + it.cls : '') + '"><button data-act="' + (it.act || 'go') + '" data-v="' + it.v + '" class="' + (on === it.v ? 'on' : '') + '"' + (on === it.v ? ' aria-current="page"' : '') + '>' + navIcon(it.v) + '<span>' + h(it.l) + '</span>' +
+      return '<div class="ni' + (it.cls ? ' ' + it.cls : '') + '"><button data-act="' + (it.act || 'go') + '" data-v="' + (it.v2 || it.v) + '" class="' + (on === it.v ? 'on' : '') + '"' + (on === it.v ? ' aria-current="page"' : '') + '>' + navIcon(it.v) + '<span>' + h(it.l) + '</span>' +
         (it.sub ? '<svg class="caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>' : '') +
         (it.badge ? '<span class="badge' + (it.blink ? ' blink' : '') + '" aria-label="' + it.badge + ' pending">' + it.badge + '</span>' : '') + '</button>' + sub + '</div>';
     }).join('');
@@ -3284,6 +3621,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     else if (S.view === 'roster') v.innerHTML = canRosters() ? rosterHtml() : '<section class="card">Shifts and rosters are for doctors.</section>';
     else if (S.view === 'wedit') v.innerHTML = weditHtml();
     else if (S.view === 'appt') v.innerHTML = canAppt() ? apptHtml() : '<section class="card">You do not have the right to give appointments.</section>';
+    else if (S.view === 'echo') v.innerHTML = echoPageHtml();
     else if (S.view === 'bulk') v.innerHTML = bulkHtml();
     else if (S.view === 'petty') v.innerHTML = isAdmin() ? pettyHtml() : '<section class="card">The petty OPD register is for the admin.</section>';
     else if (S.view === 'mrreg') v.innerHTML = mrRegHtml();
@@ -3706,7 +4044,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     return api('apiSetUser', JSON.stringify(data)).then(function () { toast(msg); S.users = null; render(); }, function (e) { toast(errText(e)); });
   }
   function editUser(u) {
-    var roles = [['doctor', 'Doctor'], ['nurse', 'Nursing staff'], ['student', 'Student']];
+    var roles = [['doctor', 'Doctor'], ['nurse', 'Nursing staff'], ['student', 'Student'], ['echo', 'Echo technician']];
     var main = u.login.toLowerCase() === 'admin';
     var body = '<p class="muted small">' + h(u.name) + ' &middot; login ID ' + h(u.login) + '</p>' +
       (main ? '' : '<label class="lb" for="uRole">Profession</label><select class="in" id="uRole">' + roles.map(function (r) { return '<option value="' + r[0] + '"' + (u.role === r[0] ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select>' +
@@ -3814,11 +4152,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
     });
     if (!entry) setTimeout(function () { var m = S.form && S.form.auto ? $('fName') : $('fMr'); if (m) m.focus(); }, 60);
   }
-  /* The category buttons: the census categories with BP check only and ECG only after OPD (both are OPD patients, regular check-up). */
-  function formCats() {
-    var a = [];
-    CEC.CATS.forEach(function (c) { a.push([c.c, c.l]); if (c.c === 'OPD') { a.push(['BPO', 'BP check only', 1]); a.push(['ECGO', 'ECG only', 1]); } });
-    return a;
+  /* The category buttons: the census categories. 14-11-2026 (night): "BP check only" and "ECG only" are no longer offered; those patients are
+     registered as OPD and get a slip like everyone else (an old record of either opens as OPD). */
+  function formCats() { return isEchoId() ? [['ECHO', 'Echo']] : CEC.CATS.map(function (c) { return [c.c, c.l]; }); }
+  /* The Echo technician registers an Echo patient: the usual registration form, the category set to Echo (the only one offered). */
+  function echoRegister() {
+    if (!S.open) return toast('No shift is open yet. Refresh the page.');
+    S.work = S.open; openReg(false);
+    S.form.cat = 'ECHO'; syncForm(); syncMr();
   }
   function onlyNote(fc, e) {
     var at = e && e.t ? ' at ' + CEC.hm(onlyEnds(e)) : ' 1 hour after registration';
@@ -3901,15 +4242,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   var VIT_LIST_MS = 30 * 60000;                       // 12-11-2026: on the Vitals page for 30 minutes after registration
   var Q_KINDS = {
-    vit: { title: 'Vitals', sub: 'Tap a patient to enter the vitals. After Save the patient leaves this list at once. Patients stay here for 30 minutes after registration (Emergency / Resus until the vitals are saved); later, vitals can be added from the patient record. A slip not printed yet carries the vitals (a printed slip is not printed again). ' +
-      'BP check only: type the BP only if it is high; if nothing is typed it closes by itself after 1 hour with BP NORMAL.',
-      lists: [['Waiting for vitals', function (e) { return !e.signed && e.cat !== 'BD' && !e.man && !hasVitals(e) && (e.cat === 'EMR' || Date.now() - (Date.parse(e.t) || 0) < VIT_LIST_MS); }],
-        ['RBS advised by the doctor', function (e) { return hasVitals(e) && advLeft(e).indexOf('RBS') >= 0; }]], empty: 'No patient is waiting for vitals.' },
+    vit: { title: 'Vitals', sub: 'Tap a patient to enter the vitals. After Save the patient leaves this list at once. Patients stay here for 30 minutes after registration (Emergency / Resus until the vitals are saved); later, vitals can be added from the patient record. A slip not printed yet carries the vitals (a printed slip is not printed again). Vitals done: every patient of this shift whose vitals are saved, newest first, to read them again.',
+      lists: [['Pending vitals', function (e) { return !e.signed && e.cat !== 'BD' && !e.man && !hasVitals(e) && (e.cat === 'EMR' || Date.now() - (Date.parse(e.t) || 0) < VIT_LIST_MS); }],
+        ['Pending RBS (advised by the doctor)', function (e) { return hasVitals(e) && advLeft(e).indexOf('RBS') >= 0; }]], empty: 'No patient is waiting for vitals.' },
     slipq: { title: 'OPD / ER slips', sub: 'An OPD or Emergency patient\u2019s slip is ready as soon as the patient is registered. Tick the slips you want and tap Print selected, or tap Print all. ' +
       'Once printed, a slip is not printed again when vitals or an ECG are added later. A print that did not come out (paper jam, two sheets pulled, print cancelled) can be printed again below, under Printed this shift.',
       lists: [['Ready to print', slipWaiting]],
       empty: 'No slip is waiting. Slips appear here as soon as patients are registered.' },
-    ecgq: { title: 'ECG', sub: 'Every patient registered in the last hour, every patient the doctor advised ECG, and every ECG only patient of this shift. Tick when the ECG is done. Search to find any other patient of this shift.',
+    ecgq: { title: 'ECG', sub: 'Every patient registered in the last hour and every patient the doctor advised ECG. Tick when the ECG is done. Search to find any other patient of this shift.',
       empty: 'No patient was registered in the last hour.' }
   };
   var ECG_MS = 60 * 60000;
@@ -3970,6 +4310,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
       (S.synced ? CEC.hm(S.synced.toISOString()) : 'Refresh') + '</button></div><p class="muted small" style="margin:0 0 10px">' + h(K.sub) + '</p>' + (S.saving ? '<div class="qsave"><span class="spin"></span>Saving ' + S.saving + ' patient' + (S.saving === 1 ? '' : 's') + ' in the background&hellip;</div>' : '');
     if (kind === 'ecgq') return head + '<input class="in" id="ecgQ" type="search" placeholder="Search name, MR No. or slip number" value="' + h(S.ecgQ || '') + '" autocomplete="off" enterkeyhint="search" style="margin-bottom:6px"><div id="ecgRes">' + ecgSearchHtml() + '</div></div>';
     var groups = K.lists.map(function (l, i) { return { h: l[0], items: qItems(l[1]), done: i > 0 }; });
+    if (kind === 'vit') {                                      // 14-11-2026 (night): two parts, Pending vitals and Vitals done
+      var vdone = vitDoneItems(''), npend = groups.reduce(function (n, g) { return n + g.items.length; }, 0), vtab = S.vitTab === 'done' ? 'done' : 'pend';
+      head += '<div class="seg vtabs">' + [['pend', 'Pending vitals', npend], ['done', 'Vitals done', vdone.length]].map(function (t) {
+        return '<button type="button" data-act="vit-tab" data-v="' + t[0] + '" class="' + (vtab === t[0] ? 'on' : '') + '" aria-pressed="' + (vtab === t[0]) + '">' + t[1] + ' <span class="cnt">' + t[2] + '</span></button>'; }).join('') + '</div>';
+      if (vtab === 'done') return head + '<input class="in" id="vitQ" type="search" placeholder="Search name, MR No. or slip number" value="' + h(S.vitQ || '') + '" autocomplete="off" enterkeyhint="search" style="margin-bottom:6px">' +
+        '<div id="vitRes">' + vitDoneHtml() + '</div></div>';
+    }
     var any = groups.some(function (g) { return g.items.length; });
     if (kind === 'slipq') {
       var ready = groups[0].items.length, shown = {};
@@ -3978,6 +4325,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       Object.keys(S.slipSel).forEach(function (id) { if (!shown[id]) delete S.slipSel[id]; });      // a slip that left the page is no longer chosen
       var nsel = selItems().length;                                  // (selItems also unticks a slip printed meanwhile, e.g. by autoprint)
       head += apCardHtml() + '<div class="sliptop">' + (apOn() ? '' : '<div class="seg" id="qPaper">' +
+        '<button type="button" data-act="q-paper" data-v="a4h" class="' + (S.paperNow === 'a4h' ? 'on' : '') + '">Half-cut A4 (2 slips)</button>' +
         '<button type="button" data-act="q-paper" data-v="a4" class="' + (S.paperNow === 'a4' ? 'on' : '') + '">A4 (2 slips a sheet)</button>' +
         '<button type="button" data-act="q-paper" data-v="a4q" class="' + (S.paperNow === 'a4q' ? 'on' : '') + '">A4 (4 slips a sheet)</button></div>') +
         '<div class="qpb"><button class="btn" data-act="q-printsel" id="qPrintSel"' + (nsel ? '' : ' disabled') + '>' + ICON.print + ' Print selected' + (nsel ? ' (' + nsel + ')' : '') + '</button>' +
@@ -3990,9 +4338,28 @@ if (typeof module !== 'undefined') module.exports = CEC;
       }).join('') + (kind === 'slipq' ? printedHtml() : '') : '<div class="plist"><div class="empty">' + h(K.empty) + '</div></div>') +
       '<p class="muted small" style="margin:12px 0 0">Other patients: open them from the <button class="lnk" data-act="go" data-v="shift">Patient dashboard</button>.</p></div>';
   }
+  /* Vitals done: every patient of this shift (and the last one, while it shows) whose vitals are saved, newest first, the vitals in large
+     letters; tap to see or correct them. For the patient whose slip printed before the vitals were taken. */
+  function vitDoneItems(q) {
+    q = (q || '').trim().toLowerCase();
+    return qItems(function (e) { return hasVitals(e) && e.cat !== 'BD' && (!q || ((e.name || '') + ' ' + (e.mr || '') + ' ' + (e.tok || '')).toLowerCase().indexOf(q) >= 0); }).reverse();
+  }
+  function vitDoneHtml() {
+    var q = (S.vitQ || '').trim(), list = vitDoneItems(q), shown = list.slice(0, 150);
+    if (!list.length) return '<div class="plist"><div class="empty">' + (q ? 'No patient with vitals matches.' : 'No vitals saved yet in this shift.') + '</div></div>';
+    return '<div class="gh2">' + (q ? 'Search: ' : 'Newest first: ') + list.length + ' patient' + (list.length === 1 ? '' : 's') + '</div><div class="plist">' + shown.map(function (x) {
+      var e = x.e;
+      return '<button class="prow vdone" data-act="q-open" data-v="vit" data-src="' + x.src + '" data-id="' + h(e.id) + '"><div class="pr-l"><div class="pr-t">' + CEC.hm(e.t) + '</div></div>' +
+        '<div class="pr-m"><div class="pr-name">' + (e.tok ? '<span class="tokb ' + (e.tok.indexOf('ER') === 0 ? 'er' : '') + '">' + h(e.tok) + '</span> ' : '') + h(e.name || '(no name)') +
+        ' <span class="muted">&middot; ' + mrTagH(e) + '</span></div><div class="pr-sub">' + (e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '') + (e.age !== '' && e.age != null ? ', ' + h(e.age) + ' y' : '') +
+        ' &middot; ' + h(catLabel(e)) + (x.src === 'prev' ? ' &middot; ' + h(CEC.shiftName(x.sh.shift)) + ' shift' : '') + (e.tokPr ? ' &middot; slip printed ' + CEC.hm(e.tokPr) : e.tok ? ' &middot; slip not printed yet' : '') + '</div>' +
+        '<div class="vbig">' + h(vitalsText(e)) + (ecgDone(e) ? ' &middot; ECG done' : '') + '</div></div><span class="chev">&rsaquo;</span></button>';
+    }).join('') + '</div>' + (list.length > shown.length ? '<p class="muted small">The newest 150 are shown. Search to find an older one.</p>' : '');
+  }
   function openQueue(kind) {
     if (isOff()) return toast('This page needs internet.');
     if (kind === 'ecgq') S.ecgQ = '';
+    if (kind === 'vit') { S.vitTab = 'pend'; S.vitQ = ''; }
     setView(kind); refresh(true);
   }
   /* ECG page: tick or untick at once; it is saved in the background. */
@@ -4156,7 +4523,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (r && (anyOverlay() || (a && a.id === 'erQ'))) r.innerHTML = erListHtml(); else render();
   }
   function openQuick(e, kind, src) {
-    var sug = e.only ? '' : e.tok ? e.tok.split(' ')[0] : e.cat === 'OPD' ? 'OPD' : e.cat === 'EMR' ? 'ER' : '';
+    var sug = e.only ? '' : e.tok ? e.tok.split(' ')[0] : e.cat === 'EMR' ? 'ER' : e.cat === 'BD' || e.petty || e.man ? '' : 'OPD';   // 14-11-2026: ETT / Echo get an OPD slip
     S.qe = { id: e.id, kind: 'vitals', src: src || 'work', slip: sug };
     var el = $('sheet'), rbsOnly = hasVitals(e) && advLeft(e).indexOf('RBS') >= 0;
     el.innerHTML = '<div class="sh-head"><button data-act="qe-close">Cancel</button><h3>Vitals</h3><span>' + (e.tok ? h(e.tok) : '') + '</span></div><div class="sh-body"><form id="qf" novalidate autocomplete="off">' +
@@ -4167,7 +4534,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         : e.man ? '<div class="slipln"><span><b>Manual slip</b>: written by hand; no slip is printed.</span></div>'
         : e.tok ? '<div class="slipln"><span>Slip <b>' + h(e.tok) + '</b>: ' + (e.tokPr ? 'printed already, so it is not printed again; the vitals are saved in the patient\u2019s record' : 'the vitals are added to it when you save') + '</span></div>'
         : '<div class="fsec">OPD / ER slip</div><div class="seg" id="qSlip"><button type="button" data-act="qe-slipk" data-v="OPD">OPD</button><button type="button" data-act="qe-slipk" data-v="ER">ER</button></div>' +
-          '<p class="muted small" style="margin:4px 0 0">The slip number is given when you save, so the slip is ready on the OPD / ER slip page. ' + (e.cat === 'ETT' || e.cat === 'ECHO' ? 'ETT / Echo: tap OPD or ER only if a slip is needed.' : 'Choosing the other one also changes the category.') + '</p>') +
+          '<p class="muted small" style="margin:4px 0 0">The slip number is given when you save, so the slip is ready on the OPD / ER slip page. ' + (e.cat === 'ETT' || e.cat === 'ECHO' ? 'ETT / Echo patients get an OPD slip (ER if needed).' : 'Choosing the other one also changes the category.') + '</p>') +
       '<div id="qErr"></div></form></div><div class="sh-foot"><button class="btn pri" data-act="qe-save">Save</button></div>';
     el.classList.remove('hidden'); document.body.style.overflow = 'hidden'; overlayOpened();
     setOn('qSlip', S.qe.slip);
@@ -4875,12 +5242,15 @@ if (typeof module !== 'undefined') module.exports = CEC;
      also during the few seconds before the census has saved it, so nothing prints on the old paper meanwhile. */
   function apPaper() { return normPaper(S.deskPaperLocal || (S.auto && S.auto.paper)); }
   /* Slip paper: 'a5' (1 slip a page), 'a4' (A4 sideways, 2 slips a sheet), 'a4q' (A4 upright, 4 A6 slips a sheet: 13-11-2026). */
-  function normPaper(p) { return p === 'a4q' ? 'a4q' : 'a4'; }      // 13-11-2026: A4 only (A5 jammed); an old A5 setting prints 2 slips a sheet
-  function paperShort(p) { return p === 'a4q' ? 'A4 \u00d7 4' : p === 'a4' ? 'A4' : 'A5'; }
-  function paperPer(p) { return p === 'a4q' ? 4 : p === 'a4' ? 2 : 1; }
+  /* 14-11-2026 (night): 'a4h' = A4 already cut in half across (210 x 148.5 mm, put in long side first): 2 small slips on each half sheet.
+     The printer is still sent a plain A4 page; the slips are on its top half (see report.js). */
+  function normPaper(p) { return p === 'a4q' || p === 'a4h' ? p : 'a4'; }      // 13-11-2026: A4 only (A5 jammed); an old A5 setting prints 2 slips a sheet
+  function paperShort(p) { return p === 'a4q' ? 'A4 \u00d7 4' : p === 'a4h' ? 'Half A4 \u00d7 2' : p === 'a4' ? 'A4' : 'A5'; }
+  function paperPer(p) { return p === 'a4q' ? 4 : p === 'a4' || p === 'a4h' ? 2 : 1; }
   function askPaper() {
-    return modal('2 or 4 slips a sheet?', '<p>The slips print on A4 paper.</p><p class="muted small" style="margin:0">2 slips a sheet: cut in the middle (each slip the size of A5). 4 slips a sheet: four small slips, cut in four.</p>',
-      [{ label: 'A4: 2 slips a sheet', cls: 'pri', value: 'a4' }, { label: 'A4: 4 slips a sheet', value: 'a4q' }, { label: 'Not now', value: null }], true);
+    return modal('Which paper and how many slips?', '<p class="muted small" style="margin:0"><b>Half-cut A4:</b> A4 cut in half across, put in the long side first; 2 small slips on each half sheet. ' +
+      '<b>A4, 2 slips:</b> cut in the middle (each slip the size of A5). <b>A4, 4 slips:</b> four small slips, cut in four.</p>',
+      [{ label: 'Half-cut A4: 2 slips', cls: 'pri', value: 'a4h' }, { label: 'A4: 2 slips a sheet', value: 'a4' }, { label: 'A4: 4 slips a sheet', value: 'a4q' }, { label: 'Not now', value: null }], true);
   }
   function withPaper(fn) {
     if (isPhone() && apOn() && !apHere()) return fn(normPaper(S.auto.paper));     // 13-11-2026: sent to the print desk, which uses its own paper
@@ -4901,7 +5271,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function askBlankSlips0() {
     var lastP = normPaper(store_('cec_blankp'));
     modal('Blank OPD slips', '<p class="muted small">The standard OPD / ER slip with empty lines, to fill by hand.</p>' +
-      '<label class="lb" for="bsPaper">Paper</label><select class="in" id="bsPaper"><option value="a4q"' + (lastP === 'a4q' ? ' selected' : '') + '>A4: four small slips a sheet (cut in four)</option><option value="a4"' + (lastP === 'a4' ? ' selected' : '') + '>A4: two slips a sheet (cut in the middle)</option></select>' +
+      '<label class="lb" for="bsPaper">Paper</label><select class="in" id="bsPaper"><option value="a4h"' + (lastP === 'a4h' ? ' selected' : '') + '>Half-cut A4: two small slips on each half sheet</option><option value="a4q"' + (lastP === 'a4q' ? ' selected' : '') + '>A4: four small slips a sheet (cut in four)</option><option value="a4"' + (lastP === 'a4' ? ' selected' : '') + '>A4: two slips a sheet (cut in the middle)</option></select>' +
       '<label class="lb" for="bsN">How many slips</label><input class="in" id="bsN" type="number" inputmode="numeric" min="1" max="200" value="20">',
       [{ label: 'Cancel', value: null }, { label: 'Download PDF', value: 'form:pdf' }, { label: 'Print', cls: 'pri', value: 'form:print' }]).then(function (v) {
       if (!v) return;
@@ -4909,7 +5279,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       if (!(n >= 1 && n <= 200)) return toast('Type a number of slips from 1 to 200.');
       store_('cec_blankp', paper);
       var list = []; for (var i = 0; i < n; i++) list.push({ blank: true });
-      if (v._b === 'pdf') return offerFile('Blank_OPD_slips_' + n + '_' + (paper === 'a4q' ? 'A4x4' : paper.toUpperCase()) + '.pdf', CEC.slipPdfMany(list, slipLogoBytes(), paper), 'application/pdf', false);
+      if (v._b === 'pdf') return offerFile('Blank_OPD_slips_' + n + '_' + (paper === 'a4q' ? 'A4x4' : paper === 'a4h' ? 'HalfA4x2' : paper.toUpperCase()) + '.pdf', CEC.slipPdfMany(list, slipLogoBytes(), paper), 'application/pdf', false);
       if (canDesk()) return deskJob({ kind: 'blankslips', n: n }, n + ' blank OPD slip' + (n === 1 ? '' : 's'));   // on the print desk's own paper
       phoneNoDesk(function () { printSlips(list.map(function (e) { return { e: e }; }), paper, { claimed: true, blank: true }); });
     });
@@ -4941,7 +5311,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     pa.innerHTML = CEC.slipSvgMany(list, SLIP_LOGO, paper);
     var ps = $('pageSize');
     if (!ps) { ps = document.createElement('style'); ps.id = 'pageSize'; document.head.appendChild(ps); }
-    ps.textContent = '@page{size:' + (paper === 'a5' ? '148.5mm 210mm' : paper === 'a4q' ? 'A4 portrait' : 'A4 landscape') + ';margin:0}';
+    ps.textContent = '@page{size:' + (paper === 'a5' ? '148.5mm 210mm' : paper === 'a4q' || paper === 'a4h' ? 'A4 portrait' : 'A4 landscape') + ';margin:0}';
     document.body.classList.add('printing');
     clearTimeout(printEnd);
     var end = function () { document.body.classList.remove('printing'); ps.textContent = ''; };
@@ -4952,7 +5322,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     try { window.print(); sentOnce(); } catch (x) { done(); slipsPdfOffer(list, paper); }     // Chrome returns from print() once the job is sent (kiosk printing: at once)
     var sheets = CEC.slipSheets(list, paper);                // 14-11-2026: an Emergency / Resus slip has a whole A4 page
     if (opt.blank) return toast(list.length + ' blank slips sent to the printer (' + sheets + ' ' + (paper === 'a5' ? 'A5' : 'A4') + ' sheet' + (sheets === 1 ? '' : 's') + ').');
-    toast((opt.auto ? 'Autoprint: ' : again.length && again.length === list.length ? 'Printing again (same numbers): ' : '') + (list.length === 1 ? (list[0].tok || 'Slip') + ' sent to the printer.' + (CEC.isErSlip(list[0]) && paper !== 'a5' ? ' Emergency / Resus: it prints alone on a whole A4 page.' : paper === 'a4' ? ' It prints on the left half of the A4 sheet.' : paper === 'a4q' ? ' It prints in the top left quarter of the A4 sheet; the other three are blank slips.' : '')
+    toast((opt.auto ? 'Autoprint: ' : again.length && again.length === list.length ? 'Printing again (same numbers): ' : '') + (list.length === 1 ? (list[0].tok || 'Slip') + ' sent to the printer.' + (CEC.isErSlip(list[0]) && paper !== 'a5' ? (paper === 'a4h' ? ' Emergency / Resus: it prints alone on the whole half sheet.' : ' Emergency / Resus: it prints alone on a whole A4 page.') : paper === 'a4' ? ' It prints on the left half of the A4 sheet.' : paper === 'a4h' ? ' It prints on the left of the half sheet.' : paper === 'a4q' ? ' It prints in the top left quarter of the A4 sheet; the other three are blank slips.' : '')
       : list.length + ' slips sent to the printer (' + sheets + ' ' + (paper === 'a5' ? 'A5' : 'A4') + ' sheet' + (sheets === 1 ? '' : 's') + ').'));
   }
   function printSlip(e, sh, paper) { printSlips([{ e: e, sh: sh }], paper); }
@@ -4965,6 +5335,18 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function isPhone() { return APP_BUILD || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent || ''); }
   /* 13-11-2026: a phone has no printer: with autoprint on at the print desk, Print / Print all send the slips there (printed within seconds). */
   function deskPrint(items, again) {
+    if (isDemo()) {                                   // 14-11-2026: practice slips go to the real print desk as a job that carries them
+      if (!canDesk()) return false;
+      var pl = items.filter(function (x) { return x.e && x.e.tok && !/^(q-|tmp)/.test(x.e.id); });
+      if (!pl.length) return false;
+      if (isOff()) { toast('No internet: the slips could not be sent to the print desk. Tap Print again when the internet is back.'); return true; }
+      var nm = pl.length + ' practice slip' + (pl.length === 1 ? '' : 's');
+      deskJob({ kind: 'slips', list: pl.map(function (x) { var e = x.e, o = { tok: e.tok, name: e.name, mr: e.mr, opd: !!e.opd, age: e.age, sex: e.sex, cat: e.cat, t: e.t, procs: (e.procs || []).indexOf('ECG') >= 0 ? ['ECG'] : [] };
+        VIT.forEach(function (v) { o[v[0]] = e[v[0]] == null ? '' : e[v[0]]; }); return o; }) }, nm);
+      markPrinted(pl.filter(function (x) { return !x.e.tokPr && x.sh; }));
+      if (S.view === 'slipq') setTimeout(render, 0);
+      return true;
+    }
     if (!isPhone() || !apOn() || apHere()) return false;
     var real = items.filter(function (x) { return x.sh && x.e.id && !/^(q-|tmp)/.test(x.e.id); });
     var fresh = again ? [] : real.filter(function (x) { return !x.e.tokPr; }), re = again ? real : real.filter(function (x) { return !!x.e.tokPr; });
@@ -4979,7 +5361,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
     return true;
   }
   /* 13-11-2026: a phone (no printer) sends a death certificate, blank certificates, blank OPD slips or a PDF / photo form to the print desk. */
-  function canDesk() { return isPhone() && apOn() && !apHere(); }
+  /* 14-11-2026: a demonstration ID (or the admin's demonstration view) on a phone prints at the REAL print desk when its autoprint is on;
+     the print desk prints those jobs with DEMONSTRATION on them. */
+  function canDesk() { return isPhone() && (isDemo() ? !!(S.realDesk && S.realDesk.on) : apOn() && !apHere()); }
   function deskJob(job, label) {
     if (isOff()) { toast('No internet: ' + label + ' could not be sent to the print desk. Try again when the internet is back.'); return; }
     job.jid = 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);   // sent twice (lost answer): printed once
@@ -5002,6 +5386,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function deskState(r) {
     if (!r) return;
     if ('autoprint' in r && S.open && r.shiftId === S.open.id) S.auto = r.autoprint || null;
+    S.realDesk = r.real || null;
     deskSeen(r.age);
   }
   setInterval(function () {
@@ -5016,7 +5401,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* 13-11-2026: before Print on a phone decides where to go, it asks the census whether the print desk is on now
      (the phone may have last refreshed before autoprint was switched on). */
   function withDesk(fn) {
-    if (!isPhone() || apHere() || apOn() || isOff() || !S.token) return fn();
+    if (!isPhone() || apHere() || (apOn() && !isDemo()) || isOff() || !S.token) return fn();
     var done = false, go = function () { if (!done) { done = true; fn(); } };
     toast('Checking the print desk\u2026');
     setTimeout(go, 6000);
@@ -5027,7 +5412,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (!isPhone()) return printHere();
     modal('The print desk is not on', '<p>Autoprint is off at the print desk, so this cannot be sent there.</p>' +
       '<p class="small">At the print desk computer: <b>OPD / ER slip &rsaquo; Autoprint &rsaquo; Switch on</b>, then tap Print again here.' +
-      (S.me && S.me.demo ? ' You are signed in with a demonstration ID: its printing is separate from the real print desk.' : '') + '</p>',
+      (isDemo() ? ' Demonstration ID: prints go to the real print desk (marked DEMONSTRATION) when its autoprint is on.' : '') + '</p>',
       [{ label: 'Print on this phone', value: 'here' }, { label: 'OK', cls: 'pri', value: null }], true).then(function (v) { if (v === 'here') printHere(); });
   }
   /* The print desk: takes the jobs one at a time, prints each once and keeps nothing (no copy is saved on this device). */
@@ -5041,9 +5426,16 @@ if (typeof module !== 'undefined') module.exports = CEC;
       if (r.left > 0) setTimeout(deskJobs, 5000);       // the next one when this print has gone out
     }, function () { S.jobBusy = false; });
   }
+  /* 14-11-2026: a job sent by a demonstration ID prints with DEMONSTRATION on every page (the pages are drawn at once, then the mark is put back). */
   function printJob(j) {
+    var was = isDemo();
+    if (j.demo) CEC.setDemo(true);
+    try { return printJob0(j); } finally { if (j.demo) CEC.setDemo(was); }
+  }
+  function printJob0(j) {
     var paper = apPaper(), list = [], i;
     if (j.err) return toast('Print desk: ' + j.err);
+    if (j.kind === 'slips') return printSlips((j.list || []).map(function (e) { return { e: e }; }), paper, { claimed: true });
     if (j.kind === 'blankslips') { for (i = 0; i < j.n; i++) list.push({ e: { blank: true } }); return printSlips(list, paper, { claimed: true, blank: true }); }
     if (j.kind === 'cert') return printPages(CEC.deathCertSvg(j.cert, S.settings, logoBytes()), 'Print desk: ' + j.what);
     if (j.kind === 'blankcert') return printPages(CEC.deathCertSvg({}, S.settings, logoBytes(), j.n), 'Print desk: ' + j.what);
@@ -5241,7 +5633,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function apOn() { return !!(S.auto && S.auto.on && S.open && S.auto.shift === S.open.id); }
   function apHere() { return apOn() && S.auto.dev === myDev(); }
   function apModeText(m) { return m === 'now' ? 'without vitals' : 'with vitals'; }
-  function apPaperText(p) { return p === 'a4q' ? 'A4 (4 slips a sheet)' : p === 'a4' ? 'A4 (2 slips a sheet)' : 'A5 (1 slip a page)'; }
+  function apPaperText(p) { return p === 'a4q' ? 'A4 (4 slips a sheet)' : p === 'a4h' ? 'Half-cut A4 (2 slips on each half sheet)' : p === 'a4' ? 'A4 (2 slips a sheet)' : 'A5 (1 slip a page)'; }
   /* the slips this device would print now (the running shift only) */
   function apReady(sh) {
     sh = sh || S.open; if (!apOn() || !sh) return [];
@@ -5310,7 +5702,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var body = '<p class="small" style="margin:0 0 6px">For this shift, for everyone. The next shift starts with it off.</p>' +
       '<label class="lb">Print each slip</label>' + seg('mode', [['vit', 'With vitals', 'prints once the vitals are saved'], ['now', 'Without vitals', 'prints as soon as the patient is registered']]) +
       '<p class="muted small" style="margin:4px 0 0">Short-staffed: without vitals. Enough staff: with vitals.</p>' +
-      '<label class="lb">Slips on each A4 sheet</label>' + seg('paper', [['a4', 'A4 \u00d7 2', '2 slips a sheet, cut in the middle'], ['a4q', 'A4 \u00d7 4', '4 small slips a sheet, cut in four']]) +
+      '<label class="lb">Slips on each A4 sheet</label>' + seg('paper', [['a4h', 'Half A4 \u00d7 2', 'A4 already cut in half across: 2 small slips on each half sheet'], ['a4', 'A4 \u00d7 2', '2 slips a sheet, cut in the middle'], ['a4q', 'A4 \u00d7 4', '4 small slips a sheet, cut in four']]) +
       '<label class="lb">Timer: print the ready slips</label>' + seg('every', AP_EVERY.map(function (x) { return [String(x[0]), x[1], x[2]]; })) +
       '<p class="muted small" style="margin:4px 0 0">Off: each slip prints by itself as soon as it is ready (with vitals: once the vitals are saved). Emergency / Resus slips always print at once, without vitals.</p>' +
       (other ? '<label class="check" style="margin-top:12px"><input type="checkbox" id="apHereCk"> Print on this device from now on (instead of the other device)</label>'
@@ -5349,7 +5741,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       api('apiDeskPaper', JSON.stringify({ paper: p, dev: myDev() })).then(function (a) {
         S.auto = a || null; S.apSeen = null; S.paperNow = p; store_('cec_deskpaper', p); if (S.auto && normPaper(S.auto.paper) === p) S.deskPaperLocal = null;
         if (apHere()) { S.apNext = Date.now() + (apInstant() ? AP_POLL : apEvery()); apSaveNext(); }
-        var t = 'A4, ' + (p === 'a4q' ? '4' : '2') + ' slips a sheet. Autoprint is on here (' + (a && a.mode === 'now' ? 'without vitals' : 'with vitals') + ', ' + apEveryText(a ? a.every : 300) + ').';
+        var t = (p === 'a4h' ? 'Half-cut A4, 2 slips on each half sheet' : 'A4, ' + (p === 'a4q' ? '4' : '2') + ' slips a sheet') + '. Autoprint is on here (' + (a && a.mode === 'now' ? 'without vitals' : 'with vitals') + ', ' + apEveryText(a ? a.every : 300) + ').';
         toast('Set by the CEC Printer app: ' + t);
         if (!S.form) render(); else apPaintLine();
         res({ ok: true, text: t });
@@ -5360,7 +5752,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   (function () {                                     // ?paper=a4 / a4q in the census link (the app opened this window): once per window
     var take = function (q) {
       var p = q && q.paper;
-      if (p !== 'a4' && p !== 'a4q') return;
+      if (p !== 'a4' && p !== 'a4q' && p !== 'a4h') return;
       try { if (sessionStorage.getItem('cec_deskparam') === p) return; sessionStorage.setItem('cec_deskparam', p); } catch (x) { }
       S.deskPaperWant = p; S.deskPaperLocal = p; S.paperNow = p;
       if (S.me && S.token) { S.deskPaperWant = null; deskPaperApply(p); }
@@ -5668,11 +6060,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
     html += '<section class="card"><div class="ct">Add names</div><p class="muted small" style="margin:0">One patient on each line, in the order of the register. Paste the names, or choose a text or CSV file ' +
       '(the old register: in Excel, <i>File &gt; Save As &gt; CSV</i>). Any number of names: each morning shift takes the next ones, up to the daily limit, as closed OPD patients of that day. ' +
       'The record keeper sees each MR on the <b>MR register</b> page.</p>' +
-      '<p class="muted small" style="margin:6px 0 0">Numbers like <b>1.</b> or <b>i)</b> are taken off; age and gender after the name are read (for example <i>Aslam Khan 45 M</i>, <i>Rukhsana Bibi, 50/F</i>); otherwise the gender is taken from the name.</p>' +
+      '<p class="muted small" style="margin:6px 0 0"><b>Just the names</b>, one on each line, is enough: no numbers, age or gender needed (the gender is taken from the name). ' +
+        'If a line does have a number like <b>1.</b> or <b>i)</b>, it is taken off; an age and gender after the name are read (for example <i>Aslam Khan 45 M</i>).</p>' +
       '<label class="lb">Category</label><div class="seg pkind" id="ptKind">' + PETTY_K.map(function (k) { return '<button type="button" data-act="pt-kind" data-v="' + k[0] + '" class="' + ((P.kind || 'REG') === k[0] ? 'on' : '') + '">' + h(k[1]) + '</button>'; }).join('') + '</div>';
     if (P.file) html += '<div class="ptfile">File <b>' + h(P.file.name) + '</b>: ' + fmtN(P.file.n) + ' line' + (P.file.n === 1 ? '' : 's') + '. Tap <b>Add to the waiting list</b>.</div>';
     else if (txt.length > PT_BIG) html += '<div class="ptfile">A long list is pasted: <b>' + fmtN((txt.match(/\n/g) || []).length + 1) + '</b> lines. Tap <b>Add to the waiting list</b>.</div>';
-    else html += '<label class="lb" for="ptText">Names</label><textarea class="in pbubble" id="ptText" rows="10" spellcheck="false" placeholder="i. Muhammad Aslam 45 M&#10;ii. Rukhsana Bibi 50 F&#10;iii. Abdul Qadir 62&#10;iv. Saima Khan, 38/F">' + h(txt) + '</textarea>';
+    else html += '<label class="lb" for="ptText">Names</label><textarea class="in pbubble" id="ptText" rows="10" spellcheck="false" placeholder="Hamza Ahmed&#10;Daniyal&#10;Rukhsana Bibi&#10;Abdul Qadir">' + h(txt) + '</textarea>';
     html += '<input type="file" id="ptFile" accept=".txt,.csv,text/plain,text/csv" class="hidden"><div class="sbtns" style="margin-top:8px">' +
       (P.busy ? '' : '<button class="btn" data-act="pt-file">Choose a file (.txt or .csv)</button>' + (P.file || txt ? '<button class="btn" data-act="pt-clear">Clear</button>' : '')) + '</div>' +
       (S.mr ? '' : '<div class="warn" style="margin-top:8px">Automatic MR is not set yet. <button class="lnk" data-act="mr-set">Enter the last MR No. of the manual register</button></div>');
@@ -6120,6 +6513,246 @@ if (typeof module !== 'undefined') module.exports = CEC;
     cam: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
     img: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-6-6-9 9"/></svg>'
   };
+  /* ---------- Echo reports (14-11-2026 night): Appointments > Echocardiography > Echo reports ----------
+     Made like the death certificate: a sheet with the patient, the measurements and tick lists of findings; the lines for the
+     FINAL ECHO REPORT come by themselves from what is ticked. A line typed by hand is kept for everyone for next time.
+     Made and changed by doctors, the admin and the Echo technician; nursing staff can view and print. Printed like the certificates. */
+  function isEchoId() { return !!(S.me && S.me.echo); }
+  function canEchoMake() { return !!(S.me && (S.me.canEcho || (S.me.canEcho == null && (S.me.canEdit || S.me.admin)))); }
+  function canEchoSee() { return !!(S.me && (S.me.seeEcho || canEchoMake() || canClin())); }
+  var ECHO_PART = { st: 'Structural interpretation', dp: 'Doppler (flow abnormality, colour flow mapping)', fin: 'Final echo report', nt: 'Note' };
+  function loadEcho(force) {
+    if (S.echoBusy && !force) return Promise.resolve();
+    S.echoBusy = true;
+    var t = pkToday();
+    return Promise.all([api('apiEchoList'), api('apiEchoPhrases').then(null, function () { return []; }), api('apiAppts', 'ECHO', CEC.addDays(t, -1), t).then(null, function () { return []; })]).then(function (r) {
+      S.echoBusy = false; S.echo = Object.assign(S.echo || {}, { list: r[0] || [], at: Date.now(), apToday: r[2] || [] }); S.echoPhr = r[1] || [];
+      if (S.view === 'echo') render();
+    }, function (e) { S.echoBusy = false; S.echo = Object.assign(S.echo || {}, { err: errText(e) }); if (S.view === 'echo') render(); });
+  }
+  function echoNameKey(n) { return String(n || '').toUpperCase().replace(/[^A-Z]/g, ''); }
+  /* Waiting for a report: today's echo appointments (booked or done) and the Echo patients registered in the census today. */
+  function echoPending() {
+    var E = S.echo || {}, t = pkToday(), list = E.list || [], have = {}, out = [];
+    list.forEach(function (x) { if (x.apptId) have['a' + x.apptId] = 1; if (x.entryId) have['e' + x.entryId] = 1; if (x.date === t) have['n' + echoNameKey(x.name)] = 1; });
+    (E.apToday || []).forEach(function (a) {
+      if (a.date !== t || a.status === 'C' || a.status === 'M' || have['a' + a.id] || have['n' + echoNameKey(a.name)]) return;
+      have['n' + echoNameKey(a.name)] = 1;
+      out.push({ kind: 'appt', id: a.id, name: a.name, age: a.age, sex: a.sex, mr: a.mr, sub: 'Echo appointment No. ' + a.no + (a.time ? ', ' + a.time + ' hrs' : '') });
+    });
+    [S.open, S.prevShift].forEach(function (sh) {
+      if (!sh || sh.censusDate !== t) return;
+      (sh.entries || []).forEach(function (e) {
+        if (e.cat !== 'ECHO' || /^(q-|tmp)/.test(e.id) || have['e' + e.id] || have['n' + echoNameKey(e.name)]) return;
+        have['n' + echoNameKey(e.name)] = 1;
+        out.push({ kind: 'entry', id: e.id, name: e.name, age: e.age, sex: e.sex, mr: e.mr, sub: 'Registered ' + CEC.hm(e.t) + (e.tok ? ' · ' + e.tok : '') });
+      });
+    });
+    return out;
+  }
+  function echoPageHtml() {
+    if (!canEchoSee()) return '<section class="card">Echo reports are for doctors, nursing staff and the Echo technician.</section>';
+    var E = S.echo;
+    if (!E || !E.list) { if (!S.echoBusy) setTimeout(loadEcho, 0); return '<section class="card center muted">' + (E && E.err ? h(E.err) : '<span class="spin"></span>Loading echo reports&hellip;') + '</section>'; }
+    if (Date.now() - (E.at || 0) > 120000 && !S.echoBusy) setTimeout(loadEcho, 0);
+    var mk = canEchoMake(), pend = mk ? echoPending() : [], q = (E.q || '').trim();
+    var html = '<div class="narrow"><div class="listhead"><h3>Echo reports</h3>' + (isEchoId() ? '' : '<button class="btn sm" data-act="ap-type" data-v="ECHO">Echo appointments</button>') + '</div>';
+    if (mk) html += '<section class="card' + (pend.length ? ' pendc' : '') + '"><div class="ct">Waiting for a report (' + pend.length + ')</div>' +
+      '<p class="muted small" style="margin:0">Today’s echo appointments and the Echo patients registered today, until their report is made.</p>' +
+      (pend.length ? '<div class="plist" style="margin-top:8px">' + pend.map(function (p) {
+        return '<div class="drow"><div class="sc-top"><div style="min-width:0"><div class="pr-name">' + h(p.name) + (p.mr ? ' <span class="muted">&middot; MR ' + h(p.mr) + '</span>' : '') + '</div>' +
+          '<div class="pr-sub">' + [p.sex === 'M' ? 'Male' : p.sex === 'F' ? 'Female' : '', p.age !== '' && p.age != null ? h(p.age) + ' y' : '', h(p.sub)].filter(Boolean).join(' &middot; ') + '</div></div>' +
+          '<button class="btn sm pri" data-act="ec-from" data-v="' + p.kind + '" data-id="' + h(p.id) + '">' + ICON.pen + ' Make report</button></div></div>';
+      }).join('') + '</div>' : '<p class="muted small" style="margin:8px 0 0"><b>None waiting.</b></p>') + '</section>' +
+      '<section class="card"><div class="ct">Make echo report</div><p class="muted small" style="margin:0 0 6px">Tick the findings; the final report fills itself. A line you add is kept for next time.</p>' +
+      '<button class="btn pri block" data-act="ec-new">+ New echo report</button></section>';
+    var list = (E.list || []).filter(function (x) { var s = q.toLowerCase(); return !s || (x.name + ' ' + (x.mr || '') + ' ' + (x.ref || '')).toLowerCase().indexOf(s) >= 0; }), groups = [], last = null;
+    list.forEach(function (x) { if (!last || last.date !== x.date) { last = { date: x.date, items: [] }; groups.push(last); } last.items.push(x); });
+    html += '<section class="card"><div class="ct">Echo reports (' + (E.list || []).length + ')</div><input class="in" id="ecQ" type="search" placeholder="Search name, MR No. or doctor" value="' + h(q) + '" autocomplete="off" style="margin:6px 0 4px">' +
+      '<div id="ecRes">' + echoListHtml(groups) + '</div></section></div>';
+    return html;
+  }
+  function echoListHtml(groups) {
+    if (!groups.length) return '<p class="muted small" style="margin:6px 0 0">' + ((S.echo && S.echo.q) ? 'No report matches.' : 'No echo reports yet.') + '</p>';
+    return groups.slice(0, 120).map(function (g) {
+      return '<div class="gh2">' + (g.date ? h(CEC.weekday(g.date) + ', ' + CEC.dmy(g.date)) : 'Date not written') + ' (' + g.items.length + ')</div><div class="plist">' + g.items.map(function (x) {
+        return '<div class="drow"><div class="pr-name">' + h(x.name) + (x.mr ? ' <span class="muted">&middot; MR ' + h(x.mr) + '</span>' : '') + '</div>' +
+          '<div class="pr-sub">' + [x.sex === 'M' ? 'Male' : x.sex === 'F' ? 'Female' : '', x.age ? h(x.age) + ' y' : '', x.ref ? 'Ref: ' + h(x.ref) : '', isAdmin() && x.by ? 'made by ' + h(x.by) : ''].filter(Boolean).join(' &middot; ') + '</div>' +
+          '<div class="sbtns ico"><button class="btn sm" data-act="ec-print" data-id="' + h(x.id) + '">' + ICON.print + ' Print</button>' +
+          '<button class="btn sm" data-act="ec-dl" data-id="' + h(x.id) + '">' + ICON.dl + ' Download</button>' +
+          (canEchoMake() ? '<button class="btn sm" data-act="ec-open" data-id="' + h(x.id) + '">' + ICON.pen + ' Edit</button>' : '') + '</div></div>';
+      }).join('') + '</div>';
+    }).join('');
+  }
+  function echoGet(id) { toast('Opening…'); return api('apiEchoGet', id).then(function (r) { if (!r) toast('This report no longer exists.'); return r; }, function (e) { toast(errText(e)); return null; }); }
+  function echoPrint(r) { printDoc('echoPdf', [r, S.settings], 'echo report' + (r.name ? ' ' + r.name : '')); }
+  function echoDownload(r) { offerFile(CEC.echoFileName(r), CEC.echoPdf(r, S.settings, logoBytes()), 'application/pdf', false); }
+  /* ---------- the report sheet ---------- */
+  function openEcho(r, from) {
+    var base = CEC.echoNew(S.settings);
+    r = r ? Object.assign(base, JSON.parse(JSON.stringify(r))) : base;
+    ['st', 'dp', 'fin', 'nt'].forEach(function (k) { r.cus[k] = (r.cus && r.cus[k]) || []; });
+    if (!r.date) r.date = pkToday();
+    if (!r.id) { var tech = store_('cec_echotech'); if (tech) r.tech = tech; else if (isEchoId()) r.tech = S.me.name; }
+    r.phys = (S.settings && S.settings.hod) || r.phys;
+    if (from) ['name', 'age', 'sex', 'mr', 'apptId', 'entryId'].forEach(function (k) { if (from[k] != null && from[k] !== '') r[k] = from[k]; });
+    S.ef = { r: r };
+    var el = $('sheet');
+    el.innerHTML = '<div class="sh-head"><button data-act="ec-close">Cancel</button><h3>Echo report</h3>' +
+      (r.id && isAdmin() ? '<button class="del" data-act="ec-del">Delete</button>' : '<span>' + (r.id ? '' : 'New') + '</span>') + '</div>' +
+      '<div class="sh-body echof" id="efBody">' + echoFormHtml() + '</div><div class="sh-foot">' +
+      (r.id ? '<button class="btn" data-act="ec-printnow">Print</button><button class="btn pri" data-act="ec-save">Save changes</button>'
+        : '<button class="btn" data-act="ec-printnow">Print only</button><button class="btn" data-act="ec-save">Save</button><button class="btn pri" data-act="ec-saveprint">Save &amp; print</button>') + '</div>';
+    el.classList.remove('hidden'); document.body.style.overflow = 'hidden'; overlayOpened();
+    if (!S.echoPhr) api('apiEchoPhrases').then(function (l) { S.echoPhr = l || []; echoRepaint(); }, function () { });
+    setTimeout(function () { var f = $('efName'); if (f && !f.value) f.focus(); }, 60);
+  }
+  function closeEcho() { S.ef = null; $('sheet').classList.add('hidden'); $('sheet').innerHTML = ''; document.body.style.overflow = ''; overlayClosed(); }
+  var ECHO_ABN = { lvs: function (n) { return n < 25 || n > 41; }, lvd: function (n) { return n >= 55; }, ef: function (n) { return n < 55; }, ivs: function (n) { return n >= 11; },
+    pw: function (n) { return n >= 11; }, la: function (n) { return n >= 40; }, rv: function (n) { return n >= 25; }, ao: function (n) { return n >= 40; } };
+  function echoAbn(k, v) { var n = parseFloat(String(v || '').replace(',', '.')); return !isNaN(n) && ECHO_ABN[k] && ECHO_ABN[k](n); }
+  function echoRow(x, s) {                            // one tick line; "__" are small boxes for the value
+    var r = S.ef.r, on = x.lib ? !!r.sel[x.k] : r.cus[s].indexOf(x.t) >= 0, vals = (x.lib && r.sel[x.k]) || [], bi = 0;
+    var txt = h(x.t).replace(/__/g, function () { var i = bi++; return '</span><input class="eblank" data-ek="blank" data-k="' + x.k + '" data-i="' + i + '" inputmode="decimal" maxlength="12" value="' + h(vals[i] || '') + '" aria-label="value"><span>'; });
+    return '<div class="erow' + (on ? ' on' : '') + '"><label><input type="checkbox" data-ek="' + (x.lib ? 'tick' : 'cus') + '" data-k="' + h(x.lib ? x.k : x.t) + '" data-s="' + s + '"' + (on ? ' checked' : '') + '><span>' + txt + '</span></label>' +
+      (!x.lib && x.saved && isAdmin() ? '<button type="button" class="lnk small ex" data-act="ec-phr-del" data-v="' + s + '" data-t="' + h(x.t) + '" aria-label="Take this line off the list">&times;</button>' : '') + '</div>';
+  }
+  function echoSecHtml(s) {
+    var r = S.ef.r, out = '', lastG = null;
+    CEC.ECHO_LIB.filter(function (x) { return x.s === s; }).forEach(function (x) {
+      if (s !== 'fin' && s !== 'nt' && x.g !== lastG) { out += '<div class="eg">' + h(x.g) + '</div>'; lastG = x.g; }
+      out += echoRow({ lib: 1, k: x.k, t: x.t }, s);
+    });
+    var saved = (S.echoPhr || []).filter(function (p) { return p.s === s; }).map(function (p) { return p.t; });
+    var own = r.cus[s].filter(function (t) { return saved.indexOf(t) < 0; });
+    if (saved.length) out += '<div class="eg">Lines kept by the CEC</div>' + saved.map(function (t) { return echoRow({ t: t, saved: 1 }, s); }).join('');
+    if (own.length) out += '<div class="eg">Added for this patient</div>' + own.map(function (t) { return echoRow({ t: t }, s); }).join('');
+    return out + '<div class="eadd"><input class="in" id="efAdd_' + s + '" placeholder="Type another line, then tap Add" maxlength="300"><button type="button" class="btn sm" data-act="ec-add" data-v="' + s + '">Add</button></div>';
+  }
+  function echoFinHtml() {
+    var r = S.ef.r, auto = CEC.echoAutoFin(r), off = r.finOff || [];
+    var rows = auto.map(function (t) {
+      var on = off.indexOf(t) < 0;
+      return '<div class="erow auto' + (on ? ' on' : '') + '"><label><input type="checkbox" data-ek="fin" data-k="' + h(t) + '"' + (on ? ' checked' : '') + '><span>' + h(t) + '</span></label></div>';
+    }).join('');
+    return '<p class="muted small" style="margin:0 0 6px">These come from the findings ticked above (and the diastolic function and RVSP). Untick one to leave it out.</p>' +
+      (rows || '<p class="muted small">Tick the findings above.</p>') + '<div class="eg">More lines</div>' + echoSecHtml('fin');
+  }
+  function echoFormHtml() {
+    var r = S.ef.r, m = r.m || {}, f = r.inflow || {}, inp = function (id, label, val, attrs) { return '<label class="lb" for="' + id + '">' + label + '</label><input class="in" id="' + id + '" value="' + h(val == null ? '' : val) + '" ' + (attrs || '') + '>'; };
+    var two = function (a, b) { return '<div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div>' + a + '</div><div>' + b + '</div></div>'; };
+    var meas = CEC.ECHO_MEAS.map(function (x) {
+      return '<div><label class="lb" for="efm_' + x[0] + '">' + h(x[1]) + ' <span class="muted">(' + h(x[2]) + ')</span></label><input class="in emeas' + (echoAbn(x[0], m[x[0]]) ? ' eab' : '') + '" id="efm_' + x[0] + '" data-ek="m" data-k="' + x[0] + '"' +
+        ' inputmode="' + (x[0] === 'ef' ? 'text' : 'decimal') + '" maxlength="12" placeholder="' + (x[0] === 'ef' ? 'e.g. 55-60' : 'mm') + '" value="' + h(m[x[0]] || '') + '"></div>';
+    }).join('');
+    var ea = CEC.echoEA(r), ph = CEC.echoPh(r);
+    return '<form novalidate autocomplete="off" onsubmit="return false"><p class="muted small fnote">' + (r.id ? 'Saved report. ' : '') + 'Name and date are needed to save or print. Everything else is optional.</p>' +
+      '<div class="fsec">Patient</div>' + two(inp('efDate', 'Date <span class="req">*</span>', r.date, 'type="date" data-ek="f" data-k="date"'), inp('efMr', 'MR No.', r.mr, 'data-ek="f" data-k="mr" autocapitalize="characters"')) +
+      inp('efName', 'Name <span class="req">*</span>', r.name, 'data-ek="f" data-k="name" autocapitalize="words"') +
+      two(inp('efAge', 'Age (years)', r.age, 'data-ek="f" data-k="age" inputmode="numeric" maxlength="3"'), '<label class="lb">Gender</label><div class="seg" id="efSex">' +
+        [['M', 'Male'], ['F', 'Female']].map(function (g) { return '<button type="button" data-act="ec-sex" data-v="' + g[0] + '" class="' + (r.sex === g[0] ? 'on' : '') + '">' + g[1] + '</button>'; }).join('') + '</div>') +
+      inp('efRef', 'Ref physician', r.ref, 'data-ek="f" data-k="ref" placeholder="e.g. Dr. Amir"') +
+      '<div class="fsec">M. Mode 2/D <span class="muted small" style="font-weight:400;text-transform:none;letter-spacing:0">(measurements in mm; normal values in brackets; outside them shows red)</span></div><div class="vgrid emg">' + meas + '</div>' +
+      '<div class="fsec">' + ECHO_PART.st + '</div><div id="ef_st">' + echoSecHtml('st') + '</div>' +
+      '<div class="fsec">' + ECHO_PART.dp + '</div><div id="ef_dp">' + echoSecHtml('dp') + '</div>' +
+      '<div class="fsec">Mitral inflow and diastolic function</div><div class="seg" id="efIfl">' + [['val', 'E and A values'], ['fused', 'Fused E/A (fast heart rate)'], ['none', 'Leave out']].map(function (o) {
+        return '<button type="button" data-act="ec-ifl" data-v="' + o[0] + '" class="' + ((f.mode || 'val') === o[0] ? 'on' : '') + '">' + o[1] + '</button>'; }).join('') + '</div>' +
+      ((f.mode || 'val') === 'val' ? '<div class="vgrid emg">' + [['e', 'E (m/s)'], ['a', 'A (m/s)'], ['ee', "E/e'"]].map(function (x) {
+          return '<div><label class="lb" for="efi_' + x[0] + '">' + x[1] + '</label><input class="in" id="efi_' + x[0] + '" data-ek="ifl" data-k="' + x[0] + '" inputmode="decimal" maxlength="8" value="' + h(f[x[0]] || '') + '"></div>'; }).join('') +
+          '<div><span class="lb">E/A</span><div class="eaval" id="efEA">' + (ea || '&ndash;') + '</div></div></div>'
+        : f.mode === 'fused' ? inp('efi_hr', 'Heart rate (beats per minute)', f.hr, 'data-ek="ifl" data-k="hr" inputmode="numeric" maxlength="3"') : '') +
+      '<label class="lb">Diastolic function <span class="muted">(goes into the final report)</span></label><div class="seg" id="efDd">' + [['', 'Not stated'], ['N', 'Normal'], ['1', 'Grade I'], ['2', 'Grade II'], ['3', 'Grade III']].map(function (o) {
+        return '<button type="button" data-act="ec-dd" data-v="' + o[0] + '" class="' + ((r.dd || '') === o[0] ? 'on' : '') + '">' + o[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="fsec">Estimation RV / MPA pressure</div><div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div>' + inp('efRvsp', 'RVSP (mmHg)', r.rvsp, 'data-ek="f" data-k="rvsp" inputmode="numeric" maxlength="3"' + (r.rvspNa ? ' disabled' : '')) + '</div>' +
+      '<div><label class="lb">&nbsp;</label><label class="tog"><input type="checkbox" data-ek="rvna"' + (r.rvspNa ? ' checked' : '') + '> <span>Could not be estimated</span></label></div></div>' +
+      '<p class="muted small" id="efPh" style="margin:4px 0 0">' + (ph ? 'Final report: <b>' + h(ph) + '</b>' : '35 to 45 mmHg: mild, 46 to 60: moderate, above 60: severe pulmonary hypertension (added to the final report).') + '</p>' +
+      '<div class="fsec">' + ECHO_PART.fin + '</div><div id="ef_fin">' + echoFinHtml() + '</div>' +
+      '<div class="fsec">' + ECHO_PART.nt + '</div><div id="ef_nt">' + echoSecHtml('nt') + '</div>' +
+      '<div class="fsec">Signatures</div>' + two(inp('efTech', 'Echo cardiographer', r.tech, 'data-ek="f" data-k="tech"'),
+        '<label class="lb">Reporting physician</label><div class="in ro">' + h(r.phys || (S.settings && S.settings.hod) || '') + '</div>') +
+      '<div id="efErr"></div></form>';
+  }
+  /* After a tick: the part ticked and the final report are drawn again (the rest of the sheet, and where it is scrolled, stay). */
+  function echoRepaint(parts) {
+    if (!S.ef) return;
+    (parts || ['st', 'dp', 'nt']).forEach(function (s) { var b = $('ef_' + s); if (b) b.innerHTML = echoSecHtml(s); });
+    var fb = $('ef_fin'); if (fb) fb.innerHTML = echoFinHtml();
+    var ea = $('efEA'); if (ea) ea.innerHTML = CEC.echoEA(S.ef.r) || '&ndash;';
+    var ph = $('efPh'), pt = CEC.echoPh(S.ef.r); if (ph) ph.innerHTML = pt ? 'Final report: <b>' + h(pt) + '</b>' : '35 to 45 mmHg: mild, 46 to 60: moderate, above 60: severe pulmonary hypertension (added to the final report).';
+  }
+  function echoTick(k, on) {
+    var r = S.ef.r, x = CEC.ECHO_BY[k]; if (!x) return;
+    if (on) {
+      if (x.x) CEC.ECHO_LIB.forEach(function (y) { if (y.x === x.x && y.k !== k) delete r.sel[y.k]; });
+      if (!r.sel[k]) r.sel[k] = [];
+    } else delete r.sel[k];
+  }
+  /* typing in the sheet: kept at once; the parts that depend on it are drawn again */
+  function echoInput(t) {
+    var r = S.ef && S.ef.r, ek = t.getAttribute('data-ek'), k = t.getAttribute('data-k');
+    if (!r || !ek) return;
+    if (ek === 'f') { r[k] = t.value; if (k === 'rvsp') echoRepaint([]); }
+    else if (ek === 'm') { r.m[k] = t.value.trim(); t.classList.toggle('eab', echoAbn(k, t.value)); if (k === 'ef') echoRepaint([]); }
+    else if (ek === 'ifl') { r.inflow[k] = t.value.trim(); echoRepaint([]); }
+    else if (ek === 'blank') {
+      var i = +t.getAttribute('data-i'), was = !!r.sel[k];
+      if (!was) echoTick(k, true);
+      (r.sel[k] = r.sel[k] || [])[i] = t.value.trim();
+      if (!was) { var row = t.closest('.erow'), cb = row && row.querySelector('input[type=checkbox]'); if (cb) cb.checked = true; if (row) row.classList.add('on'); }
+      clearTimeout(S.efT); S.efT = setTimeout(function () { var fb = $('ef_fin'); if (fb && S.ef) fb.innerHTML = echoFinHtml(); }, 250);
+    }
+  }
+  function echoChange(t) {
+    var r = S.ef && S.ef.r, ek = t.getAttribute('data-ek'), k = t.getAttribute('data-k'), s = t.getAttribute('data-s');
+    if (!r || !ek) return false;
+    if (ek === 'tick') { echoTick(k, t.checked); echoRepaint([s]); return true; }
+    if (ek === 'cus') { var l = r.cus[s], i = l.indexOf(k); if (t.checked && i < 0) l.push(k); if (!t.checked && i >= 0) l.splice(i, 1); echoRepaint([s]); return true; }
+    if (ek === 'fin') { var off = r.finOff, j = off.indexOf(k); if (!t.checked && j < 0) off.push(k); if (t.checked && j >= 0) off.splice(j, 1); t.closest('.erow').classList.toggle('on', t.checked); return true; }
+    if (ek === 'rvna') { r.rvspNa = t.checked; var rv = $('efRvsp'); if (rv) rv.disabled = t.checked; echoRepaint([]); return true; }
+    return false;
+  }
+  function echoAdd(s) {
+    var r = S.ef.r, el = $('efAdd_' + s), t = el ? el.value.replace(/\s+/g, ' ').trim() : '';
+    if (t.length < 3) return toast('Type the line first.');
+    if (!/[.:)]$/.test(t)) t += '.';
+    if (r.cus[s].indexOf(t) < 0) r.cus[s].push(t);
+    echoRepaint([s]);
+    api('apiEchoPhraseAdd', JSON.stringify({ s: s, t: t })).then(function (l) { S.echoPhr = l || S.echoPhr; toast('Added, and kept for next time.'); echoRepaint([s]); },
+      function (e) { toast('Added to this report. ' + errText(e)); });
+  }
+  function echoRead() {
+    var r = JSON.parse(JSON.stringify(S.ef.r));
+    ['name', 'mr', 'ref', 'tech'].forEach(function (k) { r[k] = String(r[k] || '').replace(/\s+/g, ' ').trim(); });
+    r.name = up(r.name); r.mr = up(r.mr); r.age = String(r.age || '').trim();
+    r.lines = CEC.echoLines(r);
+    return r;
+  }
+  function echoOk(r) {
+    var m = [];
+    if (!r.name) m.push('the name'); if (!r.date) m.push('the date');
+    var blanks = [].concat(r.lines.st, r.lines.dp, r.lines.fin, r.lines.nt).filter(function (t) { return t.indexOf('__') >= 0; });
+    if (m.length) { $('efErr').innerHTML = '<div class="err">Enter ' + h(m.join(' and ')) + '.</div>'; $('efErr').scrollIntoView({ block: 'nearest' }); return Promise.resolve(false); }
+    $('efErr').innerHTML = '';
+    if (!blanks.length) return Promise.resolve(true);
+    return confirmBox('Some values are empty', '<p>These lines still have an empty value (shown as __ on the report):</p><p class="small"><b>' + blanks.map(h).join('<br>') + '</b></p>', 'Go on anyway', false);
+  }
+  function echoSave(print) {
+    var r = echoRead();
+    echoOk(r).then(function (ok) {
+      if (!ok) return;
+      if (r.tech) store_('cec_echotech', r.tech);
+      toast('Saving…');
+      api('apiEchoSave', JSON.stringify(r)).then(function (saved) {
+        toast('Echo report saved: ' + saved.name); closeEcho();
+        if (S.echo && S.echo.list) { var l = S.echo.list, i = l.map(function (x) { return x.id; }).indexOf(saved.id), row = { id: saved.id, date: saved.date, name: saved.name, mr: saved.mr, age: saved.age, sex: saved.sex, ref: saved.ref, apptId: saved.apptId, entryId: saved.entryId, at: saved.at };
+          if (i >= 0) l[i] = row; else l.unshift(row); l.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : (a.at || '') < (b.at || '') ? 1 : -1; }); }
+        if (S.view === 'echo' || S.view === 'appt') render();
+        if (print) echoPrint(saved);
+      }, function (e) { var b = $('efErr'); if (b) b.innerHTML = '<div class="err">' + h(errText(e)) + '</div>'; else toast(errText(e)); });
+    });
+  }
+  function echoFromAppt(a) { return { name: a.name, age: a.age, sex: a.sex, mr: a.mr, apptId: a.id }; }
+  function echoFromEntry(e) { return { name: e.name, age: e.age, sex: e.sex, mr: e.mr, entryId: e.id }; }
   /* ---------- patient lists (OPD days) ---------- */
   function lastWeekday(dow) {
     var d = new Date(); if (d.getHours() * 60 + d.getMinutes() < 510) d.setDate(d.getDate() - 1);
@@ -6778,13 +7411,18 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function tilesHtml() {
     var tile = function (act, icon, t, sub) { return '<button class="stile" data-act="' + act + '"><span class="sti" aria-hidden="true">' + icon + '</span><b>' + t + '</b><span>' + sub + '</span></button>'; };
     var svg = function (d) { return '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2">' + d + '</svg>'; };
+    if (isEchoId()) return '<div class="stiles">' +                  // 14-11-2026: the Echo technician
+      tile('echo-reg', svg('<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/><path d="M19 3v6M16 6h6"/>'), 'Register Echo patient', 'MR No. and slip for an Echo patient') +
+      '<button class="stile" data-act="ap-type" data-v="ECHO"><span class="sti" aria-hidden="true">' + svg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>') + '</span><b>Echo appointments</b><span>Give a date, registration list</span></button>' +
+      '<button class="stile" data-act="go" data-v="echo"><span class="sti" aria-hidden="true">' + svg('<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M8.5 15h2l1.2-3 1.6 5 1.2-2h1"/>') + '</span><b>Echo reports</b><span>Make, change and print reports</span></button>' +
+      '</div>';
     if (!canEnter()) return '';
     return '<div class="stiles">' +                       // 12-11-2026: registration and vitals start from these two tiles (same size as the others, side by side)
       '<button class="stile mode mblue" data-act="mode" data-v="e"><span class="sti" aria-hidden="true">' + svg('<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>') + '</span><b>Electronic slip</b><span>The system prints the slip</span></button>' +
       '<button class="stile mode mred" data-act="mode" data-v="m"><span class="sti" aria-hidden="true">' + svg('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>') + '</span><b>Manual slip</b><span>The staff write the paper slip by hand</span></button>' +
       tile('q-mrreg', svg('<path d="M5 4h11l3 3v13H5z"/><path d="M8 9h2M8 13h2M8 17h2M12 9h4M12 13h4M12 17h4"/>'), 'MR register', 'Today’s MR numbers as they are given, newest on top') +
       tile('q-slip', svg('<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>'), 'OPD / ER slip', 'Print, choose slips, autoprint') +
-      tile('q-ecg', svg('<path d="M2 12h3l2-6 3 12 3-9 2 3h7"/>'), 'ECG', 'Tick ECG done: last hour and ECG only') +
+      tile('q-ecg', svg('<path d="M2 12h3l2-6 3 12 3-9 2 3h7"/>'), 'ECG', 'Tick ECG done: last hour and advised by the doctor') +
       tile('q-vit', svg('<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/><path d="M3.5 12h4l1.5-3 3 6 1.5-3h7"/>'), 'Vitals', 'BP, pulse, temp, RBS, SpO2 of registered patients') +   // 13-11-2026: back on Home (also Two staff › Vitals)
       (isAdmin() ? tile('go-petty', svg('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h3M8 12h3M8 16h3M13 8h3M13 12h3M13 16h3"/>'), 'Petty OPD register', 'Paste names (any number): MR each morning, up to the daily limit') : '') +
       (canClin() ? tile('q-erx', svg('<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/>'), 'ER procedures & medications', 'Cannula, oxygen, CPR; medicines given (drug account)') : '') +
@@ -7019,7 +7657,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var on = shOpd(sh), mrOk = !!(S.mr && S.mr.last), opOk = !!(S.opdc && S.opdc.last), miss = !mrOk || (on && !opOk);
     d.innerHTML = '<div class="dayrow"><div class="seg dayseg"><button type="button" data-act="f-day" data-v="opd" class="' + (on ? 'on' : '') + '">OPD day</button>' +
       '<button type="button" data-act="f-day" data-v="emr" class="' + (on ? '' : 'on') + '">Emergency day</button></div>' +
-      '<p class="muted small">' + (on ? 'Every patient gets an <b>OPD No.</b> (OPD register), except <b>Emergency / Resus, ECG only and Brought dead</b> (MR No.).' : 'Every patient gets an MR No.') + '</p></div>' +
+      '<p class="muted small">' + (on ? 'Every patient gets an <b>OPD No.</b> (OPD register), except <b>Emergency / Resus and Brought dead</b> (MR No.).' : 'Every patient gets an MR No.') + '</p></div>' +
       /* 12-11-2026: automatic numbering in its own box, every morning shift */
       '<div class="numbox' + (miss ? ' miss' : '') + '"><span class="nbi" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/></svg></span><div class="nbt">' +
         (miss ? '<b>Automatic numbering is not set</b><span>Tap Set numbers and type the last ' + (!mrOk ? 'MR No.' : '') + (!mrOk && on && !opOk ? ' and the last ' : '') + (on && !opOk ? 'OPD No.' : '') + ' from the paper register.</span>'
@@ -7030,12 +7668,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var sh = targetShift(); if (!sh || shOpd(sh) === on) return;
     if (isOff()) return toast('Changing the day needs internet.');
     confirmBox(on ? 'Make this morning an OPD day?' : 'Make this morning an Emergency day?',
-      on ? 'For everyone: patients registered from now get OPD numbers (OPD register), except Emergency / Resus, ECG only and Brought dead (MR numbers). No petty OPD names are added this morning.'
+      on ? 'For everyone: patients registered from now get OPD numbers (OPD register), except Emergency / Resus and Brought dead (MR numbers). No petty OPD names are added this morning.'
         : 'For everyone: every patient registered from now gets an MR No.', on ? 'OPD day' : 'Emergency day').then(function (ok) {
       if (!ok) return;
       api('apiOpdDay', sh.id, on).then(function (r) {
         [S.work, S.detail, S.prevShift].forEach(function (x) { if (x && x.id === r.shiftId) x.opdDay = !!r.opdDay; });
-        syncMr(); toast(r.opdDay ? 'This morning is an OPD day: OPD numbers (MR for Emergency / Resus, ECG only, Brought dead).' : 'This morning is an Emergency day: MR numbers for everyone.');
+        syncMr(); toast(r.opdDay ? 'This morning is an OPD day: OPD numbers (MR for Emergency / Resus and Brought dead).' : 'This morning is an Emergency day: MR numbers for everyone.');
       }, function (e) { toast(errText(e)); });
     });
   }
@@ -7132,6 +7770,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       (isAdmin() && a.bookedBy ? '<div class="pr-audit">Booked by ' + h(a.bookedBy) + (a.updatedBy ? ' &middot; changed by ' + h(a.updatedBy) : '') + '</div>' : '') +
       '</div><span class="tag ' + ST_CLS[a.status] + '">' + h(st) + '</span></div>' +
       '<div class="sbtns ico"><button class="btn sm" data-act="ap-edit" data-id="' + h(a.id) + '">' + ICON.pen + ' Edit</button>' +
+      (a.type === 'ECHO' && canEchoMake() ? '<button class="btn sm pri" data-act="ec-appt" data-id="' + h(a.id) + '">' + ICON.pen + ' Echo report</button>' : '') +
       '<button class="btn sm" data-act="ap-slipp" data-id="' + h(a.id) + '">' + ICON.print + ' Print slip</button><button class="btn sm" data-act="ap-slip" data-id="' + h(a.id) + '">' + ICON.dl + ' Slip</button>' +
       (wa ? '<a class="btn sm" href="' + h(wa) + '" target="_blank" rel="noopener">WhatsApp</a>' : '<button class="btn sm" data-act="demo-wa">WhatsApp</button>') +
       (a.status === 'B' ? '<button class="btn sm" data-act="ap-st" data-v="D" data-id="' + h(a.id) + '">Done</button><button class="btn sm" data-act="ap-st" data-v="M" data-id="' + h(a.id) + '">Did not come</button>' : '') +
@@ -7140,6 +7779,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* Appointments: first ETT or Echo; then Give date (book) or Registration list (booked patients, by date). */
   function apptHtml() {
     var A = S.ap;
+    if (isEchoId() && A.type !== 'ECHO') { A.type = 'ECHO'; A.date = null; A.list = null; A.key = ''; }      // the Echo technician: echo only
     if (!A.type) return '<div class="narrow"><section class="card"><div class="ct">Appointments</div><p class="muted small" style="margin:0">Choose the test.</p></section><div class="stiles">' +
       CEC.APPTS.map(function (x) {
         return '<button class="stile" data-act="ap-type" data-v="' + x.c + '"><span class="sti" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2">' +
@@ -7149,12 +7789,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var t = CEC.apptType(A.type), nm = t.c === 'ECHO' ? 'Echo' : t.l;
     if (!A.date) A.date = firstUsual(A.type);
     if (!A.list || A.key.indexOf(A.type) !== 0) { if (!A.loading) setTimeout(function () { loadAppts(); }, 0); }
-    var head = '<div class="listhead"><h3>' + h(nm) + ' appointments</h3><button class="btn sm" data-act="ap-type" data-v="">Change test</button></div>';
+    var head = '<div class="listhead"><h3>' + h(nm) + ' appointments</h3>' + (isEchoId() ? '' : '<button class="btn sm" data-act="ap-type" data-v="">Change test</button>') + '</div>';
     if (A.step !== 'list') return '<div class="narrow">' + head + '<div class="stiles">' +
       '<button class="stile" data-act="ap-new"><span class="sti" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></span>' +
         '<b>Give date</b><span>Choose the date and enter the patient’s details</span></button>' +
       '<button class="stile" data-act="ap-step" data-v="list"><span class="sti" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="3" stroke-linecap="round"/></svg></span>' +
-        '<b>Registration list</b><span>Patients booked, by date &middot; PDF</span></button></div>' +
+        '<b>Registration list</b><span>Patients booked, by date &middot; PDF</span></button>' +
+      (t.c === 'ECHO' && canEchoSee() ? '<button class="stile" data-act="ap-type" data-v="EREP"><span class="sti" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M8.5 15h2l1.2-3 1.6 5 1.2-2h1"/></svg></span>' +
+        '<b>Echo reports</b><span>Make, print and find echo reports' + (canEchoMake() ? '' : ' (view and print)') + '</span></button>' : '') + '</div>' +
       '<p class="muted small" style="margin:10px 0 0">' + h(t.full) + ' is usually given on ' + dayLabel(A.type) + '.</p></div>';
     var html = '<div class="narrow">' + head + '<section class="card"><button class="btn pri block" data-act="ap-new">+ Give date (new ' + h(t.c === 'ECHO' ? 'echo' : t.l) + ' appointment)</button></section>';
     if (!A.list) return html + '<section class="card center muted"><span class="spin"></span>Loading appointments&hellip;</section></div>';
@@ -7326,7 +7968,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
           .then(function (ok) { if (ok) setUser({ id: id, reset: v }, v === 'approve' ? 'New password approved for ' + ru.name : 'Request rejected'); });
         break;
       }
-      case 'q-paper': S.paperNow = normPaper(v); S.deskPaperLocal = null; toast(v === 'a4q' ? 'A4: four small slips on each sheet (cut in four)' : 'A4: two slips on each sheet (cut in the middle)'); render(); break;
+      case 'q-paper': S.paperNow = normPaper(v); S.deskPaperLocal = null; toast(v === 'a4q' ? 'A4: four small slips on each sheet (cut in four)' : v === 'a4h' ? 'Half-cut A4: two small slips on each half sheet' : 'A4: two slips on each sheet (cut in the middle)'); render(); break;
       case 'sel-one': if (id) { var fe1 = findEntry(id); if (el.checked) S.slipSel[id] = { at: new Date().toISOString(), ready: !(fe1 && fe1.e.tokPr) }; else delete S.slipSel[id]; } selPaint(); break;
       case 'sel-all': qItems(Q_KINDS.slipq.lists[0][1]).forEach(function (x) { if (el.checked) S.slipSel[x.e.id] = { at: new Date().toISOString(), ready: true }; else delete S.slipSel[x.e.id]; }); selPaint(); break;
       case 'pr-round': { S.prOpen = S.prOpen || {}; var pro = printedRounds().map(function (r, i) { return r.key === v ? (S.prOpen[v] != null ? S.prOpen[v] : i === 0) : null; }).filter(function (x) { return x !== null; })[0]; S.prOpen[v] = !pro; render(); break; }
@@ -7436,6 +8078,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'q-ecg': openQueue('ecgq'); break;
       case 'q-slip': openQueue('slipq'); break;
       case 'q-refresh': refresh(false).then(function () { if (S.me) toast('Updated'); }); break;
+      case 'vit-tab': S.vitTab = v === 'done' ? 'done' : 'pend'; render(); break;
       case 'q-open': { var qsh0 = el.getAttribute('data-src') === 'prev' ? S.prevShift : S.work, qe0 = qsh0 && qsh0.entries.filter(function (x) { return x.id === id; })[0];
         if (qe0) openQuick(qe0, 'vitals', el.getAttribute('data-src')); break; }
       case 'q-print': { var qsh1 = el.getAttribute('data-src') === 'prev' ? S.prevShift : S.work, qe1 = qsh1 && qsh1.entries.filter(function (x) { return x.id === id; })[0];
@@ -7478,7 +8121,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
         else setView('census');
         break;
       case 'roster': S.rosterShift = v; S.welAt = 0; setView('roster'); break;
-      case 'ap-type': if ((S.ap.type || '') !== v) { S.ap.type = v || null; S.ap.date = null; S.ap.list = null; S.ap.key = ''; } S.ap.step = ''; setView('appt'); break;
+      case 'ap-type': if (v === 'EREP') { setView('echo'); break; }
+        if (isEchoId()) v = 'ECHO';
+        if ((S.ap.type || '') !== v) { S.ap.type = v || null; S.ap.date = null; S.ap.list = null; S.ap.key = ''; } S.ap.step = ''; setView('appt'); break;
       case 'ap-step': S.ap.step = v; setView('appt'); break;
       case 'ap-new': openAppt({ type: S.ap.type }); break;
       case 'ap-edit': { var ae = apById(id); if (ae) openAppt(ae); break; }
@@ -7752,6 +8397,41 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'lb-save': lbSave(); break;
       case 'lst-csv': downloadList('csv'); break;
       case 'cert-close': closeCert(); break;
+      case 'ec-new': if (canEchoMake()) openEcho(null); break;
+      case 'ec-from': { var ef0 = null;
+        if (v === 'appt') { var ea0 = ((S.echo && S.echo.apToday) || []).concat((S.ap && S.ap.list) || []).filter(function (x) { return x.id === id; })[0]; if (ea0) ef0 = echoFromAppt(ea0); }
+        else { var fe0 = findEntry(id); if (fe0) ef0 = echoFromEntry(fe0.e); }
+        openEcho(null, ef0); break; }
+      case 'ec-appt': { var ea1 = apById(id); if (!ea1) break;
+        var had = ((S.echo && S.echo.list) || []).filter(function (x) { return x.apptId === id; })[0];
+        if (had) echoGet(had.id).then(function (r) { if (r) openEcho(r); });
+        else if (S.echo && S.echo.list) openEcho(null, echoFromAppt(ea1));
+        else { toast('Opening…'); loadEcho(true).then(function () { var h2 = ((S.echo && S.echo.list) || []).filter(function (x) { return x.apptId === id; })[0]; if (h2) echoGet(h2.id).then(function (r) { if (r) openEcho(r); }); else openEcho(null, echoFromAppt(ea1)); }); }
+        break; }
+      case 'ec-open': echoGet(id).then(function (r) { if (r) openEcho(r); }); break;
+      case 'ec-print': echoGet(id).then(function (r) { if (r) echoPrint(r); }); break;
+      case 'ec-dl': echoGet(id).then(function (r) { if (r) echoDownload(r); }); break;
+      case 'ec-close': closeEcho(); break;
+      case 'ec-sex': S.ef.r.sex = S.ef.r.sex === v ? '' : v; setOn('efSex', S.ef.r.sex); break;
+      case 'ec-ifl': S.ef.r.inflow.mode = v; { var eb = $('efBody'), est = eb ? eb.scrollTop : 0; if (eb) { eb.innerHTML = echoFormHtml(); eb.scrollTop = est; } } break;
+      case 'ec-dd': S.ef.r.dd = v; setOn('efDd', v); echoRepaint([]); break;
+      case 'ec-add': echoAdd(v); break;
+      case 'ec-phr-del': { var pt = el.getAttribute('data-t');
+        confirmBox('Take this line off the list?', '<p>' + h(pt) + '</p><p class="small">Reports already made keep it.</p>', 'Take it off', true).then(function (ok) {
+          if (ok) api('apiEchoPhraseDel', JSON.stringify({ s: v, t: pt })).then(function (l) { S.echoPhr = l || []; echoRepaint([v]); }, function (e) { toast(errText(e)); }); });
+        break; }
+      case 'ec-printnow': { var rp = echoRead(); echoOk(rp).then(function (ok) { if (ok) echoPrint(rp); }); break; }
+      case 'ec-save': echoSave(false); break;
+      case 'ec-saveprint': echoSave(true); break;
+      case 'ec-del': {
+        var did = S.ef.r.id, dnm = S.ef.r.name;
+        confirm3('Delete this echo report?', 'The echo report of <b>' + h(dnm) + '</b> will be removed. ' + BIN_NOTE).then(function (ok) {
+          if (!ok) return;
+          api('apiEchoDelete', did).then(function () { toast('Echo report deleted'); closeEcho(); if (S.echo && S.echo.list) S.echo.list = S.echo.list.filter(function (x) { return x.id !== did; }); render(); }, function (e) { toast(errText(e)); });
+        });
+        break;
+      }
+      case 'echo-reg': echoRegister(); break;
       case 'c-sex': S.cert.sex = v; setOn('cSex', v); if (v === 'M' && !S.cert.so) { S.cert.so = 'S/O'; setOn('cSo', 'S/O'); } break;
       case 'c-so': { var sk = el.getAttribute('data-k'); if (sk === 'c') { S.cert.so = v; setOn('cSo', v); } else { S.cert.rSo = v; setOn('cRSo', v); } break; }
       case 'cert-print': { var cp = readCert(); if (certTimesOk(cp) && certNeededOk(cp)) certMissingOk(cp).then(function (ok) { if (ok) certPrintNow(cp); }); break; }
@@ -7795,8 +8475,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
         modal('Make a demonstration ID', '<p class="small" style="margin:0 0 6px"><b>' + h(dmu.name) + '</b> (login ID ' + h(dmu.login) + ') will work like a real ID of the profession you choose, ' +
           'but everything it saves goes into the <b>practice data</b>, never into the real census. Many people can use it at the same time; each sign-in lasts 24 hours; it never expires. ' +
           'Anything it entered in the real census before stays there.</p><p class="small" style="margin:0">Demonstrate as:</p>',
-          [{ label: 'Doctor', value: 'doctor', cls: 'pri' }, { label: 'Nurse', value: 'nurse', cls: 'pri' }, { label: 'Student', value: 'student', cls: 'pri' }, { label: 'Cancel', value: false }], true)
-          .then(function (v) { if (v) setUser({ id: id, demo: v }, dmu.login + ' is now a demonstration ID (' + { doctor: 'Doctor', nurse: 'Nurse', student: 'Student' }[v] + ')').then(function () { return loadState(); }).then(function () { if (S.view === 'settings' && !anyOverlay()) render(); }, function () { }); });
+          [{ label: 'Doctor', value: 'doctor', cls: 'pri' }, { label: 'Nurse', value: 'nurse', cls: 'pri' }, { label: 'Student', value: 'student', cls: 'pri' }, { label: 'Echo technician', value: 'echo', cls: 'pri' }, { label: 'Cancel', value: false }], true)
+          .then(function (v) { if (v) setUser({ id: id, demo: v }, dmu.login + ' is now a demonstration ID (' + { doctor: 'Doctor', nurse: 'Nurse', student: 'Student', echo: 'Echo technician' }[v] + ')').then(function () { return loadState(); }).then(function () { if (S.view === 'settings' && !anyOverlay()) render(); }, function () { }); });
         break;
       }
       case 'u-real': {
@@ -7889,6 +8569,11 @@ if (typeof module !== 'undefined') module.exports = CEC;
     else if (t.id === 'apQ') { S.ap.q = t.value; $('apRes').innerHTML = apSearchHtml(); }
     else if (t.id === 'fMedX' || t.id === 'fProcX' || t.id === 'erXP' || t.id === 'erXM') suggPaint(t.id);
     else if (t.id === 'ecgQ') { S.ecgQ = t.value; $('ecgRes').innerHTML = ecgSearchHtml(); }
+    else if (t.id === 'vitQ') { S.vitQ = t.value; $('vitRes').innerHTML = vitDoneHtml(); }
+    else if (t.id === 'ecQ') { S.echo.q = t.value; var eq = (S.echo.q || '').trim().toLowerCase(), eg = [], el2 = null;
+      (S.echo.list || []).filter(function (x) { return !eq || (x.name + ' ' + (x.mr || '') + ' ' + (x.ref || '')).toLowerCase().indexOf(eq) >= 0; }).forEach(function (x) { if (!el2 || el2.date !== x.date) { el2 = { date: x.date, items: [] }; eg.push(el2); } el2.items.push(x); });
+      $('ecRes').innerHTML = echoListHtml(eg); }
+    else if (S.ef && t.getAttribute && t.getAttribute('data-ek')) echoInput(t);
     else if (t.id === 'erQ') { S.erQ = t.value; $('erRes').innerHTML = erListHtml(); }
     else if (t.id === 'q') { S.q = t.value; $('plist').innerHTML = rowsHtml(S.work.entries, S.q, S.filter, 'work', S.dashCat); }
     else if (t.id === 'logQ') {
@@ -7898,6 +8583,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   });
   document.addEventListener('change', function (ev) {
     var t = ev.target;
+    if (S.ef && t.type === 'checkbox' && t.getAttribute && t.getAttribute('data-ek') && echoChange(t)) return;      // echo report ticks
     if (t.getAttribute && t.getAttribute('data-pp') && t.files && t.files[0]) { paperPhoto(t.files[0], t.getAttribute('data-pp')); t.value = ''; return; }
     if (t.id === 'ptFile' && t.files && t.files[0]) { pettyFile(t.files[0]); t.value = ''; return; }
     if (t.getAttribute && t.getAttribute('data-dx') && S.form) {
@@ -7953,7 +8639,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (S.cert || S.af) { ev.preventDefault(); ev.target.blur(); return; }
     if (S.er) { ev.preventDefault(); var EP = erPart(ev.target.id); if (EP) { if (!suggExact(EP.x)) erAdd(EP.k); } else ev.target.blur(); return; }
     if (S.qe) { ev.preventDefault(); ev.target.blur(); return; }
-    if (ev.target.id === 'ecgQ' || ev.target.id === 'erQ') { ev.preventDefault(); ev.target.blur(); return; }
+    if (ev.target.id === 'ecgQ' || ev.target.id === 'erQ' || ev.target.id === 'vitQ' || ev.target.id === 'ecQ') { ev.preventDefault(); ev.target.blur(); return; }
+    if (S.ef) { ev.preventDefault(); if (/^efAdd_/.test(ev.target.id || '')) echoAdd(ev.target.id.slice(6)); else ev.target.blur(); return; }
     if (!S.form) return;
     ev.preventDefault();
     if (ev.target.id === 'fProcX') { if (suggExact('fProcX')) return; var pa = document.querySelector('[data-act=proc-add]'); if (pa) pa.click(); return; }
@@ -8114,7 +8801,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     S.ovEntry = false;                                    // a sheet's entry is now this page's entry
     S.lastNav = st;
   }
-  function anyOverlay() { return !!(S.form || S.cert || S.af || S.qe || S.pp || S.er); }
+  function anyOverlay() { return !!(S.form || S.cert || S.af || S.qe || S.pp || S.er || S.ef); }
   /* Phone app: a sheet that opens gets its own history entry; closing it with its own button removes that entry again. */
   function overlayOpened() {
     if (!OWN_HIST || !S.me || S.ovEntry || !tapping()) return;
@@ -8134,6 +8821,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (m && !m.classList.contains('hidden')) { m.classList.add('hidden'); m.innerHTML = ''; m.onclick = null; closed = true; }
     if (S.af) { closeAppt(); closed = true; }
     else if (S.cert) { closeCert(); closed = true; }
+    else if (S.ef) { closeEcho(); closed = true; }
     else if (S.form) { closeForm(); closed = true; }
     else if (S.qe) { closeQuick(); closed = true; }
     else if (S.pp) { closePaper(); closed = true; }
