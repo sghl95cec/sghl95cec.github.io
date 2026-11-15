@@ -3221,7 +3221,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   var IDLE_MS = 4 * 3600000;
   /* 14-11-2026: the version of this page (Index.html / phone app) and of the server (Code.gs). Both come from the same build, so they must be the same. */
-  var APP_VER = '15-11-2026 16:29';
+  var APP_VER = '16-11-2026 01:34';
   function verSame() { return S.serverVer === APP_VER; }
   function verKey(v) { v = String(v || ''); return v.slice(6, 10) + v.slice(3, 5) + v.slice(0, 2) + v.slice(11); }   // DD-MM-YYYY HH:MM in time order
   function verText() { return 'Version ' + APP_VER + (verSame() ? '' : ' (server: ' + (S.serverVer || 'older') + ')'); }
@@ -5164,7 +5164,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       }
       var i = sh.entries.map(function (x) { return x.id; }).indexOf(isNew ? temp.id : saved.id);
       if (i >= 0) sh.entries[i] = saved; else sh.entries.push(saved);
-      if (mode === 'solo') soloPrint(saved, sh, !!f.printNow);
+      if (mode === 'solo') soloPrint(saved, sh, !!f.printNow); else demoAuto(sh, saved);
       if (mode === 'man' || mode === 'next' || mode === 'solo') manPopFill(saved, temp && temp.id);
       if (mode === 'vitals' && !S.form && !S.qe) openQuick(saved, 'vitals', target);
       else if (signing && nowDead && canCertMake() && !anyOverlay()) {      // brought dead / expired: signing off goes straight to the death certificate
@@ -5619,6 +5619,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       if (!canDesk()) return false;
       var pl = items.filter(function (x) { return x.e && x.e.tok && !/^(q-|tmp)/.test(x.e.id); });
       if (!pl.length) return false;
+      S.demoSent = S.demoSent || {}; pl.forEach(function (x) { S.demoSent[x.e.id] = 1; });
       if (isOff()) { toast('No internet: the slips could not be sent to the print desk. Tap Print again when the internet is back.'); return true; }
       var nm = pl.length + ' practice slip' + (pl.length === 1 ? '' : 's');
       deskJob({ kind: 'slips', list: pl.map(function (x) { var e = x.e, o = { tok: e.tok, name: e.name, mr: e.mr, opd: !!e.opd, age: e.age, sex: e.sex, cat: e.cat, t: e.t, procs: (e.procs || []).indexOf('ECG') >= 0 ? ['ECG'] : [] };
@@ -5670,7 +5671,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     deskSeen(r.age);
   }
   setInterval(function () {
-    if (!S.me || !S.token || document.hidden || isOff() || canPrintHere() || S.deskAsk) return;
+    if (!S.me || !S.token || document.hidden || isOff() || canPrintHere() || S.deskAsk || (S.view !== 'slipq' && !isDemo())) return;   // 16-11-2026: only on the slip page (Print asks first anyway)
     S.deskAsk = true;
     api('apiDesk').then(function (r) {
       S.deskAsk = false;
@@ -6223,7 +6224,20 @@ if (typeof module !== 'undefined') module.exports = CEC;
     for (var i = 0; i < all.length; i++) { var sh = all[i][1], e = sh && (sh.entries || []).filter(function (x) { return x.id === id; })[0]; if (e) return { e: e, sh: sh, src: all[i][0] }; }
     return null;
   }
-  function putEntry(sh, saved) { var i = sh.entries.map(function (x) { return x.id; }).indexOf(saved.id); if (i >= 0) sh.entries[i] = saved; else sh.entries.push(saved); }
+  function putEntry(sh, saved) { var i = sh.entries.map(function (x) { return x.id; }).indexOf(saved.id); if (i >= 0) sh.entries[i] = saved; else sh.entries.push(saved); demoAuto(sh, saved); }
+  /* 16-11-2026: a practice ID has no autoprint of its own, and the real print desk does not read the practice copy: so each practice slip
+     goes to the real print desk by itself as soon as it is ready (Emergency / Resus and "Save & print" at once; others as the real autoprint
+     says: at once, or after the vitals), marked DEMONSTRATION, once. */
+  function demoAuto(sh, e) {
+    if (!isDemo() || !e || !e.tok || e.tokPr || /^(q-|tmp)/.test(e.id) || isOff()) return;
+    S.demoSent = S.demoSent || {}; if (S.demoSent[e.id]) return;
+    var go = function () {
+      if (!S.realDesk || !S.realDesk.on || S.demoSent[e.id]) return;
+      if (apAtOnce(e) || e.rel || S.realDesk.mode === 'now' || hasVitals(e)) deskPrint([{ e: e, sh: sh }]);
+    };
+    if (S.realDesk) setTimeout(go, 0);
+    else api('apiDesk').then(function (r) { deskState(r); go(); }, function () { });   // not known yet on this device: ask once
+  }
   /* Slip for a patient already saved: ask OPD or ER, get the number (a reprint needs no internet), print. */
   function slipFor(e, sh) {
     if (/^(q-|tmp)/.test(e.id)) return toast('Wait until this patient is saved, then print the slip.');
@@ -6962,7 +6976,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     return Promise.all([api('apiEchoList'), api('apiEchoPhrases').then(null, function () { return []; }), api('apiAppts', 'ECHO', CEC.addDays(t, -1), t).then(null, function () { return []; })]).then(function (r) {
       S.echoBusy = false; S.echo = Object.assign(S.echo || {}, { list: r[0] || [], at: Date.now(), apToday: r[2] || [] }); S.echoPhr = r[1] || [];
       if (S.view === 'echo') render();
-    }, function (e) { S.echoBusy = false; S.echo = Object.assign(S.echo || {}, { err: errText(e) }); if (S.view === 'echo') render(); });
+    }, function (e) { S.echoBusy = false; S.echo = Object.assign(S.echo || {}, { err: errText(e), errAt: Date.now() }); if (S.view === 'echo') render(); });   // 16-11-2026: no instant retry loop
   }
   function echoNameKey(n) { return String(n || '').toUpperCase().replace(/[^A-Z]/g, ''); }
   /* Waiting for a report: today's echo appointments (booked or done) and the Echo patients registered in the census today. */
@@ -6987,7 +7001,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function echoPageHtml() {
     if (!canEchoSee()) return '<section class="card">Echo reports are for doctors, nursing staff, students and the Echo technician.</section>';
     var E = S.echo;
-    if (!E || !E.list) { if (!S.echoBusy) setTimeout(loadEcho, 0); return '<section class="card center muted">' + (E && E.err ? h(E.err) : '<span class="spin"></span>Loading echo reports&hellip;') + '</section>'; }
+    if (!E || !E.list) { if (!S.echoBusy && !(E && E.errAt && Date.now() - E.errAt < 30000)) setTimeout(loadEcho, 0); return '<section class="card center muted">' + (E && E.err ? h(E.err) : '<span class="spin"></span>Loading echo reports&hellip;') + '</section>'; }
     if (Date.now() - (E.at || 0) > 120000 && !S.echoBusy) setTimeout(loadEcho, 0);
     /* 15-11-2026 (evening): two pages for everyone, opened from the Echo tiles: "Patients registered for echo" (wait) and "Print echo reports" (list) */
     var mk = canEchoMake(), q = (E.q || '').trim(), tab = S.echoTab === 'wait' ? 'wait' : 'list', pend = tab === 'wait' ? echoPending() : [];
