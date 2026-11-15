@@ -2905,9 +2905,19 @@ var CEC = (function () {
   var ECHO_DD = { N: '', 1: 'Grade I left ventricular diastolic dysfunction (LVDD).', 2: 'Grade II left ventricular diastolic dysfunction (LVDD).', 3: 'Grade III left ventricular diastolic dysfunction (LVDD), restrictive filling pattern.' };
   /* A new report: the CEC's template lines ticked. */
   function echoNew(st) {
-    var sel = {}; ECHO_LIB.forEach(function (x) { if (x.def) sel[x.k] = []; });
+    var sel = {};                                     // 15-11-2026 (evening): a new report starts empty (the usual lines are first in each list)
     return { date: '', name: '', age: '', sex: '', mr: '', ref: '', m: {}, sel: sel, cus: { st: [], dp: [], fin: [], nt: [] }, cg: {}, rs: '', finOff: [], inflow: { mode: 'val', e: '', a: '', ee: '', hr: '' },
       dd: '', rvsp: '', rvspNa: false, ph: '', tech: 'Miss Erum', phys: (st && st.hod) || DEFAULTS.hod };
+  }
+  /* 15-11-2026 (evening): the order of each heading's dropdown: the CEC's usual line first, then common findings from mild to severe, rare ones last.
+     (The printed report keeps the ECHO_LIB order.) Headings not listed keep the ECHO_LIB order. */
+  var ECHO_PICK = ['lv_n', 'lvh_m', 'lvh_mo', 'lvh_s', 'lv_mild', 'lv_mod', 'lv_sev', 'lv_dil', 'lvh_asym', 'lv_thr',
+    'rv_n', 'tapse', 'rv_dil', 'rv_red', 'rv_dys', 'v_thick', 'v_tp', 'v_mthick', 'v_norm',
+    'av_scl', 'av_th', 'as_m', 'as_mo', 'as_s', 'av_ppg', 'av_mpg', 'ava', 'av_bic', 'ias_n', 'pfo', 'asd', 'vsd', 'dp_lvot', 'dp_shunt',
+    'nt_poor', 'nt_diff', 'nt_body', 'nt_hr', 'nt_tachy', 'nt_af', 'nt_fu'];
+  function echoPickList(s, g) {
+    var l = ECHO_LIB.filter(function (x) { return x.s === s && x.g === g; }), rank = function (x, i) { var j = ECHO_PICK.indexOf(x.k); return j < 0 ? 1000 + i : j; };
+    return l.map(function (x, i) { return [rank(x, i), x]; }).sort(function (a, b) { return a[0] - b[0]; }).map(function (p) { return p[1]; });
   }
   function echoFill(t, vals) { var i = 0; return String(t).replace(/__/g, function () { var v = (vals || [])[i++]; return v != null && String(v).trim() !== '' ? String(v).trim() : '__'; }); }
   function echoNum(v) { var n = parseFloat(String(v || '').replace(',', '.')); return isNaN(n) ? null : n; }
@@ -3004,7 +3014,7 @@ var CEC = (function () {
     /* 15-11-2026: the written parts in one size (10.5 pt; never made smaller). When the whole report does not fit on one page, the final part
        (FINAL ECHO REPORT, Note, the provisional line and both signatures) moves to page 2 as one block: it is never split, and the signatures
        always stay with the final report. Page 2 repeats the hospital heading and the patient's name, MR No. and date. "Page 1 of 2", "Page 2 of 2". */
-    var fs = 10.5, lh = 13.4, hd = lh + 4, SIGN = 92, PAGE_END = d.H - 52, SIGN_END = d.H - 34 - SIGN;
+    var fs = 10.5, lh = 13.4, hd = lh + 4, SIGN = 92, PAGE_END = d.H - 52, SIGN_END = d.H - 34 - SIGN, SIGN_LAST = d.H - 60;
     function linesOf(arr, f, ind) { var n = 0; arr.forEach(function (t) { n += P.wrap(t, f || 'R', fs, W - (ind || 0)).length; }); return n; }
     function needBody() {
       var h = 0;
@@ -3021,7 +3031,7 @@ var CEC = (function () {
       if (Lx.nt.length) h += hd + linesOf(Lx.nt) * lh;
       return h;
     }
-    var onePage = y + needBody() + needFinal() <= SIGN_END;
+    var onePage = y + needBody() + needFinal() + 34 <= SIGN_LAST;
     function patientLine() {                          // page 2: who the report is for
       var yy = 124;
       d.text(L, yy, 'Name:', 'B', 10); d.text(L + 36, yy, P.fit(UP(r.name || ''), 'B', 10.5, 200), 'B', 10.5);
@@ -3055,7 +3065,13 @@ var CEC = (function () {
     if (Lx.ifl.length) block(hd + linesOf(Lx.ifl) * lh, function () { head('Mitral Inflow Show'); cols(Lx.ifl); y += 4; });
     if (Lx.rv.length) block(hd + linesOf(Lx.rv) * lh, function () { head('Estimation RV/MPA Pressure (mmHg)'); cols(Lx.rv); y += 6; });
     /* the final block and the signatures together: on this page if they fit, else all on the next page */
-    if (!onePage && y + needFinal() > SIGN_END) newPage();
+    /* 15-11-2026 (evening): the final block measured exactly as it is drawn; it stays on this page whenever the signatures still fit below it
+       with their usual space (about 1 cm clear above the physician's line), else the whole block goes to the next page */
+    var finH = 0;
+    if (Lx.fin.length || prov) finH += lh + 3 + 2 + linesOf(Lx.fin, 'R', 18) * lh + 6;
+    if (prov) finH += 2 + P.wrap(prov, 'B', fs + 1.5, W).length * (lh + 2) + 6;
+    if (Lx.nt.length) finH += lh + 3 + linesOf(Lx.nt) * lh;
+    if (!onePage && y + finH + 34 > SIGN_LAST) newPage();
     if (Lx.fin.length || prov) { head('FINAL ECHO REPORT:'); y += 2; para(Lx.fin, 'R', true); y += 6; }
     if (prov) {
       var pw = P.wrap(prov, 'B', fs + 1.5, W); y += 2;
@@ -3064,7 +3080,7 @@ var CEC = (function () {
     if (Lx.nt.length) { head('Note:'); para(Lx.nt); }
     /* signatures: the echo cardiographer, and the reporting physician (the HOD) */
     var sy = Math.max(y + 34, SIGN_END + 40);
-    if (sy > d.H - 60) { newPage(); sy = Math.max(y + 34, SIGN_END + 40); }   // (a final block longer than a whole page: signatures still on its last page)
+    if (sy > SIGN_LAST) { newPage(); sy = Math.max(y + 34, SIGN_END + 40); }   // (a final block longer than a whole page: signatures still on its last page)
     d.text(L, sy, r.tech || 'Miss Erum', 'R', 10.5); d.text(L, sy + 14, 'Echo cardiographer', 'R', 10.5);
     d.line(R - 165, sy - 18, R, sy - 18, 0.7);
     d.text(R - 165, sy, 'Reporting Physician', 'R', 10.5); d.text(R - 165, sy + 14, r.phys || st.hod || DEFAULTS.hod, 'R', 10.5);
@@ -3114,7 +3130,7 @@ var CEC = (function () {
     EXAMS: EXAMS, deathCertPdf: deathCertPdf, deathCertSvg: deathCertSvg, svgOf: svgOf, listPlain: listPlain, listPlainPdf: listPlainPdf, opdSlipPdf: opdSlipPdf, slipOps: slipOps, slipPdf: slipPdf, slipPdfMany: slipPdfMany, slipSvg: slipSvg, slipSvgMany: slipSvgMany, slipSheets: slipSheets, isErSlip: isErSlip, slipVitals: slipVitals, SLIP_TOP: SLIP_TOP, STAFF_PROCS: STAFF_PROCS, listPdf: listPdf, listCsv: listCsv,
     certHtml: certHtml, setDemo: setDemo, DEMO_LINE: DEMO_LINE, weekday: weekday, MEDS: MEDS, DX_GROUPS: DX_GROUPS, DX_LIST: DX_LIST, DXKW: DXKW, FREQ_DX: FREQ_DX, canonDx: canonDx, canonList: canonList, dxMatch: dxMatch, dxKey: dxKey, LIST_KINDS: LIST_KINDS, listSpec: listSpec, LIST_COLS: LIST_COLS, LIST_COLSETS: LIST_COLSETS, LIST_PRESETS: LIST_PRESETS, LIST_DEF: LIST_DEF,
     listCfg: listCfg, presetCfg: presetCfg, listColsFor: listColsFor, buildList: buildList, listText: listText, listTitle: listTitle, APPTS: APPTS, APPT_STATUS: APPT_STATUS, apptType: apptType,
-    ECHO_LIB: ECHO_LIB, ECHO_BY: ECHO_BY, echoClash: echoClash, echoReplaces: echoReplaces, echoGroups: echoGroups, echoProv: echoProv, ECHO_IFL_AF: ECHO_IFL_AF, ECHO_MEAS: ECHO_MEAS, ECHO_DD: ECHO_DD, echoNew: echoNew, echoFill: echoFill, echoEA: echoEA, echoPh: echoPh, echoAutoFin: echoAutoFin, echoLines: echoLines,
+    ECHO_LIB: ECHO_LIB, ECHO_BY: ECHO_BY, echoClash: echoClash, echoReplaces: echoReplaces, echoGroups: echoGroups, echoProv: echoProv, ECHO_IFL_AF: ECHO_IFL_AF, ECHO_MEAS: ECHO_MEAS, ECHO_DD: ECHO_DD, echoNew: echoNew, echoPickList: echoPickList, echoFill: echoFill, echoEA: echoEA, echoPh: echoPh, echoAutoFin: echoAutoFin, echoLines: echoLines,
     echoPdf: echoPdf, echoFileName: echoFileName,
     apptSpec: apptSpec, apptSlipPdf: apptSlipPdf, apptMessage: apptMessage, parseYmd: parseYmd, yearModel: yearModel, yearSummary: yearSummary, MONTHS: MONTHS, sexCountOf: sexCount
   };
@@ -3205,7 +3221,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   var IDLE_MS = 4 * 3600000;
   /* 14-11-2026: the version of this page (Index.html / phone app) and of the server (Code.gs). Both come from the same build, so they must be the same. */
-  var APP_VER = '15-11-2026 15:02';
+  var APP_VER = '15-11-2026 16:29';
   function verSame() { return S.serverVer === APP_VER; }
   function verKey(v) { v = String(v || ''); return v.slice(6, 10) + v.slice(3, 5) + v.slice(0, 2) + v.slice(11); }   // DD-MM-YYYY HH:MM in time order
   function verText() { return 'Version ' + APP_VER + (verSame() ? '' : ' (server: ' + (S.serverVer || 'older') + ')'); }
@@ -3643,11 +3659,11 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function navIcon(k) { return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">' + NAV_ICON[k] + '</svg>'; }
   var CEN_MODES = [['shift', 'Per shift data'], ['day', 'Daily data (24 hours)'], ['month', 'Monthly data'], ['year', 'Annual data']];
   function navItems() {
-    if (isEchoId()) return [{ v: 'home', l: 'Home' }, { v: 'appt', l: 'Give appointment for echo', act: 'ap-type', v2: 'ECHO' }, { v: 'ereg', l: 'Register echo patient', act: 'echo-reg' },
+    if (isEchoId()) return [{ v: 'home', l: 'Home' }, { v: 'appt', l: 'Give appointment for echo', act: 'ap-give', v2: 'ECHO' }, { v: 'ereg', l: 'Register echo patient', act: 'echo-reg' },
       { v: 'ewait', l: 'Patients registered for echo', act: 'echo-tab', v2: 'wait' }, { v: 'emake', l: 'Make echo report', act: 'ec-new' }, { v: 'echo', l: 'Print echo reports', act: 'echo-tab', v2: 'list' },
       { v: 'settings', l: 'Account' }, { v: 'signout', l: 'Sign out', act: 'sign-out', cls: 'so' }];      // 15-11-2026: the Echo technician: her 5 jobs only
     var a = [{ v: 'home', l: 'Home' }, { v: 'shift', l: 'Patient dashboard' }];
-    if (canAppt()) a.push({ v: 'appt', l: 'Procedures', sub: CEC.APPTS.map(function (t) { return [t.c, t.c === 'ECHO' ? 'Echocardiography' : t.l]; }).concat(canEchoSee() ? [['EREP', 'Echo reports']] : []), subAct: 'ap-type' });
+    if (canAppt()) a.push({ v: 'appt', l: 'Procedures', sub: [['ECHO', 'Echo'], ['ETT', 'ETT']], subAct: 'ap-type' });   // 15-11-2026 (evening): Echo and ETT only
     if (canRosters()) a.push({ v: 'rosters', l: 'Shifts & rosters', sub: CEC.SHIFTS.map(function (x) { return [x.c, x.l + ' shift']; }), subAct: 'roster' });
     if (canCert()) a.push({ v: 'certs', l: 'Death certificate', badge: S.pendCerts || 0, blink: true });
     if (canClin() || isPrintId()) a.push({ v: 'forms', l: 'Download forms' });              // not for students
@@ -4230,7 +4246,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function openForm(target, entry, roWhy) {
     var e = entry || {}, doctor = canEdit();
     S.form = { target: target, editId: e.id || null, sex: e.sex || '', cat: formCat(e), petty: e.petty || '', opd: !!e.opd, opdFixed: !!e.opd, dxs: CEC.dxOf(e).slice(), procs: (e.procs || []).slice(), meds: (e.meds || []).slice(),
-      out: e.out || '', outTo: e.outTo || '', obsH: e.obsH || '', signed: !!e.signed, dupOk: false, dxq: '', v: e.v || '', ro: !!roWhy, adv: (e.adv || []).slice(), tok: e.tok || '', orig: entry ? clone(entry) : null };
+      out: e.out || '', outTo: e.outTo || '', obsH: e.obsH || '', signed: !!e.signed, dupOk: false, dxq: '', v: e.v || '', ro: !!roWhy, adv: (e.adv || []).slice(), tok: e.tok || '', orig: entry ? clone(entry) : null,
+      echoOnly: !entry && !!S.echoRegOn };              // 15-11-2026 (evening): Echo > Register echo patient, for every role: the Echo technician's form
+    S.echoRegOn = false;
     var sh = targetShift(), no = entry ? sh.entries.map(function (x) { return x.id; }).indexOf(e.id) + 1 : sh.entries.length + 1;
     var el = $('sheet');
     var regOnly = !entry;                                    // registration (everyone, doctors too): biodata only; vitals, ECG and the slip have their own pages
@@ -4288,11 +4306,11 @@ if (typeof module !== 'undefined') module.exports = CEC;
      registered as OPD and get a slip like everyone else (an old record of either opens as OPD). */
   /* 15-11-2026: on an OPD-day morning: OPD, ECG only, Emergency / Resus and Brought dead (no ETT or Echo); other days as before (syncCats). */
   function formCats() {
-    if (isEchoId()) return [['ECHO', 'Echo']];
+    if (echoForm()) return [['ECHO', 'Echo']];
     var l = []; CEC.CATS.forEach(function (c) { l.push([c.c, c.l]); if (c.c === 'OPD') l.push(['ECGO', 'ECG only']); }); return l;
   }
   function syncCats() {
-    var f = S.form, box = $('fCat'); if (!f || !box || isEchoId()) return;
+    var f = S.form, box = $('fCat'); if (!f || !box || echoForm()) return;
     var od = !f.editId && shOpd(targetShift());
     if (!od && f.cat === 'ECGO') { f.cat = ''; setOn('fCat', ''); }
     Array.prototype.forEach.call(box.querySelectorAll('button'), function (b) {
@@ -4301,7 +4319,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     });
     ecgBox();
   }
-  /* "ECG only" on an OPD day: a patient who came back for ECG is found by his OPD No. (or name) and given an MR No. (same patient, no new slip);
+  /* "ECG only" on an OPD day: a patient who came back for ECG is found by his OPD No. (or name) and given an MR No. (15-11-2026 evening: its own record and slip);
      a new patient fills the form and gets an MR No.; his slip prints after the vitals, like everyone's. */
   function ecgBox() {
     var b = $('fEcgBox'), f = S.form; if (!b || !f) return;
@@ -4351,6 +4369,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     api('apiEcgMr', JSON.stringify({ id: id })).then(function (saved) {
       if (saved.mrState) S.mr = saved.mrState;
       putEntry(hit.sh, saved);
+      if (saved.mrRec) { var rsh = [S.open, S.prevShift, S.work].filter(function (x) { return x && x.id === saved.mrRec.shiftId; })[0]; if (rsh) putEntry(rsh, saved.mrRec); }   // 15-11-2026 (evening): its own MR record
       if (S.form) closeForm();
       ecgPop(saved, !!saved.again, nxt, man);
     }, function (e) { toast(errText(e)); });
@@ -4362,7 +4381,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     m.innerHTML = '<div class="mbox manbox" role="dialog" aria-modal="true"><div class="mpl">MR No. (for ECG)</div><div class="mpn" id="mpNum">' + h(x.ecgMr) + '</div>' +
       '<div class="mprows">' + row('Name', String(x.name || '').toUpperCase()) + row('Age', x.age !== '' && x.age != null ? x.age + ' years' : '') + row('Gender', x.sex === 'M' ? 'Male' : x.sex === 'F' ? 'Female' : '') +
       row('OPD No.', x.mr) + '</div>' +
-      '<p class="small" style="margin:12px 0 0"><b>Write this MR No. in the MR register.</b> No new slip is printed.' + (again ? ' (Given earlier' + (x.ecgMrAt ? ' at ' + CEC.hm(x.ecgMrAt) : '') + '.)' : '') + '</p>' +
+      '<p class="small" style="margin:12px 0 0"><b>Write this MR No. in the MR register.</b> It is a new record (counted as a new patient), with its own slip.' + (again ? ' (Given earlier' + (x.ecgMrAt ? ' at ' + CEC.hm(x.ecgMrAt) : '') + '.)' : '') + '</p>' +
       '<div class="mbtns"><button class="btn pri" id="mpNext">Next patient &rsaquo;</button></div></div>';
     m.classList.remove('hidden'); fitNum();
     m.onclick = function (ev) {
@@ -4373,9 +4392,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (S.view === 'mrreg') mrRegLoad();
   }
   /* The Echo technician registers an Echo patient: the usual registration form, the category set to Echo (the only one offered). */
+  function echoForm() { return isEchoId() || !!(S.form && S.form.echoOnly); }   // Echo only, MR No. typed and optional, no day switch, no automatic numbers
   function echoRegister() {
     if (!S.open) return toast('No shift is open yet. Refresh the page.');
-    S.work = S.open; openReg(false);
+    S.work = S.open; S.echoRegOn = true; openReg(false);
     S.form.cat = 'ECHO'; syncForm(); syncMr();
   }
   function onlyNote(fc, e) {
@@ -5072,7 +5092,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var vit = readVitals(err), bp = vit.bp || '', rbs = vit.rbs || '';
     if (bp && f.procs.indexOf('BP') < 0) f.procs.push('BP');
     if (rbs && f.procs.indexOf('BSR') < 0) f.procs.push('BSR');
-    if (!mr && !f.auto && !isEchoId()) err.push(f.opd ? 'OPD No.' : 'MR No.');      // 15-11-2026: the Echo technician: MR No. optional
+    if (!mr && !f.auto && !echoForm()) err.push(f.opd ? 'OPD No.' : 'MR No.');      // 15-11-2026: the Echo technician: MR No. optional
     if (!name) err.push('patient name');
     if (age && !/^\d{1,3}$/.test(age)) err.push('age in years (numbers only)');
     if (!f.sex) err.push('gender');
@@ -5090,7 +5110,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var base = f.editId ? (targetShift().entries.filter(function (x) { return x.id === f.editId; })[0] || {}) : {};
     VIT.forEach(function (x) { if (!(x[0] in vit)) vit[x[0]] = base[x[0]] || ''; });        // registration form: keep vitals entered elsewhere
     var only = f.cat === 'BPO' ? 'BP' : f.cat === 'ECGO' ? 'ECG' : '';
-    return { err: err, entry: { id: f.editId, autoMr: !!f.auto, mr: mr, opd: !!f.opd, name: name, age: age === '' ? '' : +age, sex: f.sex, cat: only ? 'OPD' : f.cat, only: only, petty: f.cat === 'OPD' ? f.petty || '' : '', bp: vit.bp, rbs: vit.rbs,
+    return { err: err, entry: { id: f.editId, autoMr: !!f.auto, mr: mr, opd: !!f.opd, echoReg: f.echoOnly ? 1 : 0, name: name, age: age === '' ? '' : +age, sex: f.sex, cat: only ? 'OPD' : f.cat, only: only, petty: f.cat === 'OPD' ? f.petty || '' : '', bp: vit.bp, rbs: vit.rbs,
       pulse: vit.pulse, temp: vit.temp, spo2: vit.spo2, wt: vit.wt, ht: vit.ht,
       procs: canEdit() ? f.procs.slice() : f.procs.filter(function (p) { return CEC.STAFF_PROCS.indexOf(p) >= 0; }), note: canEdit() ? note : '',
       meds: canEdit() ? f.meds.slice() : [], newOpts: newOpts,
@@ -5130,7 +5150,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         : 'The census is slow: ' + e.name + ' is kept on this device and sent by itself. No need to enter it again.');
       if (!S.form) render();
     };
-    if (APP_BUILD && isNew && isOff() && (mode === 'next' || mode === 'solo') && !isEchoId()) { keepOnPhone(); closeForm(); render(); manPop(temp, false, mode === 'solo' ? 'solo' : target === 'work' ? 'reg' : 'form:' + target, 'reg', !!f.man); if (mode === 'solo') soloPrint(temp, sh, !!f.printNow); return; }
+    if (APP_BUILD && isNew && isOff() && (mode === 'next' || mode === 'solo') && !echoForm()) { keepOnPhone(); closeForm(); render(); manPop(temp, false, mode === 'solo' ? 'solo' : target === 'work' ? 'reg' : 'form:' + target, 'reg', !!f.man); if (mode === 'solo') soloPrint(temp, sh, !!f.printNow); return; }
     if (APP_BUILD && isNew && isOff()) { keepOnPhone(); if (mode === 'next') { if (target === 'work') openReg(!!f.man); else openForm(target, null); } else if (mode === 'solo') openSolo(false); else closeForm(); render(); if (mode === 'man') manPop(temp, false, f.solo ? 'solo' : 'reg'); if (mode === 'vitals') toast('Saved on this phone. Vitals can be added after it is sent.'); return; }
     S.pending++;
     apiRetry(isNew ? 'apiAddEntry' : 'apiUpdateEntry', sh.id, JSON.stringify(e)).then(function (saved) {
@@ -5182,9 +5202,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
     });
     var msg = (signing ? 'Signed off' : 'Saved') + (e.autoMr || !e.mr ? ' ' + e.name : ' ' + mrTag(e));
     /* 15-11-2026: after every new registration at a registration desk: the OPD No. / MR No. in large letters ("write in the ... register"); Next patient */
-    var badge = isNew && (mode === 'next' || mode === 'solo') && !isEchoId();
+    var echoF = echoForm(), badge = isNew && (mode === 'next' || mode === 'solo') && !echoF;
     if (badge) { closeForm(); render(); manPop(temp, false, mode === 'solo' ? 'solo' : target === 'work' ? 'reg' : 'form:' + target, 'reg', !!f.man); return; }
-    if (mode === 'next') { toast(msg + '. Enter the next patient.'); if (target === 'work') openReg(!!f.man); else openForm(target, null); }
+    if (mode === 'next') { toast(msg + '. Enter the next patient.'); if (target === 'work' && f.echoOnly) echoRegister(); else if (target === 'work') openReg(!!f.man); else openForm(target, null); }
     else if (mode === 'solo') { toast(msg + '. Next patient.'); openSolo(false); }
     else { closeForm(); toast(mode === 'vitals' ? msg + '. Opening vitals\u2026' : msg); }
     render();
@@ -6965,24 +6985,21 @@ if (typeof module !== 'undefined') module.exports = CEC;
     return out;
   }
   function echoPageHtml() {
-    if (!canEchoSee()) return '<section class="card">Echo reports are for doctors, nursing staff and the Echo technician.</section>';
+    if (!canEchoSee()) return '<section class="card">Echo reports are for doctors, nursing staff, students and the Echo technician.</section>';
     var E = S.echo;
     if (!E || !E.list) { if (!S.echoBusy) setTimeout(loadEcho, 0); return '<section class="card center muted">' + (E && E.err ? h(E.err) : '<span class="spin"></span>Loading echo reports&hellip;') + '</section>'; }
     if (Date.now() - (E.at || 0) > 120000 && !S.echoBusy) setTimeout(loadEcho, 0);
-    var mk = canEchoMake(), pend = mk ? echoPending() : [], q = (E.q || '').trim(), tab = isEchoId() ? S.echoTab || 'list' : '';
-    var html = '<div class="narrow"><div class="listhead"><h3>' + (tab === 'wait' ? 'Patients registered for echo' : tab === 'list' ? 'Print echo reports' : 'Echo reports') + '</h3>' + (isEchoId() ? '' : '<button class="btn sm" data-act="ap-type" data-v="ECHO">Echo procedures</button>') + '</div>';
-    if (tab === 'list') mk = false;                      // 15-11-2026: the Echo technician's "Print echo reports": the provisional list and the saved reports
+    /* 15-11-2026 (evening): two pages for everyone, opened from the Echo tiles: "Patients registered for echo" (wait) and "Print echo reports" (list) */
+    var mk = canEchoMake(), q = (E.q || '').trim(), tab = S.echoTab === 'wait' ? 'wait' : 'list', pend = tab === 'wait' ? echoPending() : [];
+    var html = '<div class="narrow"><div class="listhead"><h3>' + (tab === 'wait' ? 'Patients registered for echo' : 'Print echo reports') + '</h3>' + (isEchoId() ? '' : '<button class="btn sm" data-act="ap-type" data-v="ECHO">&lsaquo; Echo</button>') + '</div>';
     if (tab === 'list') html += echoProvHtml();
-    if (mk) html += '<section class="card' + (pend.length ? ' pendc' : '') + '"><div class="ct">Waiting for a report (' + pend.length + ')</div>' +
+    if (tab === 'wait') html += '<section class="card' + (pend.length ? ' pendc' : '') + '"><div class="ct">Waiting for a report (' + pend.length + ')</div>' +
       '<p class="muted small" style="margin:0">Today’s echo bookings and the Echo patients registered today, until their report is made.</p>' +
       (pend.length ? '<div class="plist" style="margin-top:8px">' + pend.map(function (p) {
         return '<div class="drow"><div class="sc-top"><div style="min-width:0"><div class="pr-name">' + h(p.name) + (p.mr ? ' <span class="muted">&middot; MR ' + h(p.mr) + '</span>' : '') + '</div>' +
           '<div class="pr-sub">' + [p.sex === 'M' ? 'Male' : p.sex === 'F' ? 'Female' : '', p.age !== '' && p.age != null ? h(p.age) + ' y' : '', h(p.sub)].filter(Boolean).join(' &middot; ') + '</div></div>' +
-          '<button class="btn sm pri" data-act="ec-from" data-v="' + p.kind + '" data-id="' + h(p.id) + '">' + ICON.pen + ' Make report</button></div></div>';
-      }).join('') + '</div>' : '<p class="muted small" style="margin:8px 0 0"><b>None waiting.</b></p>') + '</section>' +
-      (tab ? '' : echoProvHtml() +
-      '<section class="card"><div class="ct">Make echo report</div><p class="muted small" style="margin:0 0 6px">Tick the findings; the final report fills itself. A line you add is kept for next time.</p>' +
-      '<button class="btn pri block" data-act="ec-new">+ New echo report</button></section>');
+          (mk ? '<button class="btn sm pri" data-act="ec-from" data-v="' + p.kind + '" data-id="' + h(p.id) + '">' + ICON.pen + ' Make report</button>' : '') + '</div></div>';
+      }).join('') + '</div>' : '<p class="muted small" style="margin:8px 0 0"><b>None waiting.</b></p>') + '</section>';
     if (tab === 'wait') return html + '</div>';
     var list = (E.list || []).filter(function (x) { var s = q.toLowerCase(); return !s || (x.name + ' ' + (x.mr || '') + ' ' + (x.ref || '')).toLowerCase().indexOf(s) >= 0; }), groups = [], last = null;
     list.forEach(function (x) { if (!last || last.date !== x.date) { last = { date: x.date, items: [] }; groups.push(last); } last.items.push(x); });
@@ -6997,7 +7014,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       (l.length ? '<div class="plist" style="margin-top:8px">' + l.slice(0, 60).map(function (x) {
         return '<div class="drow"><div class="sc-top"><div style="min-width:0"><div class="pr-name">' + h(x.name) + (x.mr ? ' <span class="muted">&middot; MR ' + h(x.mr) + '</span>' : '') + ' ' + echoBadge('P') + '</div>' +
           '<div class="pr-sub">' + h(CEC.weekday(x.date) + ', ' + CEC.dmy(x.date)) + (x.ref ? ' &middot; Ref: ' + h(x.ref) : '') + '</div></div>' +
-          '<button class="btn sm pri" data-act="ec-open" data-id="' + h(x.id) + '">' + ICON.pen + ' Open</button></div></div>';
+          (canEchoMake() ? '<button class="btn sm pri" data-act="ec-open" data-id="' + h(x.id) + '">' + ICON.pen + ' Open</button>' : '<button class="btn sm" data-act="ec-pv" data-id="' + h(x.id) + '">' + ICON.eye + ' Preview</button>') + '</div></div>';
       }).join('') + '</div>' : '<p class="muted small" style="margin:6px 0 0"><b>None waiting.</b></p>') + '</section>';
   }
   function echoListHtml(groups) {
@@ -7072,7 +7089,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var rows = (extra && extra.rows || '') + lib.filter(function (x) { return r.sel[x.k]; }).map(function (x) { return echoChosenRow({ k: x.k }, s, inCl[x.k]); }).join('') +
       cg.map(function (t) { return echoChosenRow({ t: t, g: g, saved: saved.indexOf(t) >= 0 }, s); }).join('');
     var opts = '<option value="">Choose a line…</option>' + (extra && extra.opts || '') +
-      lib.map(function (x) { var on = !!r.sel[x.k]; return '<option value="k:' + h(x.k) + '"' + (on ? ' disabled' : '') + '>' + (on ? '✓ ' : '') + h(echoOptText(x.t)) + '</option>'; }).join('') +
+      CEC.echoPickList(s, g).map(function (x) { var on = !!r.sel[x.k]; return '<option value="k:' + h(x.k) + '"' + (on ? ' disabled' : '') + '>' + (on ? '✓ ' : '') + h(echoOptText(x.t)) + '</option>'; }).join('') +
       saved.map(function (t) { var on = cg.indexOf(t) >= 0; return '<option value="p:' + h(t) + '"' + (on ? ' disabled' : '') + '>' + (on ? '✓ ' : '') + h(echoOptText(t)) + '</option>'; }).join('') +
       '<option value="__add">Add a new line… (kept for next time)</option>';
     var key = s + '|' + g, box = S.ef.addG && S.ef.addG.key === key ? S.ef.addG : null;
@@ -7236,6 +7253,19 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (!blanks.length) return Promise.resolve(true);
     return confirmBox('Some values are empty', '<p>These lines still have an empty value (shown as __ on the report):</p><p class="small"><b>' + blanks.map(h).join('<br>') + '</b></p>', 'Go on anyway', false);
   }
+  /* 15-11-2026 (evening): nothing is chosen at the start, so Save reminds what was not filled (Save anyway / Go back) */
+  var ECHO_MUST = ['Left atrium', 'Left ventricle', 'Wall motion', 'Right ventricle', 'Right atrium', 'Valves', 'Septa', 'IVC', 'Pericardium and masses'];
+  function echoEmpty(r) {
+    var sel = r.sel || {}, cg = r.cg || {}, miss = [], has = function (s, g) { return CEC.ECHO_LIB.some(function (x) { return x.s === s && x.g === g && sel[x.k]; }) || !!(cg[g] && cg[g].length); };
+    if (!((r.cus || {}).st || []).length) ECHO_MUST.forEach(function (g) { if (!has('st', g)) miss.push(g); });   // (an older report's lines without a heading: not asked)
+    if (!r.lines.dp.length) miss.push('Doppler');
+    if (!r.lines.ifl.length) miss.push('Mitral inflow');
+    if (!r.lines.rv.length) miss.push('RV pressure (RVSP)');
+    if (!r.lines.fin.length) miss.push('Final echo report');
+    if (!miss.length) return Promise.resolve(true);
+    return modal('Not filled yet', '<p>Nothing is chosen under:</p><p class="small"><b>' + miss.map(h).join('<br>') + '</b></p><p class="small muted">These will not be on the report.</p>',
+      [{ label: '‹ Go back', value: false }, { label: 'Save anyway', cls: 'pri', value: true }]);
+  }
   /* 15-11-2026: contradicting ticks are allowed, but asked about once more when saving */
   function echoWarnClash(r) {
     var cl = CEC.echoClash(r.sel);
@@ -7275,7 +7305,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function echoSave(print) {
     if (!S.ef || S.ef.busy) return;                   // a second tap while the first is asking or saving: nothing more
     var r = echoRead(); S.ef.busy = true;
-    echoOk(r).then(function (ok) { return ok ? echoWarnClash(r) : false; }).then(function (ok) { return ok ? echoSame(r) : null; }).then(function (r) { return r ? echoAskStatus(r) : null; }, function () { return null; }).then(function (r) {
+    echoOk(r).then(function (ok) { return ok ? echoEmpty(r) : false; }).then(function (ok) { return ok ? echoWarnClash(r) : false; }).then(function (ok) { return ok ? echoSame(r) : null; }).then(function (r) { return r ? echoAskStatus(r) : null; }, function () { return null; }).then(function (r) {
       if (!r || !S.ef) { if (S.ef) S.ef.busy = false; return; }
       if (r.tech) store_('cec_echotech', r.tech);
       toast('Saving…'); echoBusy(true);
@@ -7941,19 +7971,25 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   /* The same home page for everyone: the big buttons and the live patient dashboard (first for doctors, after the buttons for nursing staff
      and students), then pending death certificates. */
+  /* 15-11-2026 (evening): Echo: the Echo technician's home, and Procedures > Echo for everyone. Make echo report only for those who make reports
+     (doctors, the admin, the Echo technician); nursing staff and students: the other four. */
+  function echoTilesHtml() {
+    var svg = function (d) { return '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2">' + d + '</svg>'; };
+    var tile = function (act, v, icon, t, sub) { return '<button class="stile" data-act="' + act + '"' + (v ? ' data-v="' + v + '"' : '') + '><span class="sti" aria-hidden="true">' + svg(icon) + '</span><b>' + t + '</b><span>' + sub + '</span></button>'; };
+    var nw = S.echo && S.echo.list ? echoPending().length : null;
+    if (!S.echo && !S.echoBusy && canEchoSee()) setTimeout(loadEcho, 0);
+    return '<div class="stiles">' +
+      tile('ap-give', 'ECHO', '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>', 'Give appointment for echo', 'A date for the echo') +
+      tile('echo-reg', '', '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/><path d="M19 3v6M16 6h6"/>', 'Register echo patient', 'With the MR No. the student gave') +
+      (canEchoSee() ? tile('echo-tab', 'wait', '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c1-3.5 3.5-5 6-5s5 1.5 6 5"/><path d="M16 7h5M16 11h5M16 15h3"/>', 'Patients registered for echo', nw == null ? 'Waiting for their report' : nw + ' waiting for a report') : '') +
+      (canEchoMake() ? tile('ec-new', '', '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M12 11v6M9 14h6"/>', 'Make echo report', 'A new report') : '') +
+      (canEchoSee() ? tile('echo-tab', 'list', '<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>', 'Print echo reports', 'Find, preview and print') : '') +
+      '</div>';
+  }
   function tilesHtml() {
     var tile = function (act, icon, t, sub) { return '<button class="stile" data-act="' + act + '"><span class="sti" aria-hidden="true">' + icon + '</span><b>' + t + '</b><span>' + sub + '</span></button>'; };
     var svg = function (d) { return '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2">' + d + '</svg>'; };
-    if (isEchoId()) {                                    // 15-11-2026: the Echo technician: 5 tiles, no patient dashboard
-      var nw = S.echo && S.echo.list ? echoPending().length : null;
-      return '<div class="stiles">' +
-        '<button class="stile" data-act="ap-type" data-v="ECHO"><span class="sti" aria-hidden="true">' + svg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>') + '</span><b>Give appointment for echo</b><span>A date for the echo</span></button>' +
-        tile('echo-reg', svg('<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/><path d="M19 3v6M16 6h6"/>'), 'Register echo patient', 'With the MR No. the student gave') +
-        '<button class="stile" data-act="echo-tab" data-v="wait"><span class="sti" aria-hidden="true">' + svg('<circle cx="9" cy="8" r="3.5"/><path d="M3 20c1-3.5 3.5-5 6-5s5 1.5 6 5"/><path d="M16 7h5M16 11h5M16 15h3"/>') + '</span><b>Patients registered for echo</b><span>' + (nw == null ? 'Waiting for their report' : nw + ' waiting for a report') + '</span></button>' +
-        '<button class="stile" data-act="ec-new"><span class="sti" aria-hidden="true">' + svg('<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M12 11v6M9 14h6"/>') + '</span><b>Make echo report</b><span>A new report</span></button>' +
-        '<button class="stile" data-act="echo-tab" data-v="list"><span class="sti" aria-hidden="true">' + svg('<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>') + '</span><b>Print echo reports</b><span>Find, preview and print</span></button>' +
-        '</div>';
-    }
+    if (isEchoId()) return echoTilesHtml();            // 15-11-2026: the Echo technician: 5 tiles, no patient dashboard
     if (!canEnter()) return '';
     return '<div class="stiles">' +                       // 12-11-2026: registration and vitals start from these two tiles (same size as the others, side by side)
       '<button class="stile mode mblue" data-act="mode" data-v="e"><span class="sti" aria-hidden="true">' + svg('<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>') + '</span><b>Electronic slip</b><span>The system prints the slip</span></button>' +
@@ -8173,8 +8209,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var f = S.form, inp = $('fMr'), info = $('mrInfo'), tg = $('fAuto');
     if (!f || !inp) return;
     var op = f.opd = formOpd(), C = op ? S.opdc : S.mr, want = op ? S.autoOpd : S.autoMr, nm = op ? 'OPD No.' : 'MR';
-    if ($('fMrL')) $('fMrL').innerHTML = (op ? 'OPD No.' : 'MR No.') + (isEchoId() ? ' <span class="muted small">(the MR No. the student gave; may be left blank)</span>' : ' <span class="req">*</span>');
-    if (isEchoId()) {                                    // 15-11-2026: typed by hand; no automatic numbers, no OPD day / Emergency day
+    if ($('fMrL')) $('fMrL').innerHTML = (op ? 'OPD No.' : 'MR No.') + (echoForm() ? ' <span class="muted small">(the MR No. the student gave; may be left blank)</span>' : ' <span class="req">*</span>');
+    if (echoForm()) {                                    // 15-11-2026: typed by hand; no automatic numbers, no OPD day / Emergency day
       f.opd = false; f.auto = false; if (tg) { tg.checked = false; var tl = tg.closest('label'); if (tl) tl.classList.add('hidden'); }
       inp.disabled = false; inp.placeholder = 'MR No. (optional)'; if (info) info.innerHTML = ''; var dd = $('fDay'); if (dd) dd.innerHTML = '';
       return;
@@ -8196,7 +8232,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* "OPD day | Emergency day" at the top of a new registration in a morning shift: one choice for the whole shift, for everyone. */
   function syncDay() {
     var d = $('fDay'), f = S.form; if (!d || !f) return;
-    if (isEchoId()) { d.innerHTML = ''; return; }
+    if (echoForm()) { d.innerHTML = ''; return; }
     var sh = targetShift();
     if (!sh || (sh.shift !== 'M' && !(S.me && S.me.demo))) { d.innerHTML = ''; return; }     // demonstration IDs: every shift (testing)
     var on = shOpd(sh), mrOk = !!(S.mr && S.mr.last), opOk = !!(S.opdc && S.opdc.last), miss = !mrOk || (on && !opOk);
@@ -8324,6 +8360,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function apptHtml() {
     var A = S.ap;
     if (isEchoId() && A.type !== 'ECHO') { A.type = 'ECHO'; A.date = null; A.list = null; A.key = ''; }      // the Echo technician: echo only
+    if (A.type === 'ECHO' && !A.step && !isEchoId())                 // 15-11-2026 (evening): Procedures > Echo: the echo tiles
+      return '<div class="narrow"><div class="listhead"><h3>Echo</h3><button class="btn sm" data-act="ap-type" data-v="">Change test</button></div>' + echoTilesHtml() + '</div>';
     if (!A.type) return '<div class="narrow"><section class="card"><div class="ct">Procedures</div><p class="muted small" style="margin:0">Choose the test.</p></section><div class="stiles">' +
       CEC.APPTS.map(function (x) {
         return '<button class="stile" data-act="ap-type" data-v="' + x.c + '"><span class="sti" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2">' +
@@ -8333,14 +8371,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var t = CEC.apptType(A.type), nm = t.c === 'ECHO' ? 'Echo' : t.l;
     if (!A.date) A.date = firstUsual(A.type);
     if (!A.list || A.key.indexOf(A.type) !== 0) { if (!A.loading) setTimeout(function () { loadAppts(); }, 0); }
-    var head = '<div class="listhead"><h3>' + h(nm) + ' procedures</h3>' + (isEchoId() ? '' : '<button class="btn sm" data-act="ap-type" data-v="">Change test</button>') + '</div>';
+    var head = '<div class="listhead"><h3>' + (t.c === 'ECHO' ? 'Give appointment for echo' : h(nm) + ' procedures') + '</h3>' + (isEchoId() ? '' : t.c === 'ECHO' ? '<button class="btn sm" data-act="ap-type" data-v="ECHO">&lsaquo; Echo</button>' : '<button class="btn sm" data-act="ap-type" data-v="">Change test</button>') + '</div>';
     if (A.step !== 'list') return '<div class="narrow">' + head + '<div class="stiles">' +
       '<button class="stile" data-act="ap-new"><span class="sti" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></span>' +
         '<b>Give date</b><span>Choose the date and enter the patient’s details</span></button>' +
       '<button class="stile" data-act="ap-step" data-v="list"><span class="sti" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="3" stroke-linecap="round"/></svg></span>' +
         '<b>Registration list</b><span>Patients booked, by date &middot; PDF</span></button>' +
-      (t.c === 'ECHO' && canEchoSee() ? '<button class="stile" data-act="ap-type" data-v="EREP"><span class="sti" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M8.5 15h2l1.2-3 1.6 5 1.2-2h1"/></svg></span>' +
-        '<b>Echo reports</b><span>Make, print and find echo reports' + (canEchoMake() ? '' : ' (view and print)') + '</span></button>' : '') + '</div>' +
+      '</div>' +
       '<p class="muted small" style="margin:10px 0 0">' + h(t.full) + ' is usually given on ' + dayLabel(A.type) + '.</p></div>';
     var html = '<div class="narrow">' + head + '<section class="card"><button class="btn pri block" data-act="ap-new">+ Give date (new ' + h(t.c === 'ECHO' ? 'echo' : t.l) + ' booking)</button></section>';
     if (!A.list) return html + '<section class="card center muted"><span class="spin"></span>Loading bookings&hellip;</section></div>';
@@ -8670,7 +8707,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
         else setView('census');
         break;
       case 'roster': S.rosterShift = v; S.welAt = 0; setView('roster'); break;
-      case 'ap-type': if (v === 'EREP') { setView('echo'); break; }
+      case 'ap-give': S.ap.type = 'ECHO'; S.ap.date = null; S.ap.list = null; S.ap.key = ''; S.ap.step = 'give'; setView('appt'); break;   // Give appointment for echo: Give date, Registration list
+      case 'ap-type': if (v === 'EREP') { S.echoTab = 'list'; setView('echo'); loadEcho(); break; }
         if (isEchoId()) v = 'ECHO';
         if ((S.ap.type || '') !== v) { S.ap.type = v || null; S.ap.date = null; S.ap.list = null; S.ap.key = ''; } S.ap.step = ''; setView('appt'); break;
       case 'ap-step': S.ap.step = v; setView('appt'); break;
