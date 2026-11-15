@@ -804,6 +804,19 @@ details.card.lbmore .gh{margin-top:14px}
 .pv-foot{display:flex;gap:8px;justify-content:flex-end;background:#fff;padding:10px 12px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
 .pv-foot .btn{min-width:120px}
 
+/* 15-11-2026: OPD day, ECG only */
+.ecgbox{border:1px solid #b9cfe6;background:#f3f8fd;border-radius:10px;padding:10px 12px;margin:8px 0 4px}
+.ecgbox .ecgq{font-size:14px;margin:0 0 6px}
+.ecgbox .ecgrow{display:flex;gap:8px}.ecgbox .ecgrow .in{flex:1;min-width:0;margin:0}
+.ecgbox .ecghit{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:8px}
+.ecgbox .ecghit>div{display:flex;flex-direction:column;min-width:0}
+.ecgbox .ecgnone{margin:8px 0 0;color:#8a5300}
+
+/* 15-11-2026: Print a document: pages as pictures (preview and print) */
+.pvA4{max-width:820px;margin:0 auto 14px;background:#fff;aspect-ratio:210/297;padding:3.8%;box-shadow:0 2px 10px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+.pvA4 img{display:block;max-width:100%;max-height:100%;object-fit:contain}
+.imgjob{break-after:page;page-break-after:always}.imgjob:last-child{break-after:auto;page-break-after:auto}
+
 </style>
 </head>
 <body>
@@ -2922,14 +2935,17 @@ var CEC = (function () {
     if (logo) d.setImage(logo.bytes, logo.w, logo.h);
     function frame() { d.rect(22, 22, d.W - 44, d.H - 44, null, 0, 1.6); d.rect(25.5, 25.5, d.W - 51, d.H - 51, null, 0, 0.5); }
     function U(x, y, s, f, size) { var w = d.text(x, y, s, f, size); d.line(x, y + 1.6, x + w, y + 1.6, 0.6); return w; }
-    frame();
-    if (logo) { var lh0 = Math.min(56, 54 * logo.h / logo.w), lw0 = lh0 * logo.w / logo.h; d.image(73 - lw0 / 2, 38, lw0, lh0); }   // 15-11-2026: kept above the double line (y 100)
-    var cx = 324, t1 = 15.5;
-    while (P.width('SINDH GOVERNMENT HOSPITAL LIAQUATABAD', 'B', t1) > 400) t1 -= 0.5;
-    d.text(cx, 54, 'SINDH GOVERNMENT HOSPITAL LIAQUATABAD', 'B', t1, 'center');
-    d.text(cx, 72, 'CARDIAC EMERGENCY CENTRE (CEC)', 'B', 13, 'center');
-    d.text(cx, 88, 'Karachi    |    Phone No. ' + (st.phone || '021-99334317') + '    |    Email: ' + (st.email || 'sghlliaquatabad10no@gmail.com'), 'B', 8.3, 'center');
-    d.line(44, 100, 551, 100, 1.6); d.line(44, 103.5, 551, 103.5, 0.5);
+    function heading() {                              // the hospital heading (page 1, and again on page 2)
+      frame();
+      if (logo) { var lh0 = Math.min(56, 54 * logo.h / logo.w), lw0 = lh0 * logo.w / logo.h; d.image(73 - lw0 / 2, 38, lw0, lh0); }   // 15-11-2026: kept above the double line (y 100)
+      var cx = 324, t1 = 15.5;
+      while (P.width('SINDH GOVERNMENT HOSPITAL LIAQUATABAD', 'B', t1) > 400) t1 -= 0.5;
+      d.text(cx, 54, 'SINDH GOVERNMENT HOSPITAL LIAQUATABAD', 'B', t1, 'center');
+      d.text(cx, 72, 'CARDIAC EMERGENCY CENTRE (CEC)', 'B', 13, 'center');
+      d.text(cx, 88, 'Karachi    |    Phone No. ' + (st.phone || '021-99334317') + '    |    Email: ' + (st.email || 'sghlliaquatabad10no@gmail.com'), 'B', 8.3, 'center');
+      d.line(44, 100, 551, 100, 1.6); d.line(44, 103.5, 551, 103.5, 0.5);
+    }
+    heading();
     d.rect(162, 112, 271, 27, null, 0, 1.2); d.rect(165, 115, 265, 21, null, 0, 0.5);
     d.text(297.6, 130, 'ECHOCARDIOGRAPHY REPORT', 'HB', 12, 'center', 0, 2.4);
     var date = r.date ? dmy(r.date).replace(/-/g, '/') : '', age = String(r.age || '').trim();
@@ -2961,29 +2977,37 @@ var CEC = (function () {
     cell(L, ty + 5 * rh, 'Right Ventricle  (<25)', mv('rv'), '', L + 108);
     cell(c2, ty + 5 * rh, 'Aortic (<40)', mv('ao'), '', c2 + 140);
     y = ty + 5 * rh + 22;
-    /* the written parts: the size is made smaller (down to 9 pt) so that a long report still fits on one page */
-    var sizes = [[10.5, 13.4], [10, 12.6], [9.5, 11.8], [9, 11]], Z = sizes[0];
-    function linesOf(arr, z, f, ind) { var n = 0; arr.forEach(function (t) { n += P.wrap(t, f || 'R', z[0], W - (ind || 0)).length; }); return n; }
-    function need(z) {
-      var h = 0, hd = z[1] + 4;
-      if (Lx.st.length) h += hd + linesOf(Lx.st, z) * z[1];
-      h += hd + z[1] + linesOf(Lx.dp, z, 'B') * z[1] + 4;
-      if (Lx.ifl.length) h += hd + linesOf(Lx.ifl, z) * z[1];
-      if (Lx.rv.length) h += hd + z[1];
-      if (Lx.fin.length || prov) h += hd + 6 + linesOf(Lx.fin, z, 'R', 18) * z[1];
-      if (prov) h += 6 + P.wrap(prov, 'B', z[0] + 1.5, W).length * (z[1] + 2);
-      if (Lx.nt.length) h += hd + linesOf(Lx.nt, z) * z[1];
+    /* 15-11-2026: the written parts in one size (10.5 pt; never made smaller). When the whole report does not fit on one page, the final part
+       (FINAL ECHO REPORT, Note, the provisional line and both signatures) moves to page 2 as one block: it is never split, and the signatures
+       always stay with the final report. Page 2 repeats the hospital heading and the patient's name, MR No. and date. "Page 1 of 2", "Page 2 of 2". */
+    var fs = 10.5, lh = 13.4, hd = lh + 4, SIGN = 92, PAGE_END = d.H - 52, SIGN_END = d.H - 34 - SIGN;
+    function linesOf(arr, f, ind) { var n = 0; arr.forEach(function (t) { n += P.wrap(t, f || 'R', fs, W - (ind || 0)).length; }); return n; }
+    function needBody() {
+      var h = 0;
+      if (Lx.st.length) h += hd + linesOf(Lx.st) * lh + 4;
+      h += hd + lh + linesOf(Lx.dp, 'B') * lh + 6;
+      if (Lx.ifl.length) h += hd + linesOf(Lx.ifl) * lh + 4;
+      if (Lx.rv.length) h += hd + linesOf(Lx.rv) * lh + 6;
       return h;
     }
-    var SIGN = 92, BOTTOM = d.H - 34 - SIGN;
-    for (var zi = 0; zi < sizes.length; zi++) { Z = sizes[zi]; if (y + need(Z) <= BOTTOM) break; }
-    var fs = Z[0], lh = Z[1];
-    function room(hh) {                               // a new page when the next line would run into the bottom border
-      if (y + hh <= d.H - 52) return;
-      if (DEMO.on) d.mark(0, 0, d.W, d.H, [786]);
-      d.addPage(); frame(); y = 58;
-      d.text(L, 44, 'ECHOCARDIOGRAPHY REPORT (continued)  -  ' + UP(r.name || '') + (date ? '  -  ' + date : ''), 'B', 9.5);
+    function needFinal() {                            // the final block, without the signatures
+      var h = 0;
+      if (Lx.fin.length || prov) h += hd + 2 + linesOf(Lx.fin, 'R', 18) * lh + 6;
+      if (prov) h += 8 + P.wrap(prov, 'B', fs + 1.5, W).length * (lh + 2) + 6;
+      if (Lx.nt.length) h += hd + linesOf(Lx.nt) * lh;
+      return h;
     }
+    var onePage = y + needBody() + needFinal() <= SIGN_END;
+    function patientLine() {                          // page 2: who the report is for
+      var yy = 124;
+      d.text(L, yy, 'Name:', 'B', 10); d.text(L + 36, yy, P.fit(UP(r.name || ''), 'B', 10.5, 200), 'B', 10.5);
+      if (r.mr) { d.text(300, yy, 'MR No.:', 'B', 10); d.text(342, yy, P.fit(UP(r.mr), 'B', 10.5, 85), 'B', 10.5); }
+      d.text(430, yy, 'Date:', 'B', 10); d.text(460, yy, date, 'B', 10.5);
+      d.line(L, yy + 8, R, yy + 8, 0.5);
+      return yy + 30;
+    }
+    function newPage() { d.addPage(); heading(); y = patientLine(); }
+    function room(hh) { if (y + hh > PAGE_END) newPage(); }   // only a very long report: the findings go on, under the heading again
     function head(t) { room(lh * 2 + 4); U(L, y, t, 'B', fs + 0.5); y += lh + 3; }
     function para(arr, f, numbered) {
       arr.forEach(function (t, i) {
@@ -2995,29 +3019,39 @@ var CEC = (function () {
     }
     function cols(arr) {                              // "E = 1.05 m/s|A = 1.20 m/s": two columns
       arr.forEach(function (t) {
-        room(lh); var p = t.split('|');
-        if (p.length > 1) { d.text(L, y, p[0], 'R', fs); d.text(L + 170, y, p[1], 'R', fs); } else P.wrap(t, 'R', fs, W).forEach(function (w, k) { if (k) { y += lh; room(lh); } d.text(L, y, w, 'R', fs); });
+        var p = t.split('|');
+        if (p.length > 1) { d.text(L, y, p[0], 'R', fs); d.text(L + 170, y, p[1], 'R', fs); } else P.wrap(t, 'R', fs, W).forEach(function (w, k) { if (k) y += lh; d.text(L, y, w, 'R', fs); });
         y += lh;
       });
     }
+    function block(hh, draw) { room(hh); draw(); }    // a part kept whole on one page (mitral inflow, RV pressure)
     if (Lx.st.length) { head('Structural Interpretation:'); para(Lx.st); y += 4; }
     head('Doppler:'); room(lh); d.text(L, y, 'Flow Abnormality (Color Flow Mapping)', 'R', fs - 0.5); y += lh;
     para(Lx.dp, 'B'); y += 6;
-    if (Lx.ifl.length) { head('Mitral Inflow Show'); cols(Lx.ifl); y += 4; }
-    if (Lx.rv.length) { head('Estimation RV/MPA Pressure (mmHg)'); cols(Lx.rv); y += 6; }
+    if (Lx.ifl.length) block(hd + linesOf(Lx.ifl) * lh, function () { head('Mitral Inflow Show'); cols(Lx.ifl); y += 4; });
+    if (Lx.rv.length) block(hd + linesOf(Lx.rv) * lh, function () { head('Estimation RV/MPA Pressure (mmHg)'); cols(Lx.rv); y += 6; });
+    /* the final block and the signatures together: on this page if they fit, else all on the next page */
+    if (!onePage && y + needFinal() > SIGN_END) newPage();
     if (Lx.fin.length || prov) { head('FINAL ECHO REPORT:'); y += 2; para(Lx.fin, 'R', true); y += 6; }
     if (prov) {
-      var pw = P.wrap(prov, 'B', fs + 1.5, W); room(pw.length * (lh + 2) + 4); y += 2;
+      var pw = P.wrap(prov, 'B', fs + 1.5, W); y += 2;
       pw.forEach(function (w) { d.textS(L, y, w, 'B', fs + 1.5, 0.25); y += lh + 2; }); y += 6;
     }
     if (Lx.nt.length) { head('Note:'); para(Lx.nt); }
     /* signatures: the echo cardiographer, and the reporting physician (the HOD) */
-    var sy = Math.max(y + 34, d.H - 34 - SIGN + 40);
-    if (sy > d.H - 60) { if (DEMO.on) d.mark(0, 0, d.W, d.H, [786]); d.addPage(); frame(); sy = 120; }
+    var sy = Math.max(y + 34, SIGN_END + 40);
+    if (sy > d.H - 60) { newPage(); sy = Math.max(y + 34, SIGN_END + 40); }   // (a final block longer than a whole page: signatures still on its last page)
     d.text(L, sy, r.tech || 'Miss Erum', 'R', 10.5); d.text(L, sy + 14, 'Echo cardiographer', 'R', 10.5);
     d.line(R - 165, sy - 18, R, sy - 18, 0.7);
     d.text(R - 165, sy, 'Reporting Physician', 'R', 10.5); d.text(R - 165, sy + 14, r.phys || st.hod || DEFAULTS.hod, 'R', 10.5);
-    if (DEMO.on) { d.stamp(R - 175, sy - 50, 185, 46, 'NOT VALID', 'DEMONSTRATION - PRACTICE ONLY'); d.mark(0, 0, d.W, d.H, [786]); }
+    if (DEMO.on) d.stamp(R - 175, sy - 50, 185, 46, 'NOT VALID', 'DEMONSTRATION - PRACTICE ONLY');
+    var np = d.pages.length;
+    for (var pi = 0; pi < np; pi++) {
+      d.usePage(pi);
+      if (np > 1) d.text(d.W / 2, d.H - 31, 'Page ' + (pi + 1) + ' of ' + np, 'R', 9, 'center');
+      if (DEMO.on) d.mark(0, 0, d.W, d.H, [786]);
+    }
+    d.usePage(np - 1);
     return d;
   }
   function echoProv(r) { return r.rs === 'P' || (!r.rs && !r.id); }       // a saved report from before 15-11-2026 (no status) counts as final
@@ -3147,7 +3181,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   var IDLE_MS = 4 * 3600000;
   /* 14-11-2026: the version of this page (Index.html / phone app) and of the server (Code.gs). Both come from the same build, so they must be the same. */
-  var APP_VER = '15-11-2026 03:24';
+  var APP_VER = '15-11-2026 05:49';
   function verSame() { return S.serverVer === APP_VER; }
   function verKey(v) { v = String(v || ''); return v.slice(6, 10) + v.slice(3, 5) + v.slice(0, 2) + v.slice(11); }   // DD-MM-YYYY HH:MM in time order
   function verText() { return 'Version ' + APP_VER + (verSame() ? '' : ' (server: ' + (S.serverVer || 'older') + ')'); }
@@ -3419,6 +3453,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     try { new MutationObserver(function () { if (due) return; due = true; requestAnimationFrame(function () { due = false; pwTicks(); }); }).observe(document.body, { childList: true, subtree: true }); } catch (e) { }
   })();
   function signOut(msg, byUser) {
+    if (S.token && S.me && canTmp() && S.tmp && S.tmp.list && S.tmp.list.length) { try { call('apiTmpDel', [S.token, JSON.stringify({ dev: myDev(), all: true })]).then(null, function () { }); } catch (e) { } }   // 15-11-2026: documents kept for printing go for good
+    S.tmp = null;
     if (byUser && S.token && S.me && !S.me.demo) { try { call('apiSignOut', [S.token]).then(null, function () { }); } catch (e) { } }   // frees this device's place (one ID: at most 2 devices)
     if (APP_BUILD && byUser) { store_('cec_cache', ''); var off = store_('cec_off'); if (off) { off.token = ''; store_('cec_off', off); } }
     if (!APP_BUILD) store_('cec_cache', '');              // website: nothing of the census stays on the PC after signing out
@@ -3555,6 +3591,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   /* ---------- main menu: a drop-down on phones, a bar with a census submenu on computers ---------- */
   var NAV_ICON = {
+    tmpdoc: '<path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/><path d="M12 15.5v4M10.2 17.7 12 19.5l1.8-1.8"/>',
     home: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
     shift: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
     certs: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 13h7M9 17h5"/>',
@@ -3581,6 +3618,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (canRosters()) a.push({ v: 'rosters', l: 'Shifts & rosters', sub: CEC.SHIFTS.map(function (x) { return [x.c, x.l + ' shift']; }), subAct: 'roster' });
     if (canCert()) a.push({ v: 'certs', l: 'Death certificate', badge: S.pendCerts || 0, blink: true });
     if (canClin() || isPrintId()) a.push({ v: 'forms', l: 'Download forms' });              // not for students
+    if (canTmp()) a.push({ v: 'tmpdoc', l: 'Print a document' });          // 15-11-2026: doctors and the admin
     if (canClin()) a.push({ v: 'lists', l: 'Registers' });
     if (isAdmin()) a.push({ v: 'petty', l: 'Petty OPD register' });       // 12-11-2026: the admin only
     a.push({ v: 'mrreg', l: 'MR register' });
@@ -3681,6 +3719,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     else if (S.view === 'wedit') v.innerHTML = weditHtml();
     else if (S.view === 'appt') v.innerHTML = canAppt() ? apptHtml() : '<section class="card">You do not have the right to book procedures.</section>';
     else if (S.view === 'echo') v.innerHTML = echoPageHtml();
+    else if (S.view === 'tmpdoc') v.innerHTML = canTmp() ? tmpHtml() : '<section class="card">Printing a document is for doctors and the admin.</section>';
     else if (S.view === 'bulk') v.innerHTML = bulkHtml();
     else if (S.view === 'petty') v.innerHTML = isAdmin() ? pettyHtml() : '<section class="card">The petty OPD register is for the admin.</section>';
     else if (S.view === 'mrreg') v.innerHTML = mrRegHtml();
@@ -4183,7 +4222,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       [['M', 'Male'], ['F', 'Female']].map(function (g) { return '<button type="button" data-act="f-sex" data-v="' + g[0] + '">' + g[1] + '</button>'; }).join('') + '</div></div></div>' +
       '<label class="lb">Category <span class="req">*</span></label><div class="seg cats c7" id="fCat">' +
       formCats().map(function (c) { var cl = [c[2] ? 'onlyb' : '', c[0] === 'BD' ? 'bdb' : ''].filter(Boolean).join(' '); return '<button type="button" data-act="f-cat" data-v="' + c[0] + '"' + (cl ? ' class="' + cl + '"' : '') + '>' + h(c[1]) + '</button>'; }).join('') + '</div>' +
-      '<p class="muted small fnote hidden" id="fOnlyNote"></p>' +
+      '<p class="muted small fnote hidden" id="fOnlyNote"></p>' + (entry ? '' : '<div id="fEcgBox" class="ecgbox hidden"></div>') +
       (doctor && !regOnly ? docVitalsHtml(e) + slipLine(e) +
         /* Doctor's record (08-11-2026): biodata, the vitals taken, diagnosis and disposal. ER procedures and medications are given from the home page buttons. */
         '<div class="fsec">Doctor\u2019s assessment</div>' + (e.signed ? '<div class="signed">&#10003; Signed off ' + h(fmtTime(e.signedAt)) + (isAdmin() && e.signedBy ? ' by ' + h(e.signedBy) : '') + '</div>' : '') +
@@ -4213,7 +4252,92 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   /* The category buttons: the census categories. 14-11-2026 (night): "BP check only" and "ECG only" are no longer offered; those patients are
      registered as OPD and get a slip like everyone else (an old record of either opens as OPD). */
-  function formCats() { return isEchoId() ? [['ECHO', 'Echo']] : CEC.CATS.map(function (c) { return [c.c, c.l]; }); }
+  /* 15-11-2026: on an OPD-day morning: OPD, ECG only, Emergency / Resus and Brought dead (no ETT or Echo); other days as before (syncCats). */
+  function formCats() {
+    if (isEchoId()) return [['ECHO', 'Echo']];
+    var l = []; CEC.CATS.forEach(function (c) { l.push([c.c, c.l]); if (c.c === 'OPD') l.push(['ECGO', 'ECG only']); }); return l;
+  }
+  function syncCats() {
+    var f = S.form, box = $('fCat'); if (!f || !box || isEchoId()) return;
+    var od = !f.editId && shOpd(targetShift());
+    if (!od && f.cat === 'ECGO') { f.cat = ''; setOn('fCat', ''); }
+    Array.prototype.forEach.call(box.querySelectorAll('button'), function (b) {
+      var v = b.getAttribute('data-v');
+      b.classList.toggle('hidden', v === 'ECGO' ? !od : (v === 'ETT' || v === 'ECHO') ? od && f.cat !== v : false);
+    });
+    ecgBox();
+  }
+  /* "ECG only" on an OPD day: a patient who came back for ECG is found by his OPD No. (or name) and given an MR No. (same patient, no new slip);
+     a new patient fills the form and gets an MR No.; his slip prints after the vitals, like everyone's. */
+  function ecgBox() {
+    var b = $('fEcgBox'), f = S.form; if (!b || !f) return;
+    var on = !f.editId && f.cat === 'ECGO' && shOpd(targetShift());
+    b.classList.toggle('hidden', !on);
+    if (!on) { b.removeAttribute('data-on'); b.innerHTML = ''; return; }
+    if (b.getAttribute('data-on')) return;
+    b.setAttribute('data-on', '1');
+    b.innerHTML = '<div class="ecgq"><b>Came back for ECG?</b> Type the OPD No. given today (or the name), then tap Find.</div>' +
+      '<div class="ecgrow"><input class="in" id="fEcgQ" placeholder="OPD No. or name" autocomplete="off" autocapitalize="characters"><button type="button" class="btn pri" data-act="ecg-find">Find</button></div><div id="fEcgRes"></div>' +
+      '<p class="muted small" style="margin:8px 0 0"><b>New patient</b> (no OPD No. today): fill in the details below and save. An <b>MR No.</b> is given; the slip prints after the vitals.</p>';
+  }
+  function ecgHits(q) {
+    q = String(q || '').trim().toUpperCase();
+    var out = [], seen = {}, num = /^\d/.test(q);
+    [S.work, S.open, S.prevShift].forEach(function (sh) {
+      if (!sh || !shOpd(sh)) return;
+      (sh.entries || []).forEach(function (e) {
+        if (!e.opd || seen[e.id] || /^(q-|tmp)/.test(e.id)) return;
+        if (num ? String(e.mr || '').toUpperCase() === q : String(e.name || '').toUpperCase().indexOf(q) >= 0) { seen[e.id] = 1; out.push({ e: e, sh: sh }); }
+      });
+    });
+    return out.slice(0, 8);
+  }
+  function ecgFind() {
+    var qi = $('fEcgQ'), res = $('fEcgRes'), q = qi ? qi.value.trim() : '';
+    if (!res) return;
+    if (q.length < 1) return toast('Type the OPD No. or the name.');
+    var hits = ecgHits(q);
+    res.innerHTML = !hits.length ? '<p class="small ecgnone">No OPD patient of today with “' + h(q) + '”. A new patient: fill in the details below.</p>' :
+      hits.map(function (x) {
+        var e = x.e;
+        return '<div class="ecghit"><div><b>' + h(e.name) + '</b><span class="muted small">' + [e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '', e.age !== '' && e.age != null ? e.age + ' y' : '',
+          'OPD No. ' + e.mr, 'registered ' + CEC.hm(e.t)].filter(Boolean).map(h).join(' &middot; ') + '</span>' +
+          (e.ecgMr ? '<span class="small">MR No. <b>' + h(e.ecgMr) + '</b> already given' + (e.ecgMrAt ? ' at ' + CEC.hm(e.ecgMrAt) : '') + '</span>' : '') + '</div>' +
+          '<button type="button" class="btn ' + (e.ecgMr ? '' : 'pri') + '" data-act="ecg-mr" data-id="' + h(e.id) + '">' + (e.ecgMr ? 'Show MR No.' : 'Give MR No.') + '</button></div>';
+      }).join('');
+  }
+  function ecgGive(id) {
+    var f = S.form, hit = null;
+    [S.work, S.open, S.prevShift].forEach(function (sh) { (sh && sh.entries || []).forEach(function (e) { if (!hit && e.id === id) hit = { e: e, sh: sh }; }); });
+    if (!hit || !f) return;
+    var nxt = f.solo ? 'solo' : 'reg', man = !!f.man;
+    if (hit.e.ecgMr) { closeForm(); return ecgPop(hit.e, true, nxt, man); }
+    if (isOff()) return toast('Giving an MR No. needs internet.');
+    toast('Giving the MR No.\u2026');
+    api('apiEcgMr', JSON.stringify({ id: id })).then(function (saved) {
+      if (saved.mrState) S.mr = saved.mrState;
+      putEntry(hit.sh, saved);
+      if (S.form) closeForm();
+      ecgPop(saved, !!saved.again, nxt, man);
+    }, function (e) { toast(errText(e)); });
+  }
+  /* The MR No. in large letters, with the patient, to write in the MR register (like the manual slip display). */
+  function ecgPop(x, again, nxt, man) {
+    var row = function (l, v) { return v === '' || v == null ? '' : '<div class="mpr"><span>' + l + '</span><b>' + h(v) + '</b></div>'; };
+    var m = $('modal');
+    m.innerHTML = '<div class="mbox manbox" role="dialog" aria-modal="true"><div class="mpl">MR No. (for ECG)</div><div class="mpn" id="mpNum">' + h(x.ecgMr) + '</div>' +
+      '<div class="mprows">' + row('Name', String(x.name || '').toUpperCase()) + row('Age', x.age !== '' && x.age != null ? x.age + ' years' : '') + row('Gender', x.sex === 'M' ? 'Male' : x.sex === 'F' ? 'Female' : '') +
+      row('OPD No.', x.mr) + '</div>' +
+      '<p class="small" style="margin:12px 0 0"><b>Write this MR No. in the MR register.</b> No new slip is printed.' + (again ? ' (Given earlier' + (x.ecgMrAt ? ' at ' + CEC.hm(x.ecgMrAt) : '') + '.)' : '') + '</p>' +
+      '<div class="mbtns"><button class="btn pri" id="mpNext">Next patient &rsaquo;</button></div></div>';
+    m.classList.remove('hidden'); fitNum();
+    m.onclick = function (ev) {
+      if (!ev.target.closest('#mpNext')) return;
+      closeModal();
+      if (nxt === 'solo') openSolo(man); else openReg(man);
+    };
+    if (S.view === 'mrreg') mrRegLoad();
+  }
   /* The Echo technician registers an Echo patient: the usual registration form, the category set to Echo (the only one offered). */
   function echoRegister() {
     if (!S.open) return toast('No shift is open yet. Refresh the page.');
@@ -4224,7 +4348,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var at = e && e.t ? ' at ' + CEC.hm(onlyEnds(e)) : ' 1 hour after registration';
     if (fc === 'BPO') return '<b>BP check only</b>: counted as OPD (regular check-up). The patient shows on the <b>Vitals</b> page for 30 minutes; if the vitals are saved, the patient gets an OPD slip. ' +
       'If no BP is typed, it closes by itself' + at + ' with BP written as NORMAL.';
-    if (fc === 'ECGO') return '<b>ECG only</b>: counted as OPD (regular check-up). The patient shows on the <b>Vitals</b> page for 30 minutes (an OPD slip is made if the vitals are saved) and on the <b>ECG</b> page for the whole shift. ' +
+    if (fc === 'ECGO') return '';                     // 15-11-2026: ECG only on an OPD day is explained in its own box (ecgBox)
+    if (fc === 'ECGO_OLD') return '<b>ECG only</b>: counted as OPD (regular check-up). The patient shows on the <b>Vitals</b> page for 30 minutes (an OPD slip is made if the vitals are saved) and on the <b>ECG</b> page for the whole shift. ' +
       'It closes by itself' + at + ' as an OPD regular check-up.';
     return '';
   }
@@ -4729,6 +4854,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if ($('obsWrap')) $('obsWrap').classList.toggle('hidden', f.out !== 'OBS');
     if ($('rinWrap')) { $('rinWrap').classList.toggle('hidden', f.out !== 'RIN'); setOn('fRin', f.outTo || ''); }
     if ($('dxBox')) renderDx();
+    syncCats();
   }
   function isStdProc(p) { return CEC.PROCS.some(function (k) { return k.c === p; }); }
   /* Buttons for the patient form. Options that any doctor added before are offered to everyone (S.custom, kept on the server). */
@@ -4935,7 +5061,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       procs: canEdit() ? f.procs.slice() : f.procs.filter(function (p) { return CEC.STAFF_PROCS.indexOf(p) >= 0; }), note: canEdit() ? note : '',
       meds: canEdit() ? f.meds.slice() : [], newOpts: newOpts,
       dxs: canEdit() ? dxs : [], out: canEdit() ? out : '', outTo: canEdit() && out === 'RIN' ? (f.outTo || '') : '', obsH: out === 'OBS' ? obsH : '', signed: !!(signing || f.signed),
-      adv: f.regOnly ? (base.adv || []) : (f.adv || []).slice() } };
+      adv: (function () { var a = f.regOnly ? (base.adv || []).slice() : (f.adv || []).slice(); if (f.cat === 'ECGO' && a.indexOf('ECG') < 0) a.push('ECG'); return a; })() } };   // ECG only: shows on the ECG page
   }
   function savePatient(mode) {
     var signing = mode === 'sign', r = readForm(signing), f = S.form, box = $('fErr'), sh = targetShift();
@@ -5526,6 +5652,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (j.err) return toast('Print desk: ' + j.err);
     if (j.kind === 'slips') return printSlips((j.list || []).map(function (e) { return { e: e }; }), paper, { claimed: true });
     if (j.kind === 'blankslips') { for (i = 0; i < j.n; i++) list.push({ e: { blank: true } }); return printSlips(list, paper, { claimed: true, blank: true }); }
+    if (j.kind === 'tmpdoc') return printImages((j.pages || []).map(function (b) { return 'data:image/jpeg;base64,' + b; }), 'Print desk: ' + j.what);
     if (j.kind === 'testslip') return printSlips([{ e: testSlipE() }], paper, { claimed: true });
     if (j.kind === 'cert') return printPages(CEC.deathCertSvg(j.cert, S.settings, logoBytes()), 'Print desk: ' + j.what);
     if (j.kind === 'blankcert') return printPages(CEC.deathCertSvg({}, S.settings, logoBytes(), j.n), 'Print desk: ' + j.what);
@@ -5574,6 +5701,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function pvAct(k) { var a = S.pv && S.pv.acts[k]; if (!a) return; if (k === 'print') closePreview(); a(); }
   /* a census document (letter, register, list, echo report...): its pages; Print and Download as on the page */
   function previewDoc(fn, args, title, print, dl) { preview(title, function () { return CEC.svgOf(fn, args.concat([logoBytes()])); }, { print: print, dl: dl }); }
+  function printImages(srcs, what) { printReady(srcs[0], function () { printA4(srcs.map(function (s) { return '<div class="imgjob"><img src="' + s + '" alt=""></div>'; }).join(''), what, '8mm'); }); }
   function printImage(src, what) { printReady(src, function (ok) { if (!ok) return toast(what + ' could not be opened.'); printA4('<div class="imgjob"><img src="' + src + '" alt=""></div>', what, '8mm'); }); }
   function printReady(src, go) {
     if (!src) return go(true);
@@ -6330,7 +6458,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     return html + '<ol class="mrlist">' + R.rows.slice(0, 600).map(function (x) {
       return '<li' + (x.opd ? ' class="opd"' : '') + '><span class="mrn">' + (x.opd ? '<i class="opdb">OPD</i>' : '') + h(x.mr || '-') + '.</span><span class="mrb"><b>' + h(x.name || '(no name)') + '</b>' +
         '<span class="muted small">' + (x.sex === 'M' ? 'M' : x.sex === 'F' ? 'F' : '-') + (x.age !== '' && x.age != null ? ', ' + h(x.age) : '') + ' &middot; ' + CEC.hm(x.t) + ' &middot; ' +
-        h(x.only ? (x.only === 'BP' ? 'BP check only' : 'ECG only') : (CEC.label(CEC.CATS, x.cat) || x.cat)) + '</span></span></li>';
+        h(x.ecgOf ? 'for ECG (OPD No. ' + x.ecgOf + ')' : x.only ? (x.only === 'BP' ? 'BP check only' : 'ECG only') : (CEC.label(CEC.CATS, x.cat) || x.cat)) + '</span></span></li>';
     }).join('') + '</ol></div>';
   }
   function mrRegLoad() {
@@ -6574,8 +6702,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var c = x.c;
     return '<div class="drow"><div class="pr-name">' + h(c.name) + (c.mr ? ' <span class="muted">&middot; MR ' + h(c.mr) + '</span>' : '') + '</div>' +
       '<div class="pr-sub"><span class="tag online">Online</span>' + (x.time ? h(x.time) + ' hrs &middot; ' : '') + (c.mr ? 'MR ' + h(c.mr) : '') + ' &middot; issued ' + h(c.issueDate || '') + (isAdmin() && c.issuedBy ? ' by ' + h(c.issuedBy) : '') + '</div>' +
-      '<div class="sbtns ico"><button class="btn sm" data-act="cert-view" data-id="' + h(c.id) + '">' + ICON.eye + ' View</button>' +
-      '<button class="btn sm" data-act="cert-pv" data-id="' + h(c.id) + '">' + ICON.eye + ' Preview</button><button class="btn sm" data-act="cert-printx" data-id="' + h(c.id) + '">' + ICON.print + ' Print</button>' +
+      '<div class="sbtns ico"><button class="btn sm" data-act="cert-pv" data-id="' + h(c.id) + '">' + ICON.eye + ' Preview</button><button class="btn sm" data-act="cert-printx" data-id="' + h(c.id) + '">' + ICON.print + ' Print</button>' +
       (canCertMake() ? '<button class="btn sm" data-act="cert-open" data-id="' + h(c.id) + '">' + ICON.pen + ' Edit</button>' : '') +
       '<button class="btn sm" data-act="cert-dl" data-id="' + h(c.id) + '">' + ICON.dl + ' Download</button></div></div>';
   }
@@ -6608,6 +6735,144 @@ if (typeof module !== 'undefined') module.exports = CEC;
     cam: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
     img: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-6-6-9 9"/></svg>'
   };
+  /* ---------- 15-11-2026: Print a document (doctors and the admin). A PDF or a photo is made into A4 page pictures on this device
+     (PDF pages read with pdf.js), sent to the census only to reach the print desk, kept for this ID on this device only and deleted for good
+     at sign-out, on Remove, and 1 hour after upload. The file name never leaves this device. ---------- */
+  function canTmp() { return !!(S.me && (S.me.canEdit || S.me.admin) && !isEchoId()); }
+  var PDFJS_V = '3.11.174', PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/' + PDFJS_V + '/pdf.min.js', PDFJS_W = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/' + PDFJS_V + '/pdf.worker.min.js';
+  var TMP_W = 1240, TMP_H = 1754, TMP_MAXP = 10;      // A4 at 150 dots an inch; up to 10 pages
+  function pdfLib() {
+    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    if (S.pdfLoad) return S.pdfLoad;
+    S.pdfLoad = new Promise(function (res, rej) {
+      var sc = document.createElement('script'); sc.src = PDFJS;
+      sc.onload = function () {
+        var L = window.pdfjsLib; if (!L) return rej(new Error('The PDF reader could not be loaded.'));
+        fetch(PDFJS_W).then(function (r) { return r.text(); }).then(function (t) { L.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([t], { type: 'text/javascript' })); res(L); },
+          function () { L.GlobalWorkerOptions.workerSrc = PDFJS_W; res(L); });
+      };
+      sc.onerror = function () { S.pdfLoad = null; rej(new Error('The PDF reader could not be loaded. Check the internet and try again.')); };
+      document.head.appendChild(sc);
+    });
+    return S.pdfLoad;
+  }
+  /* a picture of one A4 page (upright: a sideways page is turned so that it fills the paper) */
+  function tmpPage(src, w, h) {
+    var turn = w > h, cw = turn ? h : w, ch = turn ? w : h, k = Math.min(TMP_W / cw, TMP_H / ch, 1.6), c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(cw * k)); c.height = Math.max(1, Math.round(ch * k));
+    var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+    if (turn) { x.translate(c.width, 0); x.rotate(Math.PI / 2); }
+    x.drawImage(src, 0, 0, turn ? c.height : c.width, turn ? c.width : c.height);
+    return c.toDataURL('image/jpeg', 0.85);
+  }
+  function tmpPhoto(file) {
+    return new Promise(function (res, rej) {
+      var u = URL.createObjectURL(file), im = new Image();
+      im.onload = function () { try { res([tmpPage(im, im.naturalWidth, im.naturalHeight)]); } catch (x) { rej(x); } URL.revokeObjectURL(u); };
+      im.onerror = function () { URL.revokeObjectURL(u); rej(new Error('This photo could not be opened.')); };
+      im.src = u;
+    });
+  }
+  function tmpPdf(file) {
+    return Promise.all([pdfLib(), file.arrayBuffer()]).then(function (r) { return r[0].getDocument({ data: new Uint8Array(r[1]) }).promise; }).then(function (pdf) {
+      if (pdf.numPages > TMP_MAXP) throw new Error('This PDF has ' + pdf.numPages + ' pages. Up to ' + TMP_MAXP + ' pages can be printed at a time.');
+      var out = [], i = 1;
+      var next = function () {
+        if (i > pdf.numPages) return Promise.resolve(out);
+        return pdf.getPage(i).then(function (pg) {
+          var v1 = pg.getViewport({ scale: 1 }), sc = Math.min(TMP_H / Math.max(v1.width, v1.height), 3), vp = pg.getViewport({ scale: sc }), c = document.createElement('canvas');
+          c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+          var cx = c.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, c.width, c.height);
+          return pg.render({ canvasContext: cx, viewport: vp }).promise.then(function () { out.push(tmpPage(c, c.width, c.height)); i++; S.tmp.prog = 'Reading page ' + Math.min(i, pdf.numPages) + ' of ' + pdf.numPages + '…'; tmpProg(); return next(); });
+        });
+      };
+      return next();
+    });
+  }
+  function tmpInit() { if (!S.tmp) S.tmp = { list: null, pages: {}, names: {}, busy: false, prog: '' }; return S.tmp; }
+  function tmpLoad() {
+    var T = tmpInit();
+    if (T.loading || isOff()) return;
+    T.loading = true;
+    api('apiTmpList', JSON.stringify({ dev: myDev() })).then(function (l) { T.loading = false; T.list = l || []; Object.keys(T.pages).forEach(function (id) { if (!T.list.some(function (x) { return x.id === id; })) delete T.pages[id]; }); if (S.view === 'tmpdoc' && !anyOverlay()) render(); },
+      function (e) { T.loading = false; T.err = errText(e); if (S.view === 'tmpdoc') render(); });
+  }
+  function tmpProg() { var p = $('tmpProg'); if (p && S.tmp) p.textContent = S.tmp.prog || ''; }
+  function tmpHtml() {
+    var T = tmpInit();
+    if (!T.list && !T.loading) setTimeout(tmpLoad, 0);
+    var html = '<div class="narrow"><div class="listhead"><h3>Print a document</h3></div><section class="card"><div class="ct">Choose a PDF or a photo</div>' +
+      '<p class="muted small" style="margin:0 0 8px">Up to ' + TMP_MAXP + ' pages, printed on A4. It is kept <b>only for you on this device</b>, and deleted for good when you sign out, when you tap Remove, or 1 hour after upload. Its name is never sent.</p>' +
+      '<input type="file" id="tmpFile" accept="application/pdf,image/*" class="hidden">' +
+      (T.busy ? '<p class="small"><span class="spin"></span><span id="tmpProg">' + h(T.prog || 'Preparing…') + '</span></p>'
+        : '<button class="btn pri block" data-act="tmp-pick">' + ICON.dl + ' Choose a PDF or photo</button>') + '</section>';
+    html += '<section class="card"><div class="ct">My documents (this device only)</div>';
+    if (!T.list) html += '<p class="muted small"><span class="spin"></span>Loading&hellip;</p>';
+    else if (!T.list.length) html += '<p class="muted small" style="margin:6px 0 0">Nothing kept. Choose a PDF or photo above.</p>';
+    else html += '<div class="plist" style="margin-top:8px">' + T.list.map(function (x) {
+      var nm = T.names[x.id] || (x.kind === 'pdf' ? 'PDF' : 'Photo'), ok = x.got >= x.n;
+      return '<div class="drow"><div class="pr-name">' + h(nm) + '</div><div class="pr-sub">' + x.n + ' page' + (x.n === 1 ? '' : 's') + ' &middot; ' + (ok ? 'deleted at ' + CEC.hm(x.until) : 'not fully sent: choose it again') + '</div>' +
+        '<div class="sbtns ico">' + (ok ? '<button class="btn sm" data-act="tmp-pv" data-id="' + h(x.id) + '">' + ICON.eye + ' Preview</button><button class="btn sm pri" data-act="tmp-print" data-id="' + h(x.id) + '">' + ICON.print + ' Print</button>' : '') +
+        '<button class="btn sm dan" data-act="tmp-del" data-id="' + h(x.id) + '">Remove</button></div></div>';
+    }).join('') + '</div>';
+    return html + '</section></div>';
+  }
+  function tmpChosen(file) {
+    var T = tmpInit(), pdf = /pdf$/i.test(file.type) || /\.pdf$/i.test(file.name || '');
+    if (!pdf && !/^image\//.test(file.type)) return toast('Choose a PDF or a photo.');
+    if (file.size > (pdf ? 10 : 25) * 1024 * 1024) return toast(pdf ? 'This PDF is larger than 10 MB.' : 'This photo is too large.');
+    if (isOff()) return toast('Sending a document to print needs internet.');
+    T.busy = true; T.prog = pdf ? 'Reading the PDF…' : 'Preparing the photo…'; render();
+    var pages = null, id = null;
+    (pdf ? tmpPdf(file) : tmpPhoto(file)).then(function (pg) {
+      pages = pg; T.prog = 'Sending page 1 of ' + pages.length + '…'; tmpProg();
+      return api('apiTmpStart', JSON.stringify({ dev: myDev(), n: pages.length, kind: pdf ? 'pdf' : 'photo' }));
+    }).then(function (st) {
+      id = st.id; T.names[id] = String(file.name || '').slice(0, 80) || (pdf ? 'PDF' : 'Photo');
+      var i = 0;
+      var send = function () {
+        if (i >= pages.length) return Promise.resolve();
+        T.prog = 'Sending page ' + (i + 1) + ' of ' + pages.length + '…'; tmpProg();
+        return apiRetry('apiTmpPage', JSON.stringify({ dev: myDev(), id: id, i: i }), pages[i].split(',')[1]).then(function () { i++; return send(); });
+      };
+      return send();
+    }).then(function () {
+      T.pages[id] = pages; T.busy = false; T.prog = '';
+      toast('Ready: ' + pages.length + ' page' + (pages.length === 1 ? '' : 's') + '. Preview or print it.');
+      tmpLoad(); render();
+    }, function (e) {
+      T.busy = false; T.prog = ''; render();
+      toast(errText(e));
+      if (id) api('apiTmpDel', JSON.stringify({ dev: myDev(), id: id })).then(function () { tmpLoad(); }, function () { });
+    });
+  }
+  function tmpPages(id) {
+    var T = tmpInit();
+    if (T.pages[id]) return Promise.resolve(T.pages[id]);
+    toast('Opening…');
+    return api('apiTmpGet', JSON.stringify({ dev: myDev(), id: id })).then(function (r) { T.pages[id] = r.pages.map(function (b) { return 'data:image/jpeg;base64,' + b; }); return T.pages[id]; });
+  }
+  function tmpPrintHere(pages, what) { printImages(pages, what); }
+  function tmpPrint(id) {
+    var T = tmpInit(), x = (T.list || []).filter(function (d) { return d.id === id; })[0]; if (!x) return;
+    var label = 'your document (' + x.n + ' page' + (x.n === 1 ? '' : 's') + ')';
+    withDesk(function () {
+      if (canDesk()) return deskJob({ kind: 'tmpdoc', tid: id, dev: myDev() }, label);
+      var here = function () { tmpPages(id).then(function (p) { tmpPrintHere(p, 'Your document'); }, function (e) { toast(errText(e)); }); };
+      if (isPhone() && !apHere()) return phoneNoDesk(here);
+      here();
+    });
+  }
+  function tmpPreview(id) {
+    var T = tmpInit(), x = (T.list || []).filter(function (d) { return d.id === id; })[0]; if (!x) return;
+    tmpPages(id).then(function (p) {
+      preview(T.names[id] || 'Document', function () { return p.map(function (src) { return '<div class="pvA4"><img src="' + src + '" alt=""></div>'; }); }, { print: function () { tmpPrint(id); } });
+    }, function (e) { toast(errText(e)); });
+  }
+  function tmpDel(id) {
+    api('apiTmpDel', JSON.stringify({ dev: myDev(), id: id })).then(function () { var T = tmpInit(); delete T.pages[id]; delete T.names[id]; T.list = (T.list || []).filter(function (x) { return x.id !== id; }); toast('Removed and deleted.'); render(); },
+      function (e) { toast(errText(e)); });
+  }
   /* ---------- Echo reports (14-11-2026 night): Appointments > Echocardiography > Echo reports ----------
      Made like the death certificate: a sheet with the patient, the measurements and tick lists of findings; the lines for the
      FINAL ECHO REPORT come by themselves from what is ticked. A line typed by hand is kept for everyone for next time.
@@ -7210,17 +7475,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     });
   }
   /* ---------- death certificate: view only ---------- */
-  function openCertView(c) {
-    S.cert = { data: c, view: true };
-    var el = $('sheet');
-    el.innerHTML = '<div class="sh-head"><button data-act="cert-close">Close</button><h3>Death certificate</h3><span>' + (c.mr ? 'MR ' + h(c.mr) : '') + '</span></div>' +
-      '<div class="sh-body"><p class="muted small" style="margin:12px 0 8px">View only.' + (canCertMake() ? ' Use Edit to make changes.' : '') + '</p><div class="paperwrap" id="cpw"><div class="paper" id="cpaper">' +
-      CEC.certHtml(c, S.settings, LOGO) + '</div></div></div>' +
-      '<div class="sh-foot"><button class="btn" data-act="cert-pv-cur">' + ICON.eye + ' Preview</button><button class="btn" data-act="cert-print-cur">' + ICON.print + ' Print</button><button class="btn" data-act="cert-dl-cur">' + ICON.dl + ' Download</button><button class="btn" data-act="cert-drive">Google preview</button>' +
-      (canCertMake() ? '<button class="btn pri" data-act="cert-edit-cur">' + ICON.pen + ' Edit</button>' : '') + '</div>';
-    el.classList.remove('hidden'); document.body.style.overflow = 'hidden'; overlayOpened();
-    fitBox('cpw', 'cpaper');
-  }
+
   function fitBox(wrapId, paperId) {
     var pw = $(wrapId), p = $(paperId);
     if (!pw || !p) return;
@@ -7462,7 +7717,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     closeForm(); toast('Opening certificate\u2026');
     api('apiGetCert', '', e.id).then(function (c) {
       if (canCertMake()) return openCert(c || certFromEntry(e, sh));
-      if (c) return openCertView(c);                       // nursing staff: view and download only
+      if (c) return certPreview(c);                        // nursing staff: preview, print and download (15-11-2026: Preview replaces View)
       openPaper({ id: e.id, name: e.name, mr: e.mr, cat: e.cat, censusDate: sh.censusDate });
     }, function (err) { toast(errText(err)); });
   }
@@ -7822,7 +8077,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var op = f.opd = formOpd(), C = op ? S.opdc : S.mr, want = op ? S.autoOpd : S.autoMr, nm = op ? 'OPD No.' : 'MR';
     if ($('fMrL')) $('fMrL').innerHTML = (op ? 'OPD No.' : 'MR No.') + ' <span class="req">*</span>';
     if ($('fAutoL')) $('fAutoL').textContent = op ? 'Automatic OPD No.' : 'Automatic MR';
-    syncDay();
+    syncDay(); syncCats();
     if (!info) return;
     f.auto = !f.editId && want && !!(C && C.last);        // 13-11-2026: also when slow or offline: the phone gives the next number, the census corrects it if needed
     if (tg) tg.checked = f.auto;
@@ -7843,7 +8098,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var on = shOpd(sh), mrOk = !!(S.mr && S.mr.last), opOk = !!(S.opdc && S.opdc.last), miss = !mrOk || (on && !opOk);
     d.innerHTML = '<div class="dayrow"><div class="seg dayseg"><button type="button" data-act="f-day" data-v="opd" class="' + (on ? 'on' : '') + '">OPD day</button>' +
       '<button type="button" data-act="f-day" data-v="emr" class="' + (on ? '' : 'on') + '">Emergency day</button></div>' +
-      '<p class="muted small">' + (on ? 'Every patient gets an <b>OPD No.</b> (OPD register), except <b>Emergency / Resus and Brought dead</b> (MR No.).' : 'Every patient gets an MR No.') + '</p></div>' +
+      '<p class="muted small">' + (on ? 'Every patient gets an <b>OPD No.</b> (OPD register), except <b>ECG only, Emergency / Resus and Brought dead</b> (MR No.). No ETT or Echo today.' : 'Every patient gets an MR No.') + '</p></div>' +
       /* 12-11-2026: automatic numbering in its own box, every morning shift */
       '<div class="numbox' + (miss ? ' miss' : '') + '"><span class="nbi" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/></svg></span><div class="nbt">' +
         (miss ? '<b>Automatic numbering is not set</b><span>Tap Set numbers and type the last ' + (!mrOk ? 'MR No.' : '') + (!mrOk && on && !opOk ? ' and the last ' : '') + (on && !opOk ? 'OPD No.' : '') + ' from the paper register.</span>'
@@ -8399,6 +8654,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
       }
       case 'close-form': closeForm(); break;
       case 'f-sex': S.form.sex = v; setOn('fSex', v); break;
+      case 'ecg-find': ecgFind(); break;
+      case 'ecg-mr': ecgGive(id); break;
       case 'f-cat':
         if (S.form.cat === 'BD' && v !== 'BD') { S.form.out = ''; }
         S.form.cat = v; syncForm(); syncMr(); break;
@@ -8537,16 +8794,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
         break;
       }
       case 'cert-open': if (canCertMake()) getCert(id).then(function (c) { if (c) openCert(c); }); break;
-      case 'cert-view': getCert(id).then(function (c) { if (c) openCertView(c); }); break;
       case 'cert-pv': getCert(id).then(function (c) { if (c) certPreview(c); }); break;
-      case 'cert-pv-cur': certPreview(S.cert.data); break;
       case 'cert-pvf': { var cpv = readCert(); certPreview(cpv, function () { var cp2 = readCert(); if (certTimesOk(cp2) && certNeededOk(cp2)) certMissingOk(cp2).then(function (ok) { if (ok) certPrintNow(cp2); }); }); break; }
       case 'cert-dl': getCert(id).then(function (c) { if (c) certPrint(c); }); break;
       case 'cert-printx': getCert(id).then(function (c) { if (c) certPrintNow(c); }); break;
-      case 'cert-print-cur': certPrintNow(S.cert && S.cert.data); break;
-      case 'cert-dl-cur': certPrint(S.cert.data); break;
-      case 'cert-edit-cur': if (canCertMake()) openCert(S.cert.data); break;
-      case 'cert-drive': { var cd = S.cert.data; saveToDrive(certFileName(cd), CEC.deathCertPdf(cd, S.settings, logoBytes()), 'application/pdf'); break; }
       case 'lst-day': {
         S.lst = S.lst || {}; readList();
         var dd = v === 'today' ? currentCensus() : v === 'yday' ? CEC.addDays(currentCensus(), -1) : lastWeekday(+v);
@@ -8618,6 +8869,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'ec-pvnow': echoPreview(echoRead(), true); break;
       case 'ec-pv': echoGet(id).then(function (r) { if (r) echoPreview(r); }); break;
       case 'pv-back': closePreview(); break;
+      case 'tmp-pick': { var tf = $('tmpFile'); if (tf) { tf.value = ''; tf.click(); } break; }
+      case 'tmp-pv': tmpPreview(id); break;
+      case 'tmp-print': tmpPrint(id); break;
+      case 'tmp-del': confirmBox('Remove this document?', 'It is deleted for good from the census and this device.', 'Remove', true).then(function (ok) { if (ok) tmpDel(id); }); break;
       case 'pv-print': pvAct('print'); break;
       case 'pv-dl': pvAct('dl'); break;
       case 'ec-printnow': { var rp = echoRead(); echoOk(rp).then(function (ok) { if (ok) echoPrint(rp); }); break; }
@@ -8786,6 +9041,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (S.ef && t.type === 'checkbox' && t.getAttribute && t.getAttribute('data-ek') && echoChange(t)) return;      // echo report ticks
     if (t.getAttribute && t.getAttribute('data-pp') && t.files && t.files[0]) { paperPhoto(t.files[0], t.getAttribute('data-pp')); t.value = ''; return; }
     if (t.id === 'ptFile' && t.files && t.files[0]) { pettyFile(t.files[0]); t.value = ''; return; }
+    if (t.id === 'tmpFile' && t.files && t.files[0]) { var tf0 = t.files[0]; t.value = ''; tmpChosen(tf0); return; }
     if (t.getAttribute && t.getAttribute('data-dx') && S.form) {
       var dv = t.getAttribute('data-dx'), di = S.form.dxs.indexOf(dv);
       if (t.checked && di < 0) S.form.dxs.push(dv); else if (!t.checked && di >= 0) S.form.dxs.splice(di, 1);
@@ -8841,6 +9097,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (S.qe) { ev.preventDefault(); ev.target.blur(); return; }
     if (ev.target.id === 'ecgQ' || ev.target.id === 'erQ' || ev.target.id === 'vitQ' || ev.target.id === 'ecQ') { ev.preventDefault(); ev.target.blur(); return; }
     if (S.ef) { ev.preventDefault(); if (ev.target.id === 'efAddIn') echoAdd(); else ev.target.blur(); return; }
+    if (S.form && ev.target.id === 'fEcgQ') { ev.preventDefault(); ecgFind(); return; }
     if (!S.form) return;
     ev.preventDefault();
     if (ev.target.id === 'fProcX') { if (suggExact('fProcX')) return; var pa = document.querySelector('[data-act=proc-add]'); if (pa) pa.click(); return; }
