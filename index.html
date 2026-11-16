@@ -3221,7 +3221,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   var IDLE_MS = 4 * 3600000;
   /* 14-11-2026: the version of this page (Index.html / phone app) and of the server (Code.gs). Both come from the same build, so they must be the same. */
-  var APP_VER = '16-11-2026 01:34';
+  var APP_VER = '16-11-2026 16:42';
   function verSame() { return S.serverVer === APP_VER; }
   function verKey(v) { v = String(v || ''); return v.slice(6, 10) + v.slice(3, 5) + v.slice(0, 2) + v.slice(11); }   // DD-MM-YYYY HH:MM in time order
   function verText() { return 'Version ' + APP_VER + (verSame() ? '' : ' (server: ' + (S.serverVer || 'older') + ')'); }
@@ -8901,7 +8901,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
         else setView('home');
         break;
       case 'shift-letter': {
-        var s = (S.detail && S.detail.id === id) ? S.detail : S.dayShifts.filter(function (x) { return x.id === id; })[0];
+        var fresh = (S.dayShifts || []).filter(function (x) { return x.id === id; })[0], det = (S.detail && S.detail.id === id) ? S.detail : null;   // 16-11-2026: never an old copy
+        var s = (S.view === 'detail' && det) ? det : fresh || det;
         if (s) { S.prev = S.view; openLetter({ type: 'shift', shifts: [s], annex: true }); }
         break;
       }
