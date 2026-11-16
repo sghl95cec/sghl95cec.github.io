@@ -157,7 +157,7 @@ input.in:focus,select.in:focus,textarea.in:focus{border-color:var(--g6);box-shad
 .paper .sign .sn{font-weight:700;margin-top:4px}
 .paper .copy{margin-top:22px;font-size:14.5px}.paper .copy ol{margin:4px 0 0 4px}
 .paper .foot{position:absolute;left:60px;right:60px;bottom:22px;border-top:1px solid #999;padding-top:4px;font-size:11px;color:#555;font-family:Arial,sans-serif}
-.paper .ah{text-align:center;font-weight:700;font-size:16px}.paper .aref{text-align:center;font-size:13px;margin-bottom:10px}
+.paper .ah{text-align:center;font-weight:700;font-size:16px}.paper .ab{font-weight:700;font-size:14px;margin:18px 0 0;padding-bottom:2px;border-bottom:1.5px solid #000}.paper .aref{text-align:center;font-size:13px;margin-bottom:10px}
 .paper .legend{font-style:italic;font-size:12.5px;margin-top:6px}
 
 .set-doc textarea{min-height:110px}
@@ -747,9 +747,9 @@ label.check.pwshow input{width:18px;height:18px;margin:0}
 /* 14-11-2026: Registers, simple: category and shift buttons that fill with colour when chosen; Print by category closed until tapped */
 .lbchips{display:flex;flex-wrap:wrap;gap:8px}
 .lbc{min-height:42px;min-width:58px;padding:0 16px;border-radius:999px;border:1.5px solid #c9d3cd;background:#fff;color:#33403a;font:inherit;font-size:14.5px;font-weight:700;cursor:pointer;letter-spacing:.02em}
-.lbc.OPD{color:#14497e;border-color:#b9cfe6}.lbc.EMR{color:#8c1d1d;border-color:#ebc0c0}.lbc.ECHO{color:#5b3fa0;border-color:#d3c6ee}.lbc.ETT{color:#3f2777;border-color:#cbbfe6}.lbc.BD{color:#2b2b2b;border-color:#bdbdbd}
+.lbc.OPD{color:#14497e;border-color:#b9cfe6}.lbc.OPDC{color:#14497e;border-color:#b9cfe6}.lbc.OPDE{color:#0d5f63;border-color:#b3dadb}.lbc.EMR{color:#8c1d1d;border-color:#ebc0c0}.lbc.ECHO{color:#5b3fa0;border-color:#d3c6ee}.lbc.ETT{color:#3f2777;border-color:#cbbfe6}.lbc.BD{color:#2b2b2b;border-color:#bdbdbd}
 .lbc.on{background:var(--g7);border-color:var(--g7);color:#fff}
-.lbc.OPD.on{background:#1f5f9e;border-color:#1f5f9e}.lbc.EMR.on{background:#b42318;border-color:#b42318}.lbc.ECHO.on{background:#6d4bb8;border-color:#6d4bb8}
+.lbc.OPD.on{background:#1f5f9e;border-color:#1f5f9e}.lbc.OPDC.on{background:#1f5f9e;border-color:#1f5f9e}.lbc.OPDE.on{background:#137a7f;border-color:#137a7f}.lbc.EMR.on{background:#b42318;border-color:#b42318}.lbc.ECHO.on{background:#6d4bb8;border-color:#6d4bb8}
 .lbc.ETT.on{background:#4b2f8a;border-color:#4b2f8a}.lbc.BD.on{background:#2b2b2b;border-color:#2b2b2b}
 .lbcols button{flex:1 1 40%}
 .lbmain .lbgo{margin-top:14px}
@@ -1583,16 +1583,29 @@ var CEC = (function () {
     var one = [{ h: 'No.', w: 0.046, a: 'c' }, { h: 'MR No.', w: 0.082, a: 'l' }, { h: 'Patient name', w: 0.24, a: 'l' }, { h: 'Age', w: 0.048, a: 'c' }, { h: 'Gender', w: 0.078, a: 'c' }];
     return one.concat([{ h: '', w: 0.012, a: 'c', gap: true }], one.map(function (c) { return { h: c.h, w: c.w, a: c.a }; }));
   })();
+  /* 17-11-2026: on a day with OPD numbers the list is in two blocks, one per register: OPD register (Clinic OPD, OPD Nos.) and MR register
+     (Emergency / Resus, ER OPD, Brought dead: MR Nos.). The block of a patient is the number given (an OPD No. or an MR No.), so switching
+     the morning to an Emergency day for walk-in patients puts them in the MR register. Days without OPD numbers: as before. */
+  var ANNEX_COLS_OPD = ANNEX_COLS.map(function (c) { return c.h === 'MR No.' ? Object.assign({}, c, { h: 'OPD No.' }) : c; });
   function annexGroups(entries) {
-    var g = groupBy(entries, function (e) { return e.cat; }), out = [];
-    function cells(e, n) { return [n, e.mr ? UP((e.opd ? 'OPD ' : '') + e.mr) : '-', UP(e.name), e.age !== '' && e.age != null ? e.age : '-', e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '-']; }
-    REC_CATS.forEach(function (k) {
-      var list = (g[k.c] || []).slice().sort(function (a, b) { return (a.t || '') < (b.t || '') ? -1 : 1; });
+    var out = [], split = entries.some(function (e) { return e.opd; });
+    function cells(e, n, opdCol) { return [n, e.mr ? UP((e.opd && !opdCol ? 'OPD ' : '') + e.mr) : '-', UP(e.name), e.age !== '' && e.age != null ? e.age : '-', e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '-']; }
+    function add(list, label, blk, opdCol) {
+      list = list.slice().sort(function (a, b) { return (a.t || '') < (b.t || '') ? -1 : 1; });
       if (!list.length) return;
       var half = Math.ceil(list.length / 2), rows = [];
-      for (var i = 0; i < half; i++) rows.push(cells(list[i], i + 1).concat([''], list[i + half] ? cells(list[i + half], i + half + 1) : ['', '', '', '', '']));
-      out.push({ h: k.l + ' (' + list.length + ')', t: { wrap: false, tight: true, total: null, cols: ANNEX_COLS, rows: rows } });
-    });
+      for (var i = 0; i < half; i++) rows.push(cells(list[i], i + 1, opdCol).concat([''], list[i + half] ? cells(list[i + half], i + half + 1, opdCol) : ['', '', '', '', '']));
+      out.push({ h: label + ' (' + list.length + ')', blk: blk || '', t: { wrap: false, tight: true, total: null, cols: opdCol ? ANNEX_COLS_OPD : ANNEX_COLS, rows: rows } });
+    }
+    if (!split) {
+      var g0 = groupBy(entries, function (e) { return e.cat; });
+      REC_CATS.forEach(function (k) { add(g0[k.c] || [], k.l, '', false); });
+      return out;
+    }
+    var opdL = entries.filter(function (e) { return e.opd; }), mrL = entries.filter(function (e) { return !e.opd; }), g = groupBy(mrL, function (e) { return e.cat; });
+    function pts(n) { return n + ' patient' + (n === 1 ? '' : 's'); }
+    add(opdL, 'Clinic OPD', 'OPD REGISTER (OPD Nos.): ' + pts(opdL.length), true);
+    REC_CATS.forEach(function (k) { add(g[k.c] || [], k.c === 'OPD' ? 'ER OPD' : k.l, 'MR REGISTER (MR Nos.): ' + pts(mrL.length), false); });
     return out;
   }
   function unsignedNote(entries) {
@@ -1791,7 +1804,10 @@ var CEC = (function () {
       '<div class="foot">' + h(m.footer) + '</div></div>';
     if (m.annex) {
       s += '<div class="page annex"><div class="ah">' + h(m.annex.h) + '</div><div class="aref">Ref: ' + h(m.refNo) + '</div>';
-      m.annex.groups.forEach(function (g, i) { s += '<div class="sh">' + (i + 1) + '.  ' + h(g.h) + '</div>' + tableHtml(g.t); });
+      m.annex.groups.forEach(function (g, i) {
+        if (g.blk && (!i || m.annex.groups[i - 1].blk !== g.blk)) s += '<div class="ab">' + h(g.blk) + '</div>';    // register block (17-11-2026)
+        s += '<div class="sh">' + (i + 1) + '.  ' + h(g.h) + '</div>' + tableHtml(g.t);
+      });
       s += (m.annex.legend ? '<div class="legend">' + h(m.annex.legend) + '</div>' : '') + '<div class="foot">' + h(m.footer) + '</div></div>';
     }
     return s;
@@ -1936,7 +1952,14 @@ var CEC = (function () {
       d.addPage(); y = TOP;
       d.text(d.W / 2, y, m.annex.h, 'B', 12, 'center'); y += 16;
       d.text(d.W / 2, y, 'Ref: ' + m.refNo, 'R', 10, 'center'); y += 14;
-      m.annex.groups.forEach(function (g, i) { section((i + 1) + '.  ' + g.h, g.t, g.t.tight ? 8 : 8.5); });
+      m.annex.groups.forEach(function (g, i) {
+        if (g.blk && (!i || m.annex.groups[i - 1].blk !== g.blk)) {      // register block (17-11-2026): its heading stays with the first rows
+          var rh = (g.t.tight ? 8 : 8.5) + (g.t.tight ? 4.5 : 5), est = 22 + 18 + rh * (2 + Math.min(8, Math.max(1, g.t.rows.length)));
+          if (y + est > BOTTOM && est <= BOTTOM - TOP) { d.addPage(); y = TOP; }
+          y += i ? 10 : 4; d.text(L, y, g.blk, 'B', 11); d.line(L, y + 3, R, y + 3, 0.8); y += 14;
+        }
+        section((i + 1) + '.  ' + g.h, g.t, g.t.tight ? 8 : 8.5);
+      });
       if (m.annex.legend) { ensure(14); d.text(L, y, m.annex.legend, 'I', 9); }
     }
     var nP = d.pages.length;
@@ -2446,7 +2469,7 @@ var CEC = (function () {
     { k: 'mr', m: 44, t: function (e) { return (e.opd ? 'OPD No. ' : 'MR ') + e.mr; }, h: 'MR No.', w: 7, a: 'l', f: function (e) { return (e.opd ? 'OPD ' : '') + e.mr; } },
     { k: 'name', m: 72, h: 'Patient name', w: 14, a: 'l', f: function (e) { return e.name; } },
     { k: 'agesex', m: 36, h: 'Age/Sex', w: 5.5, a: 'c', f: ageSex },
-    { k: 'cat', m: 52, h: 'Category', w: 8.5, a: 'l', f: function (e) { return label(CATS, e.cat); } },
+    { k: 'cat', m: 52, h: 'Category', w: 8.5, a: 'l', f: function (e) { return label(LIST_CATS, listCatOf(e)); } },
     { k: 'bp', m: 40, t: function (e) { return e.bp ? 'BP ' + e.bp : has(e, 'BP') ? 'BP done' : ''; }, h: 'BP', w: 6, a: 'c', f: function (e) { return e.bp || (has(e, 'BP') ? 'Done' : ''); } },
     { k: 'pulse', m: 30, t: function (e) { return e.pulse ? 'Pulse ' + e.pulse + '/min' : ''; }, h: 'Pulse', w: 4.5, a: 'c', f: function (e) { return e.pulse || ''; } },
     { k: 'temp', m: 34, t: function (e) { return e.temp ? 'Temp ' + e.temp + (+e.temp <= 45 ? ' \u00b0C' : ' \u00b0F') : ''; }, h: 'Temp', w: 4.5, a: 'c', f: function (e) { return e.temp ? e.temp + (+e.temp <= 45 ? ' \u00b0C' : ' \u00b0F') : ''; } },
@@ -2471,12 +2494,18 @@ var CEC = (function () {
     readings: ['no', 'date', 'time', 'mr', 'name', 'agesex', 'cat', 'bp', 'pulse', 'temp', 'spo2', 'rbs', 'wt', 'ht', 'ecg'],
     clinical: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'bp', 'rbs', 'dx', 'procs', 'meds', 'out']
   };
-  var LIST_DEF = { cats: [], shifts: ['M', 'E', 'N'], sex: '', ageMin: '', ageMax: '', seen: '', procs: [], outs: [], meds: [], dx: '',
+  /* 17-11-2026: OPD patients in two registers. Clinic OPD: an OPD No. (OPD register, OPD-day mornings). ER OPD: an MR No. (MR register: walk-ins
+     in other shifts or days, the morning switched to an Emergency day, patients sent back for ECG). Decided by the number each patient got. */
+  var LIST_CATS = [{ c: 'EMR', l: 'Emergency / Resus', t: 'EMERGENCY / RESUS' }, { c: 'OPDC', l: 'Clinic OPD', t: 'CLINIC OPD' }, { c: 'OPDE', l: 'ER OPD', t: 'ER OPD' },
+    { c: 'ETT', l: 'ETT', t: 'ETT' }, { c: 'ECHO', l: 'Echo', t: 'ECHO' }, { c: 'BD', l: 'Brought dead', t: 'BROUGHT DEAD' }];
+  function listCatOf(e) { return e.cat === 'OPD' ? (e.opd ? 'OPDC' : 'OPDE') : e.cat; }
+  var LIST_DEF = { cats: [], reg: '', shifts: ['M', 'E', 'N'], sex: '', ageMin: '', ageMax: '', seen: '', procs: [], outs: [], meds: [], dx: '',
     cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'bp', 'rbs', 'ecg'], group: 'cat', sort: 'time', page: 'auto', title: '' };
   var LIST_PRESETS = [
     { c: 'inflow', l: 'Patient inflow register', d: 'All patients with category and readings', cfg: { group: 'none', cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'bp', 'rbs', 'ecg', 'seen'] } },
     { c: 'entry', l: 'Patient entry only', d: 'MR, name, age/sex and category (OPD, Resus, BD…). No diagnosis', cfg: { group: 'none', cols: LIST_COLSETS.entry } },
-    { c: 'opd', l: 'OPD list', d: 'OPD patients', days: [1, 4], cfg: { cats: ['OPD'], cols: ['no', 'date', 'time', 'mr', 'name', 'agesex', 'bp', 'rbs', 'ecg', 'remarks'] } },
+    { c: 'opd', l: 'Clinic OPD list', d: 'OPD register: OPD patients with OPD Nos.', days: [1, 4], cfg: { cats: ['OPDC'], cols: ['no', 'date', 'time', 'mr', 'name', 'agesex', 'bp', 'rbs', 'ecg', 'remarks'] } },
+    { c: 'eropd', l: 'ER OPD list', d: 'MR register: OPD patients with MR Nos.', cfg: { cats: ['OPDE'], cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'bp', 'rbs', 'ecg', 'remarks'] } },
     { c: 'ett', l: 'ETT list', d: 'ETT patients', days: [2], cfg: { cats: ['ETT'], cols: ['no', 'date', 'time', 'mr', 'name', 'agesex', 'bp', 'remarks'] } },
     { c: 'echo', l: 'Echo list', d: 'Echocardiography patients', days: [3], cfg: { cats: ['ECHO'], cols: ['no', 'date', 'time', 'mr', 'name', 'agesex', 'bp', 'remarks'] } },
     { c: 'ettecho', l: 'ETT and Echo list', d: 'Both, in two groups', days: [2, 3], cfg: { cats: ['ETT', 'ECHO'], cols: ['no', 'date', 'time', 'mr', 'name', 'agesex', 'bp', 'remarks'] } },
@@ -2494,13 +2523,20 @@ var CEC = (function () {
   function listCfg(cfg) {
     var f = JSON.parse(JSON.stringify(LIST_DEF));
     Object.keys(cfg || {}).forEach(function (k) { if (cfg[k] !== undefined) f[k] = JSON.parse(JSON.stringify(cfg[k])); });
+    if ((f.cats || []).indexOf('OPD') >= 0) {                     // a list saved before 17-11-2026: "OPD" is both Clinic OPD and ER OPD
+      var cs = f.cats.concat(['OPDC', 'OPDE']);
+      f.cats = LIST_CATS.map(function (c) { return c.c; }).filter(function (c) { return cs.indexOf(c) >= 0; });
+    }
+    if (f.reg !== 'opd' && f.reg !== 'mr') f.reg = '';
     return f;
   }
   function presetCfg(c) { var p = LIST_PRESETS.filter(function (x) { return x.c === c; })[0]; return listCfg(p ? p.cfg : {}); }
   function listColsFor(who) { who = who || {}; return LIST_COLS.filter(function (c) { return (!c.clin || who.clin) && (!c.admin || who.admin); }); }
   function listMatch(e, f, who) {
     who = who || {};
-    if (f.cats.length && f.cats.indexOf(e.cat) < 0) return false;
+    if (f.cats.length && f.cats.indexOf(listCatOf(e)) < 0) return false;
+    if (f.reg === 'opd' && !e.opd) return false;                  // OPD register: OPD Nos. only
+    if (f.reg === 'mr' && e.opd) return false;                    // MR register: MR Nos. only
     if (f.shifts.length && f.shifts.indexOf(e._shift) < 0) return false;
     if (f.sex && e.sex !== f.sex) return false;
     var age = e.age === '' || e.age == null ? null : +e.age;
@@ -2526,11 +2562,15 @@ var CEC = (function () {
   function andJoin(a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' AND ' + a[a.length - 1]; }
   function listTitle(f) {
     if (f.title) return String(f.title).toUpperCase();
-    if (f.cats.length && f.cats.length < CATS.length) return andJoin(CATS.filter(function (c) { return f.cats.indexOf(c.c) >= 0; }).map(function (c) { return CAT_T[c.c]; })) + ' LIST';
+    if (f.cats.length && f.cats.length < LIST_CATS.length) {
+      var both = f.cats.indexOf('OPDC') >= 0 && f.cats.indexOf('OPDE') >= 0;
+      return andJoin(LIST_CATS.filter(function (c) { return f.cats.indexOf(c.c) >= 0 && !(both && c.c === 'OPDE'); }).map(function (c) { return both && c.c === 'OPDC' ? 'OPD' : c.t; })) + ' LIST';
+    }
     if (f.outs.length) return andJoin(f.outs.map(function (o) { return o === '_' ? 'AWAITING DOCTOR' : short(OUTS, o).toUpperCase(); })) + ' LIST';
     if (f.meds.length) return 'ER MEDICATIONS LIST';
     if (f.procs.length) return f.procs.indexOf('*er') >= 0 ? 'ER PROCEDURES LIST' : andJoin(f.procs.map(function (p) { return p === 'BSR' ? 'RBS' : p === 'NEB' ? 'NEBS' : label(PROCS, p).toUpperCase(); })) + ' LIST';
     if (f.seen === 'no') return 'PATIENTS WAITING FOR A DOCTOR';
+    if (f.reg) return f.reg === 'opd' ? 'OPD REGISTER' : 'MR REGISTER';
     return 'PATIENT LIST';
   }
   function listSub(f, from, to, n) {
@@ -2539,6 +2579,7 @@ var CEC = (function () {
     if (f.sex) p.push(f.sex === 'M' ? 'Male' : 'Female');
     if (f.ageMin !== '' || f.ageMax !== '') p.push('Age ' + (f.ageMin !== '' ? f.ageMin : '0') + (f.ageMax !== '' ? '–' + f.ageMax : '+') + ' y');
     if (f.dx) p.push('Diagnosis: ' + f.dx);
+    if (f.reg) p.push(f.reg === 'opd' ? 'OPD register (OPD Nos.)' : 'MR register (MR Nos.)');
     p.push(n + ' patient' + (n === 1 ? '' : 's'));
     return p.join('  |  ');
   }
@@ -2558,9 +2599,22 @@ var CEC = (function () {
     if (!cols.length) cols = allowed.filter(function (c) { return c.k === 'mr' || c.k === 'name'; });
     var sum = cols.reduce(function (a, c) { return a + c.w; }, 0);
     var minSum = cols.reduce(function (a, c) { return a + c.m; }, 0);
-    cols = cols.map(function (c) { return { k: c.k, h: c.h, w: c.w / sum, wt: c.w, m: c.m, a: c.a, f: c.f, t: c.t, pdfOnly: c.pdfOnly }; });
-    var groups = [];
-    if (f.group === 'cat') CATS.forEach(function (c) { var l = list.filter(function (e) { return e.cat === c.c; }); if (l.length) groups.push({ h: c.l, list: l }); });
+    var allOpd = list.length > 0 && list.every(function (e) { return e.opd; }), twoReg = !allOpd && list.some(function (e) { return e.opd; });
+    cols = cols.map(function (c) {
+      if (c.k === 'mr' && allOpd) return { k: c.k, h: 'OPD No.', w: c.w / sum, wt: c.w, m: c.m, a: c.a, f: function (e) { return e.mr; }, t: c.t, pdfOnly: c.pdfOnly };   // OPD register only
+      return { k: c.k, h: c.h, w: c.w / sum, wt: c.w, m: c.m, a: c.a, f: c.f, t: c.t, pdfOnly: c.pdfOnly };
+    });
+    var groups = [], REG = { opd: 'OPD register', mr: 'MR register' };
+    /* 17-11-2026: OPD Nos. and MR Nos. are never mixed in one list: the OPD register first, then the MR register (by category or as one list) */
+    function byCat(l, pre) { LIST_CATS.forEach(function (c) { var x = l.filter(function (e) { return listCatOf(e) === c.c; }); if (x.length) groups.push({ h: pre + c.l, list: x }); }); }
+    if (f.group === 'cat') {
+      if (twoReg) { byCat(list.filter(function (e) { return e.opd; }), REG.opd + ': '); byCat(list.filter(function (e) { return !e.opd; }), REG.mr + ': '); }
+      else byCat(list, '');
+    }
+    else if ((f.group === 'none' || !f.group) && twoReg) {
+      groups.push({ h: REG.opd + ' (OPD Nos.)', list: list.filter(function (e) { return e.opd; }) });
+      groups.push({ h: REG.mr + ' (MR Nos.)', list: list.filter(function (e) { return !e.opd; }) });
+    }
     else if (f.group === 'shift') {
       var seenS = [];
       list.forEach(function (e) { var k = e._date + ' ' + e._shift; if (seenS.indexOf(k) < 0) seenS.push(k); });
@@ -3128,7 +3182,7 @@ var CEC = (function () {
     dmy: dmy, hm: hm, hm12: hm12, dxOf: dxOf, mainDx: mainDx, shiftTimes: shiftTimes, censusDateFor: censusDateFor, suggestShift: suggestShift, sexCount: sexCount, monthName: monthName,
     shiftModel: shiftModel, dayModel: dayModel, monthModel: monthModel, letterHtml: letterHtml, letterPdf: letterPdf, summaryText: summaryText, esc: h,
     EXAMS: EXAMS, deathCertPdf: deathCertPdf, deathCertSvg: deathCertSvg, svgOf: svgOf, listPlain: listPlain, listPlainPdf: listPlainPdf, opdSlipPdf: opdSlipPdf, slipOps: slipOps, slipPdf: slipPdf, slipPdfMany: slipPdfMany, slipSvg: slipSvg, slipSvgMany: slipSvgMany, slipSheets: slipSheets, isErSlip: isErSlip, slipVitals: slipVitals, SLIP_TOP: SLIP_TOP, STAFF_PROCS: STAFF_PROCS, listPdf: listPdf, listCsv: listCsv,
-    certHtml: certHtml, setDemo: setDemo, DEMO_LINE: DEMO_LINE, weekday: weekday, MEDS: MEDS, DX_GROUPS: DX_GROUPS, DX_LIST: DX_LIST, DXKW: DXKW, FREQ_DX: FREQ_DX, canonDx: canonDx, canonList: canonList, dxMatch: dxMatch, dxKey: dxKey, LIST_KINDS: LIST_KINDS, listSpec: listSpec, LIST_COLS: LIST_COLS, LIST_COLSETS: LIST_COLSETS, LIST_PRESETS: LIST_PRESETS, LIST_DEF: LIST_DEF,
+    LIST_CATS: LIST_CATS, listCatOf: listCatOf, certHtml: certHtml, setDemo: setDemo, DEMO_LINE: DEMO_LINE, weekday: weekday, MEDS: MEDS, DX_GROUPS: DX_GROUPS, DX_LIST: DX_LIST, DXKW: DXKW, FREQ_DX: FREQ_DX, canonDx: canonDx, canonList: canonList, dxMatch: dxMatch, dxKey: dxKey, LIST_KINDS: LIST_KINDS, listSpec: listSpec, LIST_COLS: LIST_COLS, LIST_COLSETS: LIST_COLSETS, LIST_PRESETS: LIST_PRESETS, LIST_DEF: LIST_DEF,
     listCfg: listCfg, presetCfg: presetCfg, listColsFor: listColsFor, buildList: buildList, listText: listText, listTitle: listTitle, APPTS: APPTS, APPT_STATUS: APPT_STATUS, apptType: apptType,
     ECHO_LIB: ECHO_LIB, ECHO_BY: ECHO_BY, echoClash: echoClash, echoReplaces: echoReplaces, echoGroups: echoGroups, echoProv: echoProv, ECHO_IFL_AF: ECHO_IFL_AF, ECHO_MEAS: ECHO_MEAS, ECHO_DD: ECHO_DD, echoNew: echoNew, echoPickList: echoPickList, echoFill: echoFill, echoEA: echoEA, echoPh: echoPh, echoAutoFin: echoAutoFin, echoLines: echoLines,
     echoPdf: echoPdf, echoFileName: echoFileName,
@@ -3221,7 +3275,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   var IDLE_MS = 4 * 3600000;
   /* 14-11-2026: the version of this page (Index.html / phone app) and of the server (Code.gs). Both come from the same build, so they must be the same. */
-  var APP_VER = '16-11-2026 16:42';
+  var APP_VER = '17-11-2026 01:25';
   function verSame() { return S.serverVer === APP_VER; }
   function verKey(v) { v = String(v || ''); return v.slice(6, 10) + v.slice(3, 5) + v.slice(0, 2) + v.slice(11); }   // DD-MM-YYYY HH:MM in time order
   function verText() { return 'Version ' + APP_VER + (verSame() ? '' : ' (server: ' + (S.serverVer || 'older') + ')'); }
@@ -6535,7 +6589,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var R = S.mrreg;
     var html = '<div class="narrow"><div class="listhead"><h3>MR register' + (R ? ' &middot; census day ' + h(CEC.dmy(R.date)) : '') + '</h3><button class="btn sm" data-act="mr-reload" aria-label="Refresh">&#8635; ' +
       (R && R.at ? CEC.hm(new Date(R.at).toISOString()) : 'Refresh') + '</button></div>' +
-      '<p class="muted small" style="margin:0 0 8px">Every MR number given today, newest on top; on an OPD day the OPD numbers too (marked OPD, for the OPD register). The list updates by itself.</p>' +
+      '<p class="muted small" style="margin:0 0 8px">Every MR number given today, newest on top. On an OPD day the OPD numbers are kept apart: tap OPD register to see them. The list updates by itself.</p>' +
       (canEnter() ? '<div class="modetabs mrgo">' +             // 14-11-2026: register the next patient from here (same as the home tiles)
         '<button class="mtab mblue" data-act="mode" data-v="e"><span class="mti" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg></span><b>Electronic slip</b><span>The system prints the OPD / ER slip</span></button>' +
         '<button class="mtab mred" data-act="mode" data-v="m"><span class="mti" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg></span><b>Manual slip</b><span>The staff write the paper slip by hand</span></button></div>' : '');
@@ -6543,7 +6597,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
     html += '<div class="mrsum">' + (R.mr ? '<span>Last MR given: <b>' + h(R.mr) + '</b></span>' : '') + (R.opd ? '<span>Last OPD No. given: <b>' + h(R.opd) + '</b></span>' : '') +
       (canEnter() ? '<span><button class="lnk" data-act="nums-set">Set numbers</button></span>' : '') + '<span>Today: <b>' + R.rows.length + '</b></span></div>';
     if (!R.rows.length) return html + '<div class="plist"><div class="empty">No patient yet today.</div></div></div>';
-    return html + '<ol class="mrlist">' + R.rows.slice(0, 600).map(function (x) {
+    /* 17-11-2026: the two registers are never mixed: MR Nos. and OPD Nos. are shown apart (one at a time) on a day with both */
+    var nO = R.rows.filter(function (x) { return x.opd; }).length, nM = R.rows.length - nO, tab = nO && nM ? (S.mrregTab === 'opd' ? 'opd' : 'mr') : '';
+    var rows = tab ? R.rows.filter(function (x) { return tab === 'opd' ? x.opd : !x.opd; }) : R.rows;
+    if (tab) html += '<div class="seg mrtabs" style="margin:0 0 10px">' + [['mr', 'MR register', nM], ['opd', 'OPD register', nO]].map(function (o) {
+      return '<button type="button" data-act="mr-tab" data-v="' + o[0] + '" class="' + (tab === o[0] ? 'on' : '') + '" aria-pressed="' + (tab === o[0]) + '">' + o[1] + ' <small>' + o[2] + (o[0] === 'opd' ? ' OPD' : ' MR') + (o[2] === 1 ? ' No.' : ' Nos.') + '</small></button>';
+    }).join('') + '</div>';
+    return html + '<ol class="mrlist">' + rows.slice(0, 600).map(function (x) {
       return '<li' + (x.opd ? ' class="opd"' : '') + '><span class="mrn">' + (x.opd ? '<i class="opdb">OPD</i>' : '') + h(x.mr || '-') + '.</span><span class="mrb"><b>' + h(x.name || '(no name)') + '</b>' +
         '<span class="muted small">' + (x.sex === 'M' ? 'M' : x.sex === 'F' ? 'F' : '-') + (x.age !== '' && x.age != null ? ', ' + h(x.age) : '') + ' &middot; ' + CEC.hm(x.t) + ' &middot; ' +
         h(x.ecgOf ? 'for ECG (OPD No. ' + x.ecgOf + ')' : x.only ? (x.only === 'BP' ? 'BP check only' : 'ECG only') : (CEC.label(CEC.CATS, x.cat) || x.cat)) + '</span></span></li>';
@@ -7395,7 +7455,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function lbMine() { return store_('cec_lists_' + (S.me ? S.me.id : '')) || []; }
   function lbAllOf(k) {
-    if (k === 'cats') return CEC.CATS.map(function (c) { return c.c; });
+    if (k === 'cats') return CEC.LIST_CATS.map(function (c) { return c.c; });   // Clinic OPD and ER OPD (17-11-2026)
     if (k === 'shifts') return CEC.SHIFTS.map(function (c) { return c.c; });
     return null;
   }
@@ -7412,7 +7472,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* 14-11-2026: Registers made simple: dates, category and shift buttons (tap to colour; one or more), two column choices, then print.
      Everything else (ready-made registers, saved lists, more filters and columns) is in the last part, Print by category, closed until tapped.
      Petty OPD patients are OPD patients here (no separate choice). */
-  var LB_CATS = [['OPD', 'OPD', 'OPD'], ['EMR', 'ER', 'Emergency / Resus'], ['ECHO', 'Echo', 'Echo'], ['ETT', 'ETT', 'ETT'], ['BD', 'BD', 'Brought dead']];
+  var LB_CATS = [['OPDC', 'Clinic OPD', 'Clinic OPD: OPD No. (OPD register)'], ['OPDE', 'ER OPD', 'ER OPD: MR No. (MR register)'], ['EMR', 'ER', 'Emergency / Resus'], ['ECHO', 'Echo', 'Echo'], ['ETT', 'ETT', 'ETT'], ['BD', 'BD', 'Brought dead']];   // 17-11-2026: OPD in two
   function lbIs(k, v) {
     var cur = S.lb.cfg[k] || [], all = lbAllOf(k), isAll = !cur.length || cur.length === all.length && all.every(function (x) { return cur.indexOf(x) >= 0; });
     return v ? !isAll && cur.indexOf(v) >= 0 : isAll;
@@ -7468,6 +7528,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         '<div><label class="lb" for="lbTo">To <span class="muted">' + DN(L.to) + '</span></label><input class="in" type="date" id="lbTo" value="' + L.to + '"></div></div>'
         : '<label class="lb" for="lbDay">Date <span class="muted">' + DN(L.from) + '</span></label><input class="in" type="date" id="lbDay" value="' + L.from + '">') +
       '<label class="lb">Category <span class="muted small">(tap one or more)</span></label>' + lbChips('cats', LB_CATS) +
+      '<label class="lb">Register</label>' + lbSeg('reg', [['', 'Both'], ['opd', 'OPD register'], ['mr', 'MR register']]) +   // 17-11-2026: OPD Nos. / MR Nos.
       '<label class="lb">Shift</label>' + lbChips('shifts', CEC.SHIFTS.map(function (x) { return [x.c, x.l, x.l + ' shift']; })) +
       '<label class="lb">Columns</label><div class="seg lbcols">' + [['entry', 'Entry details only'], ['readings', 'Entry with vitals and ECG']].map(function (c) {
         var on = lbColsIs(c[0]); return '<button type="button" data-act="lb-cols" data-v="' + c[0] + '" class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + c[1] + '</button>'; }).join('') + '</div>' +
@@ -8586,6 +8647,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'start-other': S.startErr = null; signOut('', true); break;
       case 'q-mrreg': if (isOff()) { toast('The MR register needs internet.'); break; } setView('mrreg'); break;
       case 'mr-reload': mrRegLoad(); break;
+      case 'mr-tab': S.mrregTab = v; render(); break;
       case 'pt-reload': pettyLoad(); break;
       case 'pt-rm': {
         var prm = ((S.pq && S.pq.head) || []).concat((S.petty.find && S.petty.find.hits) || []).filter(function (x) { return x.ref === v; })[0];
