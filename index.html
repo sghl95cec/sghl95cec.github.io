@@ -827,6 +827,44 @@ details.card.lbmore .gh{margin-top:14px}
 .echof .exl{flex:none;color:#8a5300;align-self:center;white-space:nowrap}
 .echof .epick{margin:4px 0 0}.echof .epick .esel{margin:0;font-size:14px;color:var(--ink2,#444)}
 .echof .eaddl{padding-left:2px}
+/* 17-11-2026: the echo report step by step */
+.ewbar{display:flex;gap:3px;margin:10px 0 6px}
+.ews{flex:1 1 0;min-width:0;height:14px;padding:0;border:0;border-radius:4px;background:#dfe5e1;cursor:pointer}
+.ews.done{background:#8fc4a4}.ews.skip{background:#f0c27b}
+.ews.cur{background:var(--g7);box-shadow:0 0 0 2px #fff,0 0 0 3.5px var(--g7)}
+.ews.chk{flex:0 0 22px;height:22px;margin-top:-4px;border-radius:50%;font-size:12px;line-height:22px;color:#fff;background:#9aa8a0}
+.ews.chk.cur{background:var(--g7)}
+.ewh{display:flex;flex-direction:column;margin:6px 0 4px}.ewh .ewn{font-size:12px;color:var(--mute);font-weight:600;letter-spacing:.03em}
+.ewh h4{margin:2px 0 0;font-size:19px;color:var(--g9)}
+.echof .ewhint{margin:2px 0 10px}
+.echof .ewo{border:1.5px solid #d7e1db;border-radius:12px;margin:8px 0;background:#fff}
+.echof .ewo.on{border-color:var(--g7);background:#eef7f1}
+.echof .ewo.clash{background:#fff6d6;border-color:#e6c24f}
+.echof .ewo.none{border-style:dashed}
+.echof .ewb{display:flex;align-items:flex-start;gap:10px;width:100%;min-height:50px;padding:12px 12px;border:0;background:none;text-align:left;font:inherit;font-size:15px;line-height:1.4;color:var(--ink);cursor:pointer}
+.echof .ewc{flex:0 0 24px;height:24px;border:1.5px solid #9fb3a8;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;background:#fff}
+.echof .ewo.on .ewc{background:var(--g7);border-color:var(--g7)}
+.echof .ewt{flex:1;min-width:0}
+.echof .ewu{font-style:normal;font-size:11px;font-weight:700;color:var(--g7);background:var(--g1);border-radius:999px;padding:1px 7px;margin-left:4px;white-space:nowrap}
+.echof .ewv{padding:0 12px 12px 46px;font-size:14.5px;line-height:2}
+.echof .ewv .eblank{width:72px;font-size:15px;padding:4px 6px}
+.echof .ewdel{display:block;margin:-6px 0 8px 46px;color:#8a5300;font-size:12.5px}
+.echof .ewaddb{display:block;width:100%;margin:10px 0 4px;padding:11px 12px;border:1.5px dashed #9fb3a8;border-radius:12px;background:#fafcfb;color:var(--g7);font:inherit;font-size:14.5px;font-weight:600;text-align:left;cursor:pointer}
+.echof .ewadd{border:1.5px solid var(--g7);border-radius:12px;padding:10px;margin:10px 0}.echof .ewadd .in{margin:0 0 6px}.echof .ewadd .tog{margin:4px 0}
+.echof .ewdp{margin:12px 0}.echof .ewdl{font-weight:700;font-size:14px;margin:0 0 6px}
+.echof .ewg button{flex:1 1 18%;min-height:44px;font-size:13.5px}
+.echof .ewtap .in{font-size:20px;font-weight:700;max-width:180px}
+.echof .ewiss{border:1.5px solid #e6c24f;background:#fffaeb;border-radius:12px;padding:10px 12px;margin:8px 0 12px}
+.echof .ewit{font-weight:700;margin:0 0 6px;color:#6b5000}
+.echof .ewi{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid #f0e2b0}.echof .ewi:first-of-type{border-top:0}
+.echof .ewi .btn{flex:none}
+.echof .ewok{border:1.5px solid #9fcdb1;background:#eef7f1;color:var(--g9);font-weight:700;border-radius:12px;padding:12px;margin:8px 0 12px}
+.echof .ewsum{border:1px solid #e3e9e5;border-radius:10px;padding:8px 10px;margin:6px 0;background:#fff}
+.echof .ewst{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px}
+.echof .ewl{font-size:13.5px;line-height:1.45;margin:3px 0 0;color:#2e3a33}
+.echof .ewblank{color:#b42318;font-weight:700}
+.sh-foot.ewf .btn{min-height:48px}
+.sh-foot.ewf .btn.provb{background:#e59a1c;border-color:#e59a1c;color:#fff}
 
 </style>
 </head>
@@ -3014,30 +3052,57 @@ var CEC = (function () {
     return { st: part('st'), dp: part('dp'), ifl: ifl.concat(own('Mitral inflow')), rv: rv.concat(own('RVSP')), fin: fin, nt: part('nt') };
   }
   /* The printed report: A4, the CEC heading with the Sindh Government logo (like the death certificate), then the CEC's own report layout. */
+  /* 17-11-2026: the report in 10 pt (the heading and the Sindh Government logo 5% smaller, in the same proportion). Laid out by trying:
+     1. one page: everything, the signatures as low as the border allows (a one-page report has no page number);
+     2. two pages: the findings on page 1, enlarged (10 to 12 pt, the spacing with them) to fill it, the signatures under them and
+        "Continued on next page" at the foot; the final part (FINAL ECHO REPORT, provisional line, Note, signatures) on page 2;
+     3. a very long report: the findings go on over the page in 10 pt, as before. */
   function echoDoc(r, st, logo) {
     st = st || DEFAULTS; r = r || {};
-    var P = PDFGen, d = new P.Doc(), L = 50, R = 545, W = R - L, Lx = echoLines(r), m = r.m || {};
+    var Lx = echoLines(r);
     /* 15-11-2026: a provisional report says so in the final report part, with the date of this print; a final report prints nothing extra */
     var prov = echoProv(r) ? 'This is the provisional report as per ' + dmy(r.prDate || ymd(new Date())).replace(/-/g, '/') + '. Kindly collect final report from Cardiac Emergency Centre, SGHL.' : '';
+    var one = echoBuild(r, st, logo, Lx, prov, { mode: 'one', fs: ECHO_FS, gap: 0 });
+    if (one.ok) return one.d;
+    if (Lx.fin.length || prov || Lx.nt.length) {
+      for (var f = ECHO_FS_MAX; f >= ECHO_FS - 0.001; f -= 0.25) {
+        var t = echoBuild(r, st, logo, Lx, prov, { mode: 'two', fs: f, gap: 0 });
+        if (!t.ok && f < ECHO_FS + 0.01) t = echoBuild(r, st, logo, Lx, prov, { mode: 'two', fs: f, gap: 0, tight: true });   // page 1 nearly full: signed close under the findings
+        if (!t.ok) continue;
+        if (t.left > 2 && t.gaps) {                    // room still left on page 1: a little more space between the parts
+          var t2 = echoBuild(r, st, logo, Lx, prov, { mode: 'two', fs: f, gap: Math.min(14, (t.left - 0.5) / t.gaps) });
+          if (t2.ok) return t2.d;
+        }
+        return t.d;
+      }
+    }
+    return echoBuild(r, st, logo, Lx, prov, { mode: 'flow', fs: ECHO_FS, gap: 0 }).d;
+  }
+  var ECHO_FS = 10, ECHO_FS_MAX = 12, ECHO_LH = 13.4 / 10.5, ECHO_HK = 10 / 10.5;   // text size, the largest page-1 size, line spacing per pt, heading scale
+  function echoBuild(r, st, logo, Lx, prov, F) {
+    var P = PDFGen, d = new P.Doc(), L = 50, R = 545, W = R - L, m = r.m || {}, fail = false;
     d.title = 'Echo report' + (r.name ? ' - ' + UP(r.name) : '');
     if (logo) d.setImage(logo.bytes, logo.w, logo.h);
     function frame() { d.rect(22, 22, d.W - 44, d.H - 44, null, 0, 1.6); d.rect(25.5, 25.5, d.W - 51, d.H - 51, null, 0, 0.5); }
     function U(x, y, s, f, size) { var w = d.text(x, y, s, f, size); d.line(x, y + 1.6, x + w, y + 1.6, 0.6); return w; }
+    var HT = 38, K = ECHO_HK;
+    function hy(v) { return HT + (v - HT) * K; }      // a heading position, the heading drawn K smaller from its top
     function heading() {                              // the hospital heading (page 1, and again on page 2)
       frame();
-      if (logo) { var lh0 = Math.min(56, 54 * logo.h / logo.w), lw0 = lh0 * logo.w / logo.h; d.image(73 - lw0 / 2, 38, lw0, lh0); }   // 15-11-2026: kept above the double line (y 100)
-      var cx = 324, t1 = 15.5;
-      while (P.width('SINDH GOVERNMENT HOSPITAL LIAQUATABAD', 'B', t1) > 400) t1 -= 0.5;
-      d.text(cx, 54, 'SINDH GOVERNMENT HOSPITAL LIAQUATABAD', 'B', t1, 'center');
-      d.text(cx, 72, 'CARDIAC EMERGENCY CENTRE (CEC)', 'B', 13, 'center');
-      d.text(cx, 88, 'Karachi    |    Phone No. ' + (st.phone || '021-99334317') + '    |    Email: ' + (st.email || 'sghlliaquatabad10no@gmail.com'), 'B', 8.3, 'center');
-      d.line(44, 100, 551, 100, 1.6); d.line(44, 103.5, 551, 103.5, 0.5);
+      if (logo) { var lh0 = Math.min(56, 54 * logo.h / logo.w) * K, lw0 = lh0 * logo.w / logo.h; d.image(73 - lw0 / 2, HT, lw0, lh0); }   // the logo in proportion (17-11-2026), above the double line
+      var cx = 324, t1 = 15.5 * K;
+      while (P.width('SINDH GOVERNMENT HOSPITAL LIAQUATABAD', 'B', t1) > 400 * K) t1 -= 0.5;
+      d.text(cx, hy(54), 'SINDH GOVERNMENT HOSPITAL LIAQUATABAD', 'B', t1, 'center');
+      d.text(cx, hy(72), 'CARDIAC EMERGENCY CENTRE (CEC)', 'B', 13 * K, 'center');
+      d.text(cx, hy(88), 'Karachi    |    Phone No. ' + (st.phone || '021-99334317') + '    |    Email: ' + (st.email || 'sghlliaquatabad10no@gmail.com'), 'B', 8.3 * K, 'center');
+      d.line(44, hy(100), 551, hy(100), 1.6); d.line(44, hy(103.5), 551, hy(103.5), 0.5);
     }
+    var DY = hy(100) - 100;                           // the parts below the heading move up by what it saved
     heading();
-    d.rect(162, 112, 271, 27, null, 0, 1.2); d.rect(165, 115, 265, 21, null, 0, 0.5);
-    d.text(297.6, 130, 'ECHOCARDIOGRAPHY REPORT', 'HB', 12, 'center', 0, 2.4);
+    d.rect(162, 112 + DY, 271, 27, null, 0, 1.2); d.rect(165, 115 + DY, 265, 21, null, 0, 0.5);
+    d.text(297.6, 130 + DY, 'ECHOCARDIOGRAPHY REPORT', 'HB', 12, 'center', 0, 2.4);
     var date = r.date ? dmy(r.date).replace(/-/g, '/') : '', age = String(r.age || '').trim();
-    var y = 160;
+    var y = 160 + DY;
     d.text(L, y, 'Name:', 'B', 10); d.text(L + 36, y, P.fit(UP(r.name || ''), 'B', 10.5, 200), 'B', 10.5);
     d.text(300, y, 'Date:', 'B', 10); d.text(330, y, date, 'B', 10.5);
     d.text(430, y, 'Age:', 'B', 10); d.text(456, y, age ? age + (/^\d+$/.test(age) ? ' yrs' : '') : '', 'B', 10.5);
@@ -3065,29 +3130,15 @@ var CEC = (function () {
     cell(L, ty + 5 * rh, 'Right Ventricle  (<25)', mv('rv'), '', L + 108);
     cell(c2, ty + 5 * rh, 'Aortic (<40)', mv('ao'), '', c2 + 140);
     y = ty + 5 * rh + 22;
-    /* 15-11-2026: the written parts in one size (10.5 pt; never made smaller). When the whole report does not fit on one page, the final part
-       (FINAL ECHO REPORT, Note, the provisional line and both signatures) moves to page 2 as one block: it is never split, and the signatures
-       always stay with the final report. Page 2 repeats the hospital heading and the patient's name, MR No. and date. "Page 1 of 2", "Page 2 of 2". */
-    var fs = 10.5, lh = 13.4, hd = lh + 4, SIGN = 92, PAGE_END = d.H - 52, SIGN_END = d.H - 34 - SIGN, SIGN_LAST = d.H - 60;
-    function linesOf(arr, f, ind) { var n = 0; arr.forEach(function (t) { n += P.wrap(t, f || 'R', fs, W - (ind || 0)).length; }); return n; }
-    function needBody() {
-      var h = 0;
-      if (Lx.st.length) h += hd + linesOf(Lx.st) * lh + 4;
-      h += hd + lh + linesOf(Lx.dp, 'B') * lh + 6;
-      if (Lx.ifl.length) h += hd + linesOf(Lx.ifl) * lh + 4;
-      if (Lx.rv.length) h += hd + linesOf(Lx.rv) * lh + 6;
-      return h;
-    }
-    function needFinal() {                            // the final block, without the signatures
-      var h = 0;
-      if (Lx.fin.length || prov) h += hd + 2 + linesOf(Lx.fin, 'R', 18) * lh + 6;
-      if (prov) h += 8 + P.wrap(prov, 'B', fs + 1.5, W).length * (lh + 2) + 6;
-      if (Lx.nt.length) h += hd + linesOf(Lx.nt) * lh;
-      return h;
-    }
-    var onePage = y + needBody() + needFinal() + 34 <= SIGN_LAST;
+    /* The written parts: the findings in F.fs (10 pt, up to 12 on page 1 of a two-page report), the final part always in 10 pt.
+       The final part is never split, and the signatures always stay with it. Page 2 repeats the hospital heading and the patient's name,
+       MR No. and date. "Page 1 of 2", "Page 2 of 2". */
+    var FS = F.fs, FF = ECHO_FS, SIGN = 92, SIGN_END = d.H - 34 - SIGN, SIGN_LAST = d.H - 60, SIGN_ONE = d.H - 52, SIGN_P1 = d.H - 72,
+      PAGE_END = F.mode === 'flow' ? d.H - 62 : d.H - 52, CONT_Y = d.H - 44, wideY = 0;
+    function lhOf(s) { return s * ECHO_LH; }
+    function linesOf(arr, f, s, ind) { var n = 0; arr.forEach(function (t) { n += P.wrap(t, f || 'R', s, W - (ind || 0)).length; }); return n; }
     function patientLine() {                          // page 2: who the report is for
-      var yy = 124;
+      var yy = 124 + DY;
       d.text(L, yy, 'Name:', 'B', 10); d.text(L + 36, yy, P.fit(UP(r.name || ''), 'B', 10.5, 200), 'B', 10.5);
       if (r.mr) { d.text(300, yy, 'MR No.:', 'B', 10); d.text(342, yy, P.fit(UP(r.mr), 'B', 10.5, 85), 'B', 10.5); }
       d.text(430, yy, 'Date:', 'B', 10); d.text(460, yy, date, 'B', 10.5);
@@ -3095,58 +3146,81 @@ var CEC = (function () {
       return yy + 30;
     }
     function newPage() { d.addPage(); heading(); y = patientLine(); }
-    function room(hh) { if (y + hh > PAGE_END) newPage(); }   // only a very long report: the findings go on, under the heading again
-    function head(t) { room(lh * 2 + 4); U(L, y, t, 'B', fs + 0.5); y += lh + 3; }
-    function para(arr, f, numbered) {
+    function room(hh) {                               // only a very long report: the findings go on, under the heading again
+      if (y + hh <= PAGE_END) return;
+      if (F.mode === 'flow') newPage(); else fail = true;
+    }
+    function wide(x, w, f, s) { if (x + P.width(w, f, s) > R - 175) wideY = Math.max(wideY, y); }   // a line reaching the physician's side
+    function head(t, s) { room(lhOf(s) * 2 + 4); wide(L, t, 'B', s + 0.5); U(L, y, t, 'B', s + 0.5); y += lhOf(s) + 3; }
+    function para(arr, f, numbered, s) {
       arr.forEach(function (t, i) {
-        var ind = numbered ? 18 : 0, ws = P.wrap(t, f || 'R', fs, W - ind);
-        room(ws.length * lh);
-        if (numbered) d.text(L + 2, y, (i + 1) + '.', f || 'R', fs);
-        ws.forEach(function (w) { d.text(L + ind, y, w, f || 'R', fs); y += lh; });
+        var ind = numbered ? 18 : 0, ws = P.wrap(t, f || 'R', s, W - ind);
+        room(ws.length * lhOf(s));
+        if (numbered) d.text(L + 2, y, (i + 1) + '.', f || 'R', s);
+        ws.forEach(function (w) { wide(L + ind, w, f || 'R', s); d.text(L + ind, y, w, f || 'R', s); y += lhOf(s); });
       });
     }
-    function cols(arr) {                              // "E = 1.05 m/s|A = 1.20 m/s": two columns
+    function cols(arr, s) {                           // "E = 1.05 m/s|A = 1.20 m/s": two columns
       arr.forEach(function (t) {
         var p = t.split('|');
-        if (p.length > 1) { d.text(L, y, p[0], 'R', fs); d.text(L + 170, y, p[1], 'R', fs); } else P.wrap(t, 'R', fs, W).forEach(function (w, k) { if (k) y += lh; d.text(L, y, w, 'R', fs); });
-        y += lh;
+        if (p.length > 1) { d.text(L, y, p[0], 'R', s); wide(L + 170, p[1], 'R', s); d.text(L + 170, y, p[1], 'R', s); } else P.wrap(t, 'R', s, W).forEach(function (w, k) { if (k) y += lhOf(s); wide(L, w, 'R', s); d.text(L, y, w, 'R', s); });
+        y += lhOf(s);
       });
     }
     function block(hh, draw) { room(hh); draw(); }    // a part kept whole on one page (mitral inflow, RV pressure)
-    if (Lx.st.length) { head('Structural Interpretation:'); para(Lx.st); y += 4; }
-    head('Doppler:'); room(lh); d.text(L, y, 'Flow Abnormality (Color Flow Mapping)', 'R', fs - 0.5); y += lh;
-    para(Lx.dp, 'B'); y += 6;
-    if (Lx.ifl.length) block(hd + linesOf(Lx.ifl) * lh, function () { head('Mitral Inflow Show'); cols(Lx.ifl); y += 4; });
-    if (Lx.rv.length) block(hd + linesOf(Lx.rv) * lh, function () { head('Estimation RV/MPA Pressure (mmHg)'); cols(Lx.rv); y += 6; });
-    /* the final block and the signatures together: on this page if they fit, else all on the next page */
-    /* 15-11-2026 (evening): the final block measured exactly as it is drawn; it stays on this page whenever the signatures still fit below it
-       with their usual space (about 1 cm clear above the physician's line), else the whole block goes to the next page */
-    var finH = 0;
-    if (Lx.fin.length || prov) finH += lh + 3 + 2 + linesOf(Lx.fin, 'R', 18) * lh + 6;
-    if (prov) finH += 2 + P.wrap(prov, 'B', fs + 1.5, W).length * (lh + 2) + 6;
-    if (Lx.nt.length) finH += lh + 3 + linesOf(Lx.nt) * lh;
-    if (!onePage && y + finH + 34 > SIGN_LAST) newPage();
-    if (Lx.fin.length || prov) { head('FINAL ECHO REPORT:'); y += 2; para(Lx.fin, 'R', true); y += 6; }
-    if (prov) {
-      var pw = P.wrap(prov, 'B', fs + 1.5, W); y += 2;
-      pw.forEach(function (w) { d.textS(L, y, w, 'B', fs + 1.5, 0.25); y += lh + 2; }); y += 6;
+    function signs(sy) {                              // the echo cardiographer, and the reporting physician (the HOD)
+      d.text(L, sy, r.tech || 'Miss Erum', 'R', 10.5); d.text(L, sy + 14, 'Echo cardiographer', 'R', 10.5);
+      d.line(R - 165, sy - 18, R, sy - 18, 0.7);
+      d.text(R - 165, sy, 'Reporting Physician', 'R', 10.5); d.text(R - 165, sy + 14, r.phys || st.hod || DEFAULTS.hod, 'R', 10.5);
+      if (DEMO.on) d.stamp(R - 175, sy - 50, 185, 46, 'NOT VALID', 'DEMONSTRATION - PRACTICE ONLY');
     }
-    if (Lx.nt.length) { head('Note:'); para(Lx.nt); }
-    /* signatures: the echo cardiographer, and the reporting physician (the HOD) */
+    /* the findings */
+    var gaps = 0, G = F.gap || 0, lhF = lhOf(FS), first = true;
+    function gapBefore() { if (!first) { y += G; gaps++; } first = false; }   // the extra space goes between the parts only
+    if (Lx.st.length) { gapBefore(); head('Structural Interpretation:', FS); para(Lx.st, 'R', false, FS); y += 4; }
+    gapBefore(); head('Doppler:', FS); room(lhF); d.text(L, y, 'Flow Abnormality (Color Flow Mapping)', 'R', FS - 0.5); y += lhF;
+    para(Lx.dp, 'B', false, FS); y += 6;
+    if (Lx.ifl.length) { gapBefore(); block(lhF + 4 + linesOf(Lx.ifl, 'R', FS) * lhF, function () { head('Mitral Inflow Show', FS); cols(Lx.ifl, FS); y += 4; }); }
+    if (Lx.rv.length) { gapBefore(); block(lhF + 4 + linesOf(Lx.rv, 'R', FS) * lhF, function () { head('Estimation RV/MPA Pressure (mmHg)', FS); cols(Lx.rv, FS); y += 6; }); }
+    var left = 0;
+    if (F.mode === 'two') {                           // page 1 signed too, then "Continued on next page"; the final part on page 2
+      /* the physician's line keeps about 1 cm clear above it on its side; the echo cardiographer's name a line under the findings */
+      if ((F.tight ? y + 10 : y + 34) > SIGN_P1 || wideY + 50 > SIGN_P1 || d.pages.length > 1) fail = true;
+      left = Math.min(SIGN_P1 - 34 - y, SIGN_P1 - 50 - wideY);
+      signs(SIGN_P1);
+      newPage();
+    }
+    /* the final part, in 10 pt: on this page if it fits with the signatures below it (about 1 cm clear above the physician's line) */
+    var lh = lhOf(FF), finH = 0;
+    if (Lx.fin.length || prov) finH += lh + 3 + 2 + linesOf(Lx.fin, 'R', FF, 18) * lh + 6;
+    if (prov) finH += 2 + P.wrap(prov, 'B', FF + 1.5, W).length * (lh + 2) + 6;
+    if (Lx.nt.length) finH += lh + 3 + linesOf(Lx.nt, 'R', FF) * lh;
+    if (F.mode === 'flow' && y + finH + 34 > SIGN_LAST) newPage();
+    var keep = PAGE_END; if (F.mode !== 'flow') PAGE_END = d.H - 52;
+    if (Lx.fin.length || prov) { head('FINAL ECHO REPORT:', FF); y += 2; para(Lx.fin, 'R', true, FF); y += 6; }
+    if (prov) {
+      var pw = P.wrap(prov, 'B', FF + 1.5, W); y += 2;
+      pw.forEach(function (w) { d.textS(L, y, w, 'B', FF + 1.5, 0.25); y += lh + 2; }); y += 6;
+    }
+    if (Lx.nt.length) { head('Note:', FF); para(Lx.nt, 'R', false, FF); }
+    PAGE_END = keep;
     var sy = Math.max(y + 34, SIGN_END + 40);
-    if (sy > SIGN_LAST) { newPage(); sy = Math.max(y + 34, SIGN_END + 40); }   // (a final block longer than a whole page: signatures still on its last page)
-    d.text(L, sy, r.tech || 'Miss Erum', 'R', 10.5); d.text(L, sy + 14, 'Echo cardiographer', 'R', 10.5);
-    d.line(R - 165, sy - 18, R, sy - 18, 0.7);
-    d.text(R - 165, sy, 'Reporting Physician', 'R', 10.5); d.text(R - 165, sy + 14, r.phys || st.hod || DEFAULTS.hod, 'R', 10.5);
-    if (DEMO.on) d.stamp(R - 175, sy - 50, 185, 46, 'NOT VALID', 'DEMONSTRATION - PRACTICE ONLY');
+    if (F.mode === 'one') { if (sy > SIGN_ONE || d.pages.length > 1) fail = true; }
+    else if (sy > SIGN_LAST) { newPage(); sy = Math.max(y + 34, SIGN_END + 40); }   // (a final part longer than a whole page: signatures still on its last page)
+    signs(sy);
     var np = d.pages.length;
     for (var pi = 0; pi < np; pi++) {
       d.usePage(pi);
       if (np > 1) d.text(d.W / 2, d.H - 31, 'Page ' + (pi + 1) + ' of ' + np, 'R', 9, 'center');
+      if (pi < np - 1) {                              // 17-11-2026: "Continued on next page", bold, in the centre between two thin lines
+        var ct = 'Continued on next page', cw = P.width(ct, 'B', 11), cx0 = d.W / 2 - cw / 2;
+        d.text(d.W / 2, CONT_Y, ct, 'B', 11, 'center');
+        d.line(cx0 - 44, CONT_Y - 3.6, cx0 - 12, CONT_Y - 3.6, 0.6); d.line(cx0 + cw + 12, CONT_Y - 3.6, cx0 + cw + 44, CONT_Y - 3.6, 0.6);
+      }
       if (DEMO.on) d.mark(0, 0, d.W, d.H, [786]);
     }
     d.usePage(np - 1);
-    return d;
+    return { d: d, ok: !fail, left: left, gaps: gaps };
   }
   function echoProv(r) { return r.rs === 'P' || (!r.rs && !r.id); }       // a saved report from before 15-11-2026 (no status) counts as final
   function echoPdf(r, st, logo) { return echoDoc(r, st, logo).output(); }
@@ -3275,7 +3349,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   var IDLE_MS = 4 * 3600000;
   /* 14-11-2026: the version of this page (Index.html / phone app) and of the server (Code.gs). Both come from the same build, so they must be the same. */
-  var APP_VER = '17-11-2026 01:25';
+  var APP_VER = '17-11-2026 02:48';
   function verSame() { return S.serverVer === APP_VER; }
   function verKey(v) { v = String(v || ''); return v.slice(6, 10) + v.slice(3, 5) + v.slice(0, 2) + v.slice(11); }   // DD-MM-YYYY HH:MM in time order
   function verText() { return 'Version ' + APP_VER + (verSame() ? '' : ' (server: ' + (S.serverVer || 'older') + ')'); }
@@ -7124,15 +7198,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
     r.phys = (S.settings && S.settings.hod) || r.phys;
     if (from) ['name', 'age', 'sex', 'mr', 'apptId', 'entryId'].forEach(function (k) { if (from[k] != null && from[k] !== '') r[k] = from[k]; });
     if (r.id && !r.rs) r.rs = 'F';                    // saved before 15-11-2026: final
-    r.cg = r.cg || {};
-    S.ef = { r: r };
+    r.cg = r.cg || {}; r.none = Array.isArray(r.none) ? r.none : [];
+    S.ef = { r: r, st: r.id ? EW.length : 0, skip: {} };   // 17-11-2026: step by step; a saved report opens on "Check and save"
     var el = $('sheet');
     el.innerHTML = '<div class="sh-head"><button data-act="ec-close">Cancel</button><h3>Echo report' + (r.id ? ' ' + echoBadge(r.rs) : '') + '</h3>' +
       (r.id && isAdmin() ? '<button class="del" data-act="ec-del">Delete</button>' : '<span>' + (r.id ? '' : 'New') + '</span>') + '</div>' +
-      '<div class="sh-body echof" id="efBody">' + echoFormHtml() + '</div><div class="sh-foot">' +
-      '<button class="btn" data-act="ec-pvnow">' + ICON.eye + ' Preview</button>' +
-      (r.id ? '<button class="btn" data-act="ec-printnow">Print</button><button class="btn pri" data-act="ec-save">Save changes</button>'
-        : '<button class="btn" data-act="ec-printnow">Print only</button><button class="btn" data-act="ec-save">Save</button><button class="btn pri" data-act="ec-saveprint">Save &amp; print</button>') + '</div>';
+      '<div class="sh-body echof ewz" id="efBody">' + ewHtml() + '</div><div class="sh-foot ewf" id="efFoot">' + ewFoot() + '</div>';
     el.classList.remove('hidden'); document.body.style.overflow = 'hidden'; overlayOpened();
     if (!S.echoPhr) api('apiEchoPhrases').then(function (l) { S.echoPhr = l || []; echoRepaint(); }, function () { });
     setTimeout(function () { var f = $('efName'); if (f && !f.value) f.focus(); }, 60);
@@ -7235,9 +7306,266 @@ if (typeof module !== 'undefined') module.exports = CEC;
         '<label class="lb">Reporting physician</label><div class="in ro">' + h(r.phys || (S.settings && S.settings.hod) || '') + '</div>') +
       '<div id="efErr"></div></form>';
   }
+  /* ---------- 17-11-2026: the echo report made step by step: one question a screen (21 steps) with Back / Skip / Next and a bar of the
+     steps (tap one to go to it); then "Check and save": what was skipped or left empty (Go to it) and every answer (Change); saved as
+     Provisional or Final, or only previewed. A saved report opens on "Check and save". The report itself (r) is the same as before, so
+     the printed report, the saved reports and the echo register do not change. "Nothing to add" answers are kept in r.none. ---------- */
+  var EW = [
+    { k: 'pt', t: 'Patient' },
+    { k: 'mm', t: 'Measurements (M-mode 2D)' },
+    { k: 'la', t: 'Left atrium', g: ['Left atrium'] },
+    { k: 'lv', t: 'Left ventricle', g: ['Left ventricle'] },
+    { k: 'wm', t: 'Wall motion', g: ['Wall motion'] },
+    { k: 'rv', t: 'Right ventricle', g: ['Right ventricle'], not: ['tapse'] },
+    { k: 'tapse', t: 'TAPSE' },
+    { k: 'ra', t: 'Right atrium', g: ['Right atrium'] },
+    { k: 'vl', t: 'Valves', g: ['Valves'] },
+    { k: 'mv', t: 'Mitral valve', g: ['Mitral valve'], none: 'Nothing to add (normal mitral valve)' },
+    { k: 'av', t: 'Aortic valve', g: ['Aortic valve'], none: 'Nothing to add (normal aortic valve)' },
+    { k: 'pv', t: 'Prosthetic valves and vegetation', g: ['Prosthetic valves', 'Vegetation'], none: 'None' },
+    { k: 'se', t: 'Septa', g: ['Septa'] },
+    { k: 'ivc', t: 'IVC', g: ['IVC'] },
+    { k: 'pe', t: 'Pericardium and masses', g: ['Pericardium and masses'] },
+    { k: 'ao', t: 'Aorta', g: ['Aorta'], none: 'Nothing to add (normal aortic root)' },
+    { k: 'dp', t: 'Doppler (colour flow mapping)' },
+    { k: 'ifl', t: 'Mitral inflow and diastolic function' },
+    { k: 'rvsp', t: 'RV / MPA pressure (RVSP)' },
+    { k: 'fin', t: 'Final echo report' },
+    { k: 'nt', t: 'Note', g: ['Note'], s: 'nt', none: 'No note' }
+  ];
+  var EW_DP = [['Mitral regurgitation', 'MR'], ['Aortic regurgitation', 'AR'], ['Tricuspid regurgitation', 'TR'], ['Pulmonary regurgitation', 'PR']];
+  var EW_GRADE = { t: 'Trace', m: 'Mild', mo: 'Moderate', s: 'Severe' };
+  function ewIdx(k) { for (var i = 0; i < EW.length; i++) if (EW[i].k === k) return i; return -1; }
+  function ewKeys(x) {                                // the ready-made lines of a step
+    return x.g ? CEC.ECHO_LIB.filter(function (l) { return l.s === (x.s || 'st') && x.g.indexOf(l.g) >= 0 && !(x.not && x.not.indexOf(l.k) >= 0); }).map(function (l) { return l.k; }) : [];
+  }
+  function ewStepOf(k) {                              // the step of a ready-made line
+    var l = CEC.ECHO_BY[k]; if (!l) return -1;
+    if (k === 'tapse') return ewIdx('tapse');
+    if (l.s === 'dp') return ewIdx('dp'); if (l.s === 'fin') return ewIdx('fin');
+    for (var i = 0; i < EW.length; i++) if (EW[i].g && EW[i].g.indexOf(l.g) >= 0 && (EW[i].s || 'st') === l.s) return i;
+    return -1;
+  }
+  function ewNone(k) { return (S.ef.r.none || []).indexOf(k) >= 0; }
+  function ewNoneOff(k) { var n = S.ef.r.none || [], i = n.indexOf(k); if (i >= 0) n.splice(i, 1); }
+  function ewFill(t, vals) { var i = 0; return String(t).replace(/__/g, function () { var v = (vals || [])[i++]; return v != null && String(v).trim() !== '' ? String(v).trim() : '__'; }); }
+  function ewHas(i) {
+    var x = EW[i], r = S.ef.r, L = CEC.echoLines(r);
+    if (ewNone(x.k)) return true;
+    if (x.k === 'pt') return !!(String(r.name || '').trim() && r.date);
+    if (x.k === 'mm') return CEC.ECHO_MEAS.some(function (m) { return String((r.m || {})[m[0]] || '').trim(); });
+    if (x.k === 'tapse') return !!(r.sel.tapse && String(r.sel.tapse[0] || '').trim());
+    if (x.k === 'dp') return L.dp.length > 0;
+    if (x.k === 'ifl') return (r.inflow || {}).mode === 'none' || L.ifl.length > 0;
+    if (x.k === 'rvsp') return L.rv.length > 0;
+    if (x.k === 'fin') return L.fin.length > 0;
+    return ewKeys(x).some(function (k) { return r.sel[k]; }) || x.g.some(function (g) { return ((r.cg || {})[g] || []).length > 0; });
+  }
+  /* what a step says, for "Check and save" */
+  function ewSays(i) {
+    var x = EW[i], r = S.ef.r, L = CEC.echoLines(r), out = [];
+    if (x.k === 'pt') {
+      out.push((r.name ? up(r.name) : '(no name)') + (r.mr ? ', MR ' + up(r.mr) : '') + (r.age ? ', ' + r.age + ' y' : '') + (r.sex ? ', ' + (r.sex === 'M' ? 'male' : 'female') : ''));
+      out.push((r.date ? CEC.dmy(r.date) : '(no date)') + (r.ref ? ', ref. ' + r.ref : '') + (r.tech ? ', echo cardiographer ' + r.tech : ''));
+      return out;
+    }
+    if (x.k === 'mm') return [CEC.ECHO_MEAS.filter(function (m) { return String((r.m || {})[m[0]] || '').trim(); }).map(function (m) { return m[1] + ' ' + r.m[m[0]]; }).join(', ')].filter(String);
+    if (ewNone(x.k)) return [x.k === 'tapse' ? 'Not measured' : x.none || 'Nothing to add'];
+    if (x.k === 'tapse') return r.sel.tapse ? [ewFill(CEC.ECHO_BY.tapse.t, r.sel.tapse)] : [];
+    if (x.k === 'dp') return L.dp;
+    if (x.k === 'ifl') return L.ifl.map(function (t) { return t.replace('|', ',  '); }).concat(r.dd ? ['Diastolic function: ' + ({ N: 'normal', 1: 'grade I', 2: 'grade II', 3: 'grade III' })[r.dd]] : []);
+    if (x.k === 'rvsp') return L.rv;
+    if (x.k === 'fin') return L.fin.map(function (t, j) { return (j + 1) + '. ' + t; });
+    ewKeys(x).forEach(function (k) { if (r.sel[k]) out.push(ewFill(CEC.ECHO_BY[k].t, r.sel[k])); });
+    x.g.forEach(function (g) { out = out.concat((r.cg || {})[g] || []); });
+    return out;
+  }
+  function ewBar() {
+    var cur = S.ef.st, n = EW.length;
+    return '<div class="ewbar" role="navigation" aria-label="Steps">' + EW.map(function (x, i) {
+      var cl = ewHas(i) ? 'done' : S.ef.skip[x.k] ? 'skip' : '';
+      return '<button type="button" class="ews ' + cl + (i === cur ? ' cur' : '') + '" data-act="ew-go" data-v="' + i + '" title="' + h((i + 1) + '. ' + x.t) + '" aria-label="' + h('Step ' + (i + 1) + ': ' + x.t) + '"></button>';
+    }).join('') + '<button type="button" class="ews chk' + (cur === n ? ' cur' : '') + '" data-act="ew-go" data-v="' + n + '" title="Check and save" aria-label="Check and save">&#10003;</button></div>' +
+      '<div class="ewh"><span class="ewn">' + (cur < n ? 'Step ' + (cur + 1) + ' of ' + n : 'Last step') + '</span><h4>' + h(cur < n ? EW[cur].t : 'Check and save') + '</h4></div>';
+  }
+  function ewOpt(k) {                                  // a ready-made line: tap to choose (more than one where they go together), tap again to remove
+    var r = S.ef.r, x = CEC.ECHO_BY[k], on = !!r.sel[k], cl = on && CEC.echoClash(r.sel).some(function (p) { return p[0] === k || p[1] === k; });
+    return '<div class="ewo' + (on ? ' on' : '') + (cl ? ' clash' : '') + '"><button type="button" class="ewb" data-act="ew-opt" data-k="' + h(k) + '" aria-pressed="' + on + '">' +
+      '<span class="ewc" aria-hidden="true">' + (on ? '&#10003;' : '') + '</span><span class="ewt">' + h(x.t.replace(/__/g, '…')) + (x.def ? ' <i class="ewu">usual</i>' : '') + '</span></button>' +
+      (on && x.t.indexOf('__') >= 0 ? '<div class="ewv"><span>' + echoBlanks(x.t, k, r.sel[k]) + '</span></div>' : '') + '</div>';
+  }
+  function ewOwn(s, g, label) {                       // lines kept for next time, lines added for this patient, and "+ Add my own line"
+    var r = S.ef.r, cg = (r.cg && r.cg[g]) || [], saved = (S.echoPhr || []).filter(function (p) { return p.s === s && p.g === g; }).map(function (p) { return p.t; });
+    var all = saved.concat(cg.filter(function (t) { return saved.indexOf(t) < 0; }));
+    var html = all.map(function (t) {
+      var on = cg.indexOf(t) >= 0, kept = saved.indexOf(t) >= 0;
+      return '<div class="ewo own' + (on ? ' on' : '') + '"><button type="button" class="ewb" data-act="ew-cg" data-g="' + h(g) + '" data-t="' + h(t) + '" aria-pressed="' + on + '">' +
+        '<span class="ewc" aria-hidden="true">' + (on ? '&#10003;' : '') + '</span><span class="ewt">' + h(t) + (kept ? '' : ' <i class="ewu">this patient</i>') + '</span></button>' +
+        (kept ? '<button type="button" class="lnk small ewdel" data-act="ec-phr-del" data-v="' + s + '" data-g="' + h(g) + '" data-t="' + h(t) + '" title="Take this line off the list">Take off the list</button>' : '') + '</div>';
+    }).join('');
+    var key = s + '|' + g, box = S.ef.addG && S.ef.addG.key === key;
+    return html + (box ? '<div class="ewadd"><input class="in" id="efAddIn" data-s="' + s + '" data-g="' + h(g) + '" data-mode="once" placeholder="Type the line" maxlength="300">' +
+      '<label class="tog"><input type="checkbox" id="efAddKeep"> <span>Keep it in the list for next time</span></label>' +
+      '<div class="sbtns"><button type="button" class="btn sm pri" data-act="ec-addok">Add</button><button type="button" class="btn sm" data-act="ec-addx">Cancel</button></div></div>'
+      : '<button type="button" class="ewaddb" data-act="ew-addopen" data-v="' + s + '" data-g="' + h(g) + '">+ Add my own line' + (label ? ' (' + h(label) + ')' : '') + '</button>');
+  }
+  function ewNoneBtn(k, text) {
+    var on = ewNone(k);
+    return '<div class="ewo none' + (on ? ' on' : '') + '"><button type="button" class="ewb" data-act="ew-none" data-v="' + k + '" aria-pressed="' + on + '"><span class="ewc" aria-hidden="true">' + (on ? '&#10003;' : '') + '</span><span class="ewt">' + h(text) + '</span></button></div>';
+  }
+  function ewClashNote(keys) {
+    var cl = CEC.echoClash(S.ef.r.sel).filter(function (p) { return keys.indexOf(p[0]) >= 0 || keys.indexOf(p[1]) >= 0; });
+    return cl.length ? '<div class="ewarn">&#9888; ' + cl.map(function (p) { return '“' + h(echoClashTxt(p[0])) + '” and “' + h(echoClashTxt(p[1])) + '”'; }).join('; ') + ' may say different things. Tap one to remove it, or keep both if you mean it.</div>' : '';
+  }
+  function ewHint(t) { return '<p class="muted small ewhint">' + t + '</p>'; }
+  function ewStepHtml(i) {
+    var x = EW[i], r = S.ef.r, m = r.m || {}, f = r.inflow || {};
+    var inp = function (id, label, val, attrs) { return '<label class="lb" for="' + id + '">' + label + '</label><input class="in" id="' + id + '" value="' + h(val == null ? '' : val) + '" ' + (attrs || '') + '>'; };
+    var two = function (a, b) { return '<div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div>' + a + '</div><div>' + b + '</div></div>'; };
+    if (x.k === 'pt') return ewHint('Name and date are needed to save or print.') +
+      two(inp('efDate', 'Date <span class="req">*</span>', r.date, 'type="date" data-ek="f" data-k="date"'), inp('efMr', 'MR No.', r.mr, 'data-ek="f" data-k="mr" autocapitalize="characters"')) +
+      inp('efName', 'Name <span class="req">*</span>', r.name, 'data-ek="f" data-k="name" autocapitalize="words"') +
+      two(inp('efAge', 'Age (years)', r.age, 'data-ek="f" data-k="age" inputmode="numeric" maxlength="3"'), '<label class="lb">Gender</label><div class="seg" id="efSex">' +
+        [['M', 'Male'], ['F', 'Female']].map(function (g) { return '<button type="button" data-act="ec-sex" data-v="' + g[0] + '" class="' + (r.sex === g[0] ? 'on' : '') + '">' + g[1] + '</button>'; }).join('') + '</div>') +
+      inp('efRef', 'Ref physician', r.ref, 'data-ek="f" data-k="ref" placeholder="e.g. Dr. Amir"') +
+      two(inp('efTech', 'Echo cardiographer', r.tech, 'data-ek="f" data-k="tech"'), '<label class="lb">Reporting physician</label><div class="in ro">' + h(r.phys || (S.settings && S.settings.hod) || '') + '</div>');
+    if (x.k === 'mm') return ewHint('In mm. Normal values in brackets; a value outside them shows red.') + '<div class="vgrid emg">' + CEC.ECHO_MEAS.map(function (q) {
+      return '<div><label class="lb" for="efm_' + q[0] + '">' + h(q[1]) + ' <span class="muted">(' + h(q[2]) + ')</span></label><input class="in emeas' + (echoAbn(q[0], m[q[0]]) ? ' eab' : '') + '" id="efm_' + q[0] + '" data-ek="m" data-k="' + q[0] + '"' +
+        ' inputmode="' + (q[0] === 'ef' ? 'text' : 'decimal') + '" maxlength="12" placeholder="' + (q[0] === 'ef' ? 'e.g. 55-60' : 'mm') + '" value="' + h(m[q[0]] || '') + '"></div>'; }).join('') + '</div>';
+    if (x.k === 'tapse') return ewHint('Tricuspid annular plane systolic excursion, in mm (normal 17 mm or more).') +
+      '<div class="ewtap"><label class="lb" for="efTapse">TAPSE (mm)</label><input class="in" id="efTapse" data-ek="tapse" inputmode="decimal" maxlength="8" placeholder="e.g. 20" value="' + h(r.sel.tapse ? r.sel.tapse[0] || '' : '') + '"></div>' +
+      '<p class="muted small" style="margin:6px 0 10px">Prints: <b>Tricuspid annular plane systolic excursion (TAPSE) = … mm.</b></p>' + ewNoneBtn('tapse', 'Not measured');
+    if (x.k === 'dp') {
+      var dpk = ['dp_none'].concat(CEC.ECHO_LIB.filter(function (l) { return l.s === 'dp'; }).map(function (l) { return l.k; }));
+      return ewHint('Tap the usual line, or the grade for each valve.') + ewClashNote(dpk) + ewOpt('dp_none') +
+        EW_DP.map(function (d) {
+          var ks = CEC.ECHO_LIB.filter(function (l) { return l.s === 'dp' && l.g === d[0]; }).map(function (l) { return l.k; }), on = ks.filter(function (k) { return r.sel[k]; })[0] || '';
+          return '<div class="ewdp"><div class="ewdl">' + h(d[0]) + ' (' + d[1] + ')</div><div class="seg ewg">' + [['', 'None']].concat(ks.map(function (k) { return [k, EW_GRADE[k.split('_')[1]] || k]; })).map(function (o) {
+            return '<button type="button" data-act="ew-dp" data-g="' + h(d[0]) + '" data-k="' + o[0] + '" class="' + (on === o[0] ? 'on' : '') + '" aria-pressed="' + (on === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div></div>';
+        }).join('') + '<div class="eg">Other flow</div>' + CEC.ECHO_LIB.filter(function (l) { return l.s === 'dp' && l.g === 'Other flow'; }).map(function (l) { return ewOpt(l.k); }).join('') +
+        CEC.echoGroups('dp').filter(function (g) { return g !== 'Other flow' && ((r.cg || {})[g] || []).length; }).map(function (g) { return ewOwn('dp', g); }).join('') + ewOwn('dp', 'Other flow');
+    }
+    if (x.k === 'ifl') {
+      var ea = CEC.echoEA(r), md = f.mode || 'val';
+      return '<div class="seg" id="efIfl">' + [['val', 'E and A values'], ['fused', 'Fused E/A (fast heart rate)'], ['af', 'Atrial fibrillation: no A wave'], ['none', 'Leave out']].map(function (o) {
+          return '<button type="button" data-act="ec-ifl" data-v="' + o[0] + '" class="' + (md === o[0] ? 'on' : '') + '">' + o[1] + '</button>'; }).join('') + '</div>' +
+        (md === 'val' ? '<div class="vgrid emg">' + [['e', 'E (m/s)'], ['a', 'A (m/s)'], ['ee', "E/e'"]].map(function (q) {
+            return '<div><label class="lb" for="efi_' + q[0] + '">' + q[1] + '</label><input class="in" id="efi_' + q[0] + '" data-ek="ifl" data-k="' + q[0] + '" inputmode="decimal" maxlength="8" value="' + h(f[q[0]] || '') + '"></div>'; }).join('') +
+            '<div><span class="lb">E/A</span><div class="eaval" id="efEA">' + (ea || '&ndash;') + '</div></div></div>'
+          : md === 'fused' ? inp('efi_hr', 'Heart rate (beats per minute)', f.hr, 'data-ek="ifl" data-k="hr" inputmode="numeric" maxlength="3"')
+          : md === 'af' ? '<div class="vgrid emg">' + [['e', 'E (m/s)'], ['ee', "E/e'"]].map(function (q) {
+            return '<div><label class="lb" for="efi_' + q[0] + '">' + q[1] + '</label><input class="in" id="efi_' + q[0] + '" data-ek="ifl" data-k="' + q[0] + '" inputmode="decimal" maxlength="8" value="' + h(f[q[0]] || '') + '"></div>'; }).join('') +
+            '</div><p class="muted small" style="margin:4px 0 0">Prints: <b>' + h(CEC.ECHO_IFL_AF) + '</b></p>' : '<p class="muted small">Mitral inflow is left out of the report.</p>') +
+        '<label class="lb">Diastolic function <span class="muted">(goes into the final report)</span></label><div class="seg" id="efDd">' + [['', 'Not stated'], ['N', 'Normal'], ['1', 'Grade I'], ['2', 'Grade II'], ['3', 'Grade III']].map(function (o) {
+          return '<button type="button" data-act="ec-dd" data-v="' + o[0] + '" class="' + ((r.dd || '') === o[0] ? 'on' : '') + '">' + o[1] + '</button>'; }).join('') + '</div>' +
+        '<div class="eg">More</div>' + ewOwn('ifl', 'Mitral inflow');
+    }
+    if (x.k === 'rvsp') {
+      var ph = CEC.echoPh(r);
+      return '<div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div>' + inp('efRvsp', 'RVSP (mmHg)', r.rvsp, 'data-ek="f" data-k="rvsp" inputmode="numeric" maxlength="3"' + (r.rvspNa ? ' disabled' : '')) + '</div>' +
+        '<div><label class="lb">&nbsp;</label><label class="tog"><input type="checkbox" data-ek="rvna"' + (r.rvspNa ? ' checked' : '') + '> <span>Could not be estimated</span></label></div></div>' +
+        '<p class="muted small" id="efPh" style="margin:4px 0 0">' + (ph ? 'Final report: <b>' + h(ph) + '</b>' : '35 to 45 mmHg: mild, 46 to 60: moderate, above 60: severe pulmonary hypertension (added to the final report).') + '</p>' +
+        '<div class="eg">More</div>' + ewOwn('rv', 'RVSP');
+    }
+    if (x.k === 'fin') {
+      var auto = CEC.echoAutoFin(r), off = r.finOff || [];
+      return ewHint('Made from your answers. Tap × to leave a line out; it can be put back below.') +
+        auto.filter(function (t) { return off.indexOf(t) < 0; }).map(function (t) {
+          return '<div class="echo-row auto"><span class="etx"><span>' + h(t) + '</span></span><button type="button" class="ex2" data-act="ec-finx" data-t="' + h(t) + '" aria-label="Leave this line out">&times;</button></div>'; }).join('') +
+        (auto.length ? '' : '<p class="muted small">Nothing from the findings yet.</p>') +
+        auto.filter(function (t) { return off.indexOf(t) >= 0; }).map(function (t) {
+          return '<div class="ewo own"><button type="button" class="ewb" data-act="ew-finback" data-t="' + h(t) + '"><span class="ewc" aria-hidden="true">+</span><span class="ewt">' + h(t) + ' <i class="ewu">put back</i></span></button></div>'; }).join('') +
+        '<div class="eg">Add</div>' + CEC.ECHO_LIB.filter(function (l) { return l.s === 'fin'; }).map(function (l) { return ewOpt(l.k); }).join('') + ewOwn('fin', 'Final report') +
+        (CEC.echoProv(r) ? '<p class="eprov">A provisional report also prints here: <b>This is the provisional report as per (date of print). Kindly collect final report from Cardiac Emergency Centre, SGHL.</b></p>' : '');
+    }
+    /* a heading (or two): its lines, the usual one marked; "Nothing to add" where a heading is often normal */
+    var keys = ewKeys(x), s = x.s || 'st';
+    return ewHint('Tap one or more. Tap again to remove.') + ewClashNote(keys) +
+      x.g.map(function (g) {
+        var ks = CEC.echoPickList(s, g).map(function (l) { return l.k; }).filter(function (k) { return keys.indexOf(k) >= 0; });
+        return (x.g.length > 1 ? '<div class="eg">' + h(g) + '</div>' : '') + ks.map(ewOpt).join('') + ewOwn(s, g, x.g.length > 1 ? g : '');
+      }).join('') + (x.none ? ewNoneBtn(x.k, x.none) : '');
+  }
+  function ewCheckHtml() {
+    var r = S.ef.r, iss = [], L = CEC.echoLines(r);
+    if (!String(r.name || '').trim()) iss.push([0, 'Name', 'needed to save']);
+    if (!r.date) iss.push([0, 'Date', 'needed to save']);
+    EW.forEach(function (x, i) { if (i > 0 && !ewHas(i)) iss.push([i, x.t, S.ef.skip[x.k] ? 'skipped' : 'nothing chosen']); });
+    Object.keys(r.sel || {}).forEach(function (k) { var l = CEC.ECHO_BY[k]; if (l && l.t.indexOf('__') >= 0 && ewFill(l.t, r.sel[k]).indexOf('__') >= 0) iss.push([ewStepOf(k), ewFill(l.t, r.sel[k]).replace(/__/g, '…'), 'value empty']); });
+    L.ifl.concat(L.rv).forEach(function (t) { if (t.indexOf('__') >= 0) iss.push([L.rv.indexOf(t) >= 0 ? ewIdx('rvsp') : ewIdx('ifl'), t.replace('|', ', ').replace(/__/g, '…'), 'value empty']); });
+    CEC.echoClash(r.sel).forEach(function (p) { iss.push([ewStepOf(p[1]), '“' + echoClashTxt(p[0]) + '” and “' + echoClashTxt(p[1]) + '”', 'may say different things']); });
+    var old = ['st', 'dp', 'fin', 'nt'].filter(function (s) { return (r.cus[s] || []).length; });
+    return (iss.length ? '<div class="ewiss"><div class="ewit">Before saving, check these:</div>' + iss.map(function (o) {
+        return '<div class="ewi"><span><b>' + h(o[1]) + '</b> <span class="muted small">' + h(o[2]) + '</span></span><button type="button" class="btn sm" data-act="ew-go" data-v="' + o[0] + '">Go to it</button></div>'; }).join('') +
+        '<p class="small muted" style="margin:6px 0 0">What is not filled is left out of the report. You can still save.</p></div>'
+      : '<div class="ewok">&#10003; Every step is filled.</div>') +
+      '<div class="ewsums">' + EW.map(function (x, i) {
+        var says = ewSays(i);
+        return '<div class="ewsum"><div class="ewst"><b>' + (i + 1) + '. ' + h(x.t) + '</b><button type="button" class="lnk" data-act="ew-go" data-v="' + i + '">Change</button></div>' +
+          (says.length ? says.map(function (t) { return '<div class="ewl">' + h(t).replace(/__/g, '<span class="ewblank">…</span>') + '</div>'; }).join('') : '<div class="ewl muted">' + (S.ef.skip[x.k] ? 'Skipped' : 'Nothing chosen') + '</div>') + '</div>';
+      }).join('') +
+      (old.length ? '<div class="ewsum"><div class="ewst"><b>Lines from an older report</b></div>' + old.map(function (s) { return r.cus[s].map(function (t) { return echoChosenRow({ t: t, old: 1 }, s); }).join(''); }).join('') + '</div>' : '') + '</div>' +
+      '<label class="tog" style="margin-top:12px"><input type="checkbox" id="efPrintAfter"' + (store_('cec_ewprint') ? ' checked' : '') + '> <span>Print after saving</span></label>' +
+      (r.id && r.rs === 'F' ? '<p class="muted small">This report is final; it stays final when changed.</p>' : '<p class="muted small"><b>Provisional</b> prints: <i>This is the provisional report as per (date of print). Kindly collect final report from Cardiac Emergency Centre, SGHL.</i> <b>Final</b> prints nothing extra and stays final when changed later.</p>');
+  }
+  function ewHtml() {
+    var cur = S.ef.st;
+    return ewBar() + '<div class="ewbody">' + (cur < EW.length ? ewStepHtml(cur) : ewCheckHtml()) + '</div><div id="efErr"></div>';
+  }
+  function ewFoot() {
+    var cur = S.ef.st, n = EW.length, r = S.ef.r;
+    if (cur < n) return '<button class="btn" data-act="ew-back"' + (cur ? '' : ' disabled') + '>&lsaquo; Back</button><button class="btn" data-act="ew-skip">Skip</button>' +
+      '<button class="btn pri" data-act="ew-next">' + (cur === n - 1 ? 'Check &rsaquo;' : 'Next &rsaquo;') + '</button>';
+    return '<button class="btn" data-act="ew-back">&lsaquo; Back</button><button class="btn" data-act="ec-pvnow">' + ICON.eye + ' Preview only</button>' +
+      (r.id && r.rs === 'F' ? '<button class="btn pri" data-act="ew-save" data-v="F">Save changes</button>'
+        : '<button class="btn provb" data-act="ew-save" data-v="P">Provisional</button><button class="btn pri" data-act="ew-save" data-v="F">Final</button>');
+  }
+  function ewRender(top) {
+    var b = $('efBody'), f = $('efFoot'); if (!S.ef || !b) return;
+    var keep = top ? 0 : b.scrollTop;
+    b.innerHTML = ewHtml(); if (f) f.innerHTML = ewFoot();
+    b.scrollTop = keep;
+  }
+  function ewGo(i) {
+    if (!S.ef) return;
+    S.ef.addG = null; S.ef.st = Math.max(0, Math.min(EW.length, i)); ewRender(true);
+    if (S.ef.st === 0) setTimeout(function () { var f = $('efName'); if (f && !f.value) f.focus(); }, 60);
+  }
+  function ewLive() {                                 // typing: only the values that depend on it are written again (the box keeps the cursor)
+    var r = S.ef && S.ef.r; if (!r) return;
+    var ea = $('efEA'); if (ea) ea.innerHTML = CEC.echoEA(r) || '&ndash;';
+    var ph = $('efPh'), pt = CEC.echoPh(r); if (ph) ph.innerHTML = pt ? 'Final report: <b>' + h(pt) + '</b>' : '35 to 45 mmHg: mild, 46 to 60: moderate, above 60: severe pulmonary hypertension (added to the final report).';
+  }
+  function ewOptTap(k) {
+    var r = S.ef.r, st = EW[S.ef.st];
+    if (r.sel[k]) { delete r.sel[k]; ewRender(); return; }
+    var gone = echoTick(k, true);
+    if (st) ewNoneOff(st.k);
+    if (gone.length) toast('Replaced: ' + gone.map(function (j) { return echoClashTxt(j); }).join('; '));
+    ewRender();
+    if (CEC.ECHO_BY[k].t.indexOf('__') >= 0) setTimeout(function () { var b = document.querySelector('.ewv .eblank[data-k="' + k + '"]'); if (b && !b.value) b.focus(); }, 50);
+  }
+  function ewNoneTap(k) {
+    var r = S.ef.r, n = r.none || (r.none = []), i = n.indexOf(k), x = EW[ewIdx(k)];
+    if (i >= 0) { n.splice(i, 1); ewRender(); return; }
+    n.push(k);
+    if (k === 'tapse') delete r.sel.tapse;
+    else if (x) { ewKeys(x).forEach(function (q) { delete r.sel[q]; }); (x.g || []).forEach(function (g) { if (r.cg) delete r.cg[g]; }); }
+    ewRender();
+  }
+  function ewSave(rs) {
+    if (!S.ef || S.ef.busy) return;
+    var r = echoRead(), pa = $('efPrintAfter'), print = !!(pa && pa.checked);
+    store_('cec_ewprint', print);
+    if (!r.name || !r.date) { toast('Enter the ' + (!r.name ? 'name' : 'date') + ' first.'); ewGo(0); return; }
+    if (!(r.id && r.rs === 'F')) { r.rs = rs; S.ef.r.rs = rs; }
+    S.ef.busy = true;
+    echoSame(r).then(function (r2) { if (!r2) { if (S.ef) S.ef.busy = false; return; } echoPut(r2, print); }, function () { if (S.ef) S.ef.busy = false; });
+  }
   /* After a tick: the part ticked and the final report are drawn again (the rest of the sheet, and where it is scrolled, stay). */
   function echoRepaint(parts) {
     if (!S.ef) return;
+    if (S.ef.st != null) return ewRender();          // 17-11-2026: the step-by-step report
     (parts || ['st', 'dp', 'nt', 'ifl', 'rv']).forEach(function (s) { var b = $('ef_' + s); if (b) b.innerHTML = echoSecHtml(s); });
     var fb = $('ef_fin'); if (fb) fb.innerHTML = echoFinHtml();
     var ea = $('efEA'); if (ea) ea.innerHTML = CEC.echoEA(S.ef.r) || '&ndash;';
@@ -7279,9 +7607,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function echoInput(t) {
     var r = S.ef && S.ef.r, ek = t.getAttribute('data-ek'), k = t.getAttribute('data-k');
     if (!r || !ek) return;
-    if (ek === 'f') { r[k] = t.value; if (k === 'rvsp') echoRepaint([]); }
-    else if (ek === 'm') { r.m[k] = t.value.trim(); t.classList.toggle('eab', echoAbn(k, t.value)); if (k === 'ef') echoRepaint([]); }
-    else if (ek === 'ifl') { r.inflow[k] = t.value.trim(); echoRepaint([]); }
+    if (ek === 'f') { r[k] = t.value; if (k === 'rvsp') ewLive(); }
+    else if (ek === 'm') { r.m[k] = t.value.trim(); t.classList.toggle('eab', echoAbn(k, t.value)); }
+    else if (ek === 'ifl') { r.inflow[k] = t.value.trim(); ewLive(); }
+    else if (ek === 'tapse') {                        // 17-11-2026: TAPSE, its own step
+      var tv = t.value.trim();
+      if (tv) { r.sel.tapse = [tv]; ewNoneOff('tapse'); var nb = document.querySelector('[data-act=ew-none][data-v=tapse]'); if (nb) { nb.parentNode.classList.remove('on'); nb.querySelector('.ewc').innerHTML = ''; } }
+      else delete r.sel.tapse;
+    }
     else if (ek === 'blank') {
       var i = +t.getAttribute('data-i');
       (r.sel[k] = r.sel[k] || [])[i] = t.value.trim();
@@ -7300,7 +7633,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function echoAdd() {
     var r = S.ef.r, el = $('efAddIn'); if (!el) return;
-    var s = el.getAttribute('data-s'), g = el.getAttribute('data-g'), keep = el.getAttribute('data-mode') === 'save', t = el.value.replace(/\s+/g, ' ').trim();
+    var s = el.getAttribute('data-s'), g = el.getAttribute('data-g'), keep = el.getAttribute('data-mode') === 'save' || !!($('efAddKeep') && $('efAddKeep').checked), t = el.value.replace(/\s+/g, ' ').trim();
     if (t.length < 3) return toast('Type the line first.');
     if (!/[.:)]$/.test(t)) t += '.';
     var cg = r.cg || (r.cg = {}), gl = cg[g] || (cg[g] = []);
@@ -7381,6 +7714,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var r = echoRead(); S.ef.busy = true;
     echoOk(r).then(function (ok) { return ok ? echoEmpty(r) : false; }).then(function (ok) { return ok ? echoWarnClash(r) : false; }).then(function (ok) { return ok ? echoSame(r) : null; }).then(function (r) { return r ? echoAskStatus(r) : null; }, function () { return null; }).then(function (r) {
       if (!r || !S.ef) { if (S.ef) S.ef.busy = false; return; }
+      echoPut(r, print);
+    });
+  }
+  function echoPut(r, print) {                        // the report sent to the census (17-11-2026: also from "Check and save")
+    if (!S.ef) return;
+    (function () {
       if (r.tech) store_('cec_echotech', r.tech);
       toast('Saving…'); echoBusy(true);
       api('apiEchoSave', JSON.stringify(r)).then(function (saved) {
@@ -7392,7 +7731,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         if (S.view === 'echo' || S.view === 'appt') render();
         if (print) echoPrint(saved);
       }, function (e) { echoBusy(false); var b = $('efErr'); if (b) b.innerHTML = '<div class="err">' + h(errText(e)) + '</div>'; else toast(errText(e)); });
-    });
+    })();
   }
   function echoFromAppt(a) { return { name: a.name, age: a.age, sex: a.sex, mr: a.mr, apptId: a.id }; }
   function echoFromEntry(e) { return { name: e.name, age: e.age, sex: e.sex, mr: e.mr, entryId: e.id }; }
@@ -9076,7 +9415,23 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'ec-dl': echoGet(id).then(function (r) { if (r) echoDownload(r); }); break;
       case 'ec-close': closeEcho(); break;
       case 'ec-sex': S.ef.r.sex = S.ef.r.sex === v ? '' : v; setOn('efSex', S.ef.r.sex); break;
-      case 'ec-ifl': S.ef.r.inflow.mode = v; { var eb = $('efBody'), est = eb ? eb.scrollTop : 0; if (eb) { eb.innerHTML = echoFormHtml(); eb.scrollTop = est; } } break;
+      case 'ec-ifl': S.ef.r.inflow.mode = v; ewRender(); break;
+      case 'ew-go': ewGo(+v); break;                  // 17-11-2026: the step-by-step echo report
+      case 'ew-next': ewGo(S.ef.st + 1); break;
+      case 'ew-back': ewGo(S.ef.st - 1); break;
+      case 'ew-skip': S.ef.skip[EW[S.ef.st].k] = 1; ewGo(S.ef.st + 1); break;
+      case 'ew-opt': ewOptTap(el.getAttribute('data-k')); break;
+      case 'ew-none': ewNoneTap(v); break;
+      case 'ew-cg': { var wr = S.ef.r, wg = el.getAttribute('data-g'), wt = el.getAttribute('data-t'), wc = wr.cg || (wr.cg = {}), wl = wc[wg] || (wc[wg] = []), wi = wl.indexOf(wt);
+        if (wi >= 0) { wl.splice(wi, 1); if (!wl.length) delete wc[wg]; } else { wl.push(wt); var wst = EW[S.ef.st]; if (wst) ewNoneOff(wst.k); }
+        ewRender(); break; }
+      case 'ew-dp': { var dr = S.ef.r, dg = el.getAttribute('data-g'), dk = el.getAttribute('data-k');
+        CEC.ECHO_LIB.forEach(function (l) { if (l.s === 'dp' && l.g === dg) delete dr.sel[l.k]; });
+        if (dk) { var dgone = echoTick(dk, true); if (dgone.length) toast('Replaced: ' + dgone.map(function (j) { return echoClashTxt(j); }).join('; ')); }
+        ewRender(); break; }
+      case 'ew-addopen': { S.ef.addG = { key: v + '|' + el.getAttribute('data-g'), mode: 'once' }; ewRender(); var wa = $('efAddIn'); if (wa) wa.focus(); break; }
+      case 'ew-finback': { var fo2 = S.ef.r.finOff, ft2 = el.getAttribute('data-t'), fj = fo2.indexOf(ft2); if (fj >= 0) fo2.splice(fj, 1); ewRender(); break; }
+      case 'ew-save': ewSave(v); break;
       case 'ec-dd': S.ef.r.dd = v; setOn('efDd', v); echoRepaint([]); break;
       case 'ec-addg': { S.ef.addG = { key: v + '|' + el.getAttribute('data-g'), mode: 'once' }; echoRepaint([v]); var ai = $('efAddIn'); if (ai) ai.focus(); break; }
       case 'ec-x': echoRemove(el); break;
