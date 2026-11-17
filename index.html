@@ -764,7 +764,7 @@ details.card.lbmore .gh{margin-top:14px}
 @media(max-width:420px){.lbchips{gap:6px}.lbc{min-width:0;padding:0 11px;font-size:14px}.lbdays .btn{padding:0 10px;font-size:13px}}
 .verwarn{border-color:#e3a3a3;background:#fdf1f1;color:#7a1f1f;font-size:14px;line-height:1.45}.vbad{color:#b42318;font-weight:600}
 /* 14-11-2026 (night): Vitals page: Pending vitals / Vitals done */
-.vtabs{margin:0 0 10px}.vtabs button{flex:1 1 45%;min-height:42px;font-weight:600}.vtabs .cnt{display:inline-block;min-width:20px;padding:0 6px;border-radius:999px;background:rgba(0,0,0,.08);font-size:12px;margin-left:4px}
+.vtabs{margin:0 0 10px;flex-wrap:nowrap}.vtabs button{flex:1 1 0;min-height:42px;font-weight:600;padding-left:4px;padding-right:4px;white-space:nowrap;font-size:14px}.vtabs .cnt{display:inline-block;min-width:20px;padding:0 6px;border-radius:999px;background:rgba(0,0,0,.08);font-size:12px;margin-left:4px}
 .vtabs button.on .cnt{background:rgba(255,255,255,.25)}
 .vdone .vbig{font-size:15px;font-weight:700;color:var(--g9,#0b3d24);margin-top:5px;line-height:1.35;white-space:normal}
 /* 14-11-2026 (night): echo report sheet */
@@ -865,6 +865,55 @@ details.card.lbmore .gh{margin-top:14px}
 .echof .ewblank{color:#b42318;font-weight:700}
 .sh-foot.ewf .btn{min-height:48px}
 .sh-foot.ewf .btn.provb{background:#e59a1c;border-color:#e59a1c;color:#fff}
+/* 18-11-2026: BP only / Print slip, and the question in Urdu */
+.sh-foot .btn.bponly{background:#fff;border:1.5px solid #9aa8a0;color:var(--ink)}
+.mbox .urq{font-family:"Noto Nastaliq Urdu","Jameel Noori Nastaleeq","Noto Naskh Arabic","Noto Sans Arabic",serif;font-size:32px;line-height:1.9;text-align:center;margin:6px 0 10px;color:var(--g9);font-weight:700}
+.mbtns .btn.urb{min-height:52px;font-size:19px;min-width:110px}
+.prow .lnkrow{background:none;border:0;padding:0;text-align:left;font:inherit;color:inherit;cursor:pointer;flex:1;min-width:0}
+
+/* 18-11-2026 (night): Print a document: Preview with page choice */
+.tpvsz{flex:none}
+.tpvsz button{padding:5px 10px;font-size:13px}
+.tpvbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;background:#fff;padding:8px 12px;border-bottom:1px solid var(--line)}
+.tpvbar label{font-weight:600;font-size:14px}
+.tpvbar .in{flex:1;min-width:150px;max-width:340px;margin:0}
+.tpvn{flex-basis:100%;font-size:13px;color:var(--mute)}
+.tpvn.bad{color:var(--red);font-weight:600}
+.tpg{max-width:820px;margin:0 auto 16px}
+.tpck{display:flex;align-items:center;gap:8px;background:#e3e8e5;color:#33403a;border-radius:8px 8px 0 0;padding:7px 10px;font-size:14px;font-weight:600;cursor:pointer;user-select:none}
+.tpck input{width:20px;height:20px;margin:0;accent-color:var(--g7)}
+.tpg.on .tpck{background:var(--g7);color:#fff}
+.tpg .pvA4{margin:0;position:relative;opacity:.55}
+.tpg.on .pvA4{opacity:1}
+.tpg .pvA4 img:not([src]){display:none}
+.tpld{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#b8c2bd;font-size:28px;font-weight:600;z-index:0}
+.tpg .pvA4 img[src]{position:relative;z-index:1;background:#fff}
+.tpg .pvA4 img[src]+.tpld{display:none}
+.pv-body.tpvsm{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;align-content:start}
+.pv-body.tpvsm .tpg{margin:0;cursor:pointer;max-width:none}
+.pv-body.tpvsm .tpck{font-size:12px;padding:5px 7px}
+.pv-body.tpvsm .tpck input{width:17px;height:17px}
+.pv-foot .btn:disabled{opacity:.5}
+
+/* 18-11-2026 (night): ECG page: a tile for each of the last three shifts */
+.etiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 10px}
+.etile{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:var(--r);padding:9px 10px;font:inherit;color:var(--ink);cursor:pointer;min-width:0}
+.etile b{font-size:15px}
+.etile .ed{font-size:12px;color:var(--mute)}
+.etile .en{font-size:13px;margin-top:4px}
+.etile .el{font-size:12px;font-weight:600;color:var(--amb)}
+.etile .el.none{color:var(--g7)}
+.etile .el.zero{color:var(--mute);font-weight:400}
+.etile.on{border-color:var(--g7);background:var(--g1);box-shadow:inset 0 0 0 1px var(--g7)}
+@media (max-width:380px){.etile{padding:8px 7px}.etile b{font-size:14px}}
+@media (max-width:380px){.vtabs button{font-size:12.5px}.vtabs .cnt{padding:0 4px;min-width:16px}}
+
+/* 18-11-2026: RBS page tick with a reading; Today's list; several files ready */
+.tick.fixed{cursor:default}
+.tlist .sbtns .btn{min-width:130px}
+.fready{border-top:1px solid var(--line);padding:8px 0 4px}.fready:first-child{border-top:0;padding-top:0}.fready p{margin:0 0 6px}
+.tlbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;margin:0 0 10px}
+.tlbar span{flex:1 1 150px;display:flex;flex-direction:column;line-height:1.25}.tlbar small{font-size:12px}
 
 </style>
 </head>
@@ -1121,19 +1170,20 @@ var CEC = (function () {
     { c: 'EMR', l: 'Emergency / Resus' }, { c: 'OPD', l: 'OPD' }, { c: 'ETT', l: 'ETT' },
     { c: 'ECHO', l: 'Echo' }, { c: 'BD', l: 'Brought dead' }
   ];
+  /* 18-11-2026: the outcomes of the CEC. "Discharged after observation" is gone (those patients are Sent home); Admitted to SGHL ward, LAMA,
+     Discharged on request and Absconded are no longer offered (old: true), but patients saved with them still show them. */
   var OUTS = [
-    { c: 'DIS', l: 'Discharged home', s: 'Home' },
-    { c: 'FU', l: 'Discharged home, follow-up planned', s: 'Home, F/U' },
-    { c: 'OBS', l: 'Discharged after observation', s: 'After obs.' },
-    { c: 'ADM', l: 'Admitted to SGHL ward', s: 'Admitted' },
-    { c: 'HO', l: 'Handed over to next shift', s: 'Handed over' },
-    { c: 'REF', l: 'Referred to higher centre', s: 'Referred' },
-    { c: 'RIN', l: 'Referred within SGHL', s: 'Ref. within SGHL' },
-    { c: 'LAMA', l: 'Left against medical advice (LAMA)', s: 'LAMA' },
-    { c: 'DOR', l: 'Discharged on request (DOR)', s: 'DOR' },
-    { c: 'ABS', l: 'Absconded', s: 'Absconded' },
+    { c: 'DIS', l: 'Sent home', s: 'Sent home' },
+    { c: 'RIN', l: 'Referred to other OPD', s: 'Other OPD' },
+    { c: 'REF', l: 'Referred out', s: 'Referred out' },
+    { c: 'FU', l: 'Planned for cardiac follow-up', s: 'Cardiac F/U' },
+    { c: 'HO', l: 'Given to next shift', s: 'Next shift' },
     { c: 'EXP', l: 'Expired in CEC', s: 'Expired' },
-    { c: 'BD', l: 'Brought dead', s: 'BD' }
+    { c: 'BD', l: 'Brought dead', s: 'BD' },
+    { c: 'ADM', l: 'Admitted to SGHL ward', s: 'Admitted', old: true },
+    { c: 'LAMA', l: 'Left against medical advice (LAMA)', s: 'LAMA', old: true },
+    { c: 'DOR', l: 'Discharged on request (DOR)', s: 'DOR', old: true },
+    { c: 'ABS', l: 'Absconded', s: 'Absconded', old: true }
   ];
   /* g: chk = checks and tests, er = ER procedures, old = kept only so earlier entries still show */
   var PROCS = [
@@ -1665,7 +1715,7 @@ var CEC = (function () {
   function nowStamp() { var d = new Date(); return dmy(ymd(d)) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ' hrs'; }
   function refDate(s) { var p = s.split('-'); return p[0] + '/' + p[2] + p[1]; }
   function hodSign(st) { return [{ name: (st && st.hod) || DEFAULTS.hod, lines: ['Head of Department', 'Cardiac Emergency Centre'] }]; }
-  var LEGEND = 'F/U = follow-up planned; Obs. = observation; DOR = discharged on request; LAMA = left against medical advice; BD = brought dead.';
+  var LEGEND = 'Cardiac F/U = planned for cardiac follow-up; Other OPD = referred to other OPD; BD = brought dead.';
 
   function shiftModel(shift, st, opt) {
     st = st || DEFAULTS; opt = opt || {};
@@ -2495,8 +2545,7 @@ var CEC = (function () {
           cols, group ('none' | 'cat' | 'shift' | 'date' | 'out'), sort ('time' | 'mr' | 'name'), page ('auto' | 'portrait' | 'landscape'), title, exclude (entry ids) */
   function erProc(p) { var k = PROCS.filter(function (x) { return x.c === p; })[0]; return !k || k.g === 'er' || k.g === 'old'; }
   function ageSex(e) { return (e.age !== '' && e.age != null ? e.age : '-') + '/' + (e.sex || '-'); }
-  /* Hours of observation, or where within SGHL the patient was referred (optional: Ward, OPD or ER). */
-  function outExtra(e) { return e.out === 'OBS' && e.obsH ? ' (' + e.obsH + ' h)' : e.out === 'RIN' && e.outTo ? ' (' + e.outTo + ')' : ''; }
+  function outExtra(e) { return ''; }                 // 18-11-2026: no hours of observation, and no "where within SGHL" any more
   function outText(e) { return e.out ? short(OUTS, e.out) + outExtra(e) : 'Awaiting doctor'; }
   var LIST_COLS = [
     { k: 'no', m: 18, h: 'No.', w: 3, a: 'c', f: function (e, i) { return i + 1; } },
@@ -2525,7 +2574,12 @@ var CEC = (function () {
     { k: 'seen', m: 34, t: function (e) { return e.signed ? 'Seen by doctor' : 'Waiting for doctor'; }, h: 'Doctor seen', w: 6, a: 'c', f: function (e) { return e.signed ? 'Yes' : 'No'; } },
     { k: 'by', m: 56, h: 'Entered by', w: 10, a: 'l', admin: true, f: function (e) { return e.by || ''; } },
     { k: 'remarks', m: 56, h: 'Remarks', w: 12, a: 'l', f: function () { return ''; } },
-    { k: 'sign', m: 52, h: 'Signature', w: 9, a: 'l', pdfOnly: true, f: function () { return ''; } }
+    { k: 'sign', m: 52, h: 'Signature', w: 9, a: 'l', pdfOnly: true, f: function () { return ''; } },
+    /* 18-11-2026: Today's list: a tick when the check was done (BP: every patient gets the BP checked). Not in the column picker. */
+    { k: 'bpck', m: 30, h: 'BP', w: 4, a: 'c', tick: true, quick: true, f: function () { return '\u2713'; } },
+    { k: 'ecgck', m: 30, h: 'ECG', w: 4, a: 'c', tick: true, quick: true, f: function (e) { return has(e, 'ECG') ? '\u2713' : ''; } },
+    { k: 'rbsck', m: 30, h: 'RBS', w: 4, a: 'c', tick: true, quick: true, f: function (e) { return e.rbs || has(e, 'BSR') ? '\u2713' : ''; } },
+    { k: 'outck', m: 62, h: 'Outcome', w: 9, a: 'l', clin: true, quick: true, f: function (e) { return e.out ? short(OUTS, e.out) : ''; } }   // blank: still with the doctor
   ];
   var LIST_COLSETS = {
     entry: ['no', 'date', 'time', 'mr', 'name', 'agesex', 'cat'],
@@ -2555,8 +2609,7 @@ var CEC = (function () {
     { c: 'meds', l: 'Patients given ER medications', d: 'With the medications given', clin: true, cfg: { meds: ['*'], group: 'none', cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'dx', 'meds'] } },
     { c: 'erproc', l: 'Patients with ER procedures', d: 'Cannula, Foley’s, intubation, CPR…', clin: true, cfg: { procs: ['*er'], group: 'none', cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'dx', 'procs', 'out'] } },
     { c: 'deaths', l: 'Expired and brought dead', d: 'Deaths in or before arrival at the CEC', clin: true, cfg: { outs: ['EXP', 'BD'], group: 'out', cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'dx', 'out'] } },
-    { c: 'admref', l: 'Admitted and referred', d: 'Sent to the ward, within SGHL or to a higher centre', clin: true, cfg: { outs: ['ADM', 'REF', 'RIN'], group: 'out', cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'dx', 'out', 'note'] } },
-    { c: 'lama', l: 'LAMA, DOR and absconded', d: 'Left against advice, on request or absconded', clin: true, cfg: { outs: ['LAMA', 'DOR', 'ABS'], group: 'out', cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'dx', 'out', 'note'] } }
+    { c: 'admref', l: 'Referred', d: 'Referred to other OPD or referred out', clin: true, cfg: { outs: ['RIN', 'REF'], group: 'out', cols: ['no', 'date', 'shift', 'time', 'mr', 'name', 'agesex', 'cat', 'dx', 'out', 'note'] } },
   ];
   function listCfg(cfg) {
     var f = JSON.parse(JSON.stringify(LIST_DEF));
@@ -2640,7 +2693,7 @@ var CEC = (function () {
     var allOpd = list.length > 0 && list.every(function (e) { return e.opd; }), twoReg = !allOpd && list.some(function (e) { return e.opd; });
     cols = cols.map(function (c) {
       if (c.k === 'mr' && allOpd) return { k: c.k, h: 'OPD No.', w: c.w / sum, wt: c.w, m: c.m, a: c.a, f: function (e) { return e.mr; }, t: c.t, pdfOnly: c.pdfOnly };   // OPD register only
-      return { k: c.k, h: c.h, w: c.w / sum, wt: c.w, m: c.m, a: c.a, f: c.f, t: c.t, pdfOnly: c.pdfOnly };
+      return { k: c.k, h: c.h, w: c.w / sum, wt: c.w, m: c.m, a: c.a, f: c.f, t: c.t, pdfOnly: c.pdfOnly, tick: c.tick };
     });
     var groups = [], REG = { opd: 'OPD register', mr: 'MR register' };
     /* 17-11-2026: OPD Nos. and MR Nos. are never mixed in one list: the OPD register first, then the MR register (by category or as one list) */
@@ -2668,6 +2721,24 @@ var CEC = (function () {
     var title = listTitle(f);
     return { cols: cols, groups: groups, n: list.length, list: list, title: title, sub: from ? listSub(f, from, to || from, list.length) : '', portrait: !wide, day: false,
       file: 'CEC_' + title.replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '') + (from ? '_' + dmy(from) + (to && to !== from ? '_to_' + dmy(to) : '') : '') };
+  }
+  /* 18-11-2026: Today's list: the shift running now, from its start until now, to put with the paper MR register.
+     The MR register list (MR Nos.); on an OPD day also the OPD register list (OPD Nos.), as a separate list. */
+  function todayLists(shift, st, nowIso, who) {
+    var all = (shift.entries || []), opd = all.filter(function (e) { return e.opd; }), out = [];
+    var from = shift.openedAt ? hm(shift.openedAt) : times(st)[shift.shift], to = hm(nowIso);
+    [['opd', 'OPD register list', 'OPD'], ['mr', 'MR register list', 'MR']].forEach(function (r) {
+      if (r[0] === 'opd' && !opd.length) return;
+      var sp = buildList([shift], { cols: ['no', 'mr', 'name', 'agesex', 'bpck', 'ecgck', 'rbsck', 'outck'], group: 'none', reg: r[0], sort: 'time', page: 'portrait', title: r[1] }, who || {}, shift.censusDate);
+      sp.cols.forEach(function (c) { if (c.k === 'no') c.h = 'S.No.'; if (c.k === 'mr') { c.h = r[0] === 'opd' ? 'OPD No.' : 'MR No.'; c.f = function (e) { return e.mr || '-'; }; } });
+      sp.portrait = true;
+      sp.sub = shiftName(shift.shift) + ' shift, ' + weekday(shift.censusDate) + ' ' + dmy(shift.censusDate) + ' \u00b7 ' + from + ' to ' + to + ' hrs \u00b7 ' + sp.n + ' patient' + (sp.n === 1 ? '' : 's');
+      sp.file = 'CEC_' + r[2] + '_register_' + shiftName(shift.shift) + '_' + dmy(shift.censusDate) + '_' + to.replace(':', '');
+      sp.reg = r[0]; sp.label = r[1];
+      if (sp.cols.some(function (c) { return c.k === 'outck'; })) sp.note = 'Outcome: Other OPD = referred to other OPD; Cardiac F/U = planned for cardiac follow-up; Next shift = given to next shift; BD = brought dead; blank = still with the doctor.';
+      out.push(sp);
+    });
+    return out;
   }
   function listText(spec) {
     var byDate = spec.groups.length > 0 && /^[A-Z][a-z]+day, /.test(spec.groups[0].h), hasDate = spec.cols.some(function (c) { return c.k === 'date'; });
@@ -2699,16 +2770,18 @@ var CEC = (function () {
       else W = cols.map(function (c) { return c.m + (CW - ms) * (c.wt || 1) / ws; });
     } else W = cols.map(function (c) { return c.w * CW; });
     cols.forEach(function (c, i) { c._w = W[i]; xs.push(x); x += W[i]; });
-    function lay(vals, f) {
-      var lines = vals.map(function (v, i) { return P.wrap(v == null ? '' : String(v), f, size, cols[i]._w - 6).slice(0, 5); });
-      var n = Math.max.apply(null, lines.map(function (l) { return l.length; }));
-      return { lines: lines, h: n * (size + 2.5) + 7 };
+    function lay(vals, f, body) {
+      var ticks = [];                                     // 18-11-2026: a tick column draws a tick mark (the PDF fonts have no tick)
+      var lines = vals.map(function (v, i) { if (body && cols[i].tick) { ticks[i] = !!v; return []; } return P.wrap(v == null ? '' : String(v), f, size, cols[i]._w - 6).slice(0, 5); });
+      var n = Math.max(1, Math.max.apply(null, lines.map(function (l) { return l.length; })));
+      return { lines: lines, h: n * (size + 2.5) + 7, ticks: ticks };
     }
     function draw(l, f, fill) {
       d.rect(L, y, CW, l.h, fill, 0, 0.5);
       for (var i = 1; i < xs.length; i++) d.line(xs[i], y, xs[i], y + l.h, 0.5);
       l.lines.forEach(function (ls, i) {
         var c = cols[i], cw = c._w;
+        if (l.ticks[i]) { var cx = xs[i] + cw / 2, cy = y + 4 + size * 0.5; d.line(cx - 4, cy, cx - 1.2, cy + 3.2, 1.3); d.line(cx - 1.2, cy + 3.2, cx + 4.5, cy - 3.6, 1.3); }
         ls.forEach(function (t, j) {
           var by = y + 4 + size * 0.85 + j * (size + 2.5);
           if (c.a === 'c') d.text(xs[i] + cw / 2, by, t, f, size, 'center'); else d.text(xs[i] + 3, by, t, f, size);
@@ -2723,12 +2796,17 @@ var CEC = (function () {
       if (!g.plain) { y += 6; d.text(L, y + 8, g.h + ' (' + g.list.length + ')', 'HB', 10.5); y += 14; } else y += 4;
       draw(head, 'HB', 0.88);
       g.list.forEach(function (e, i) {
-        var l = lay(cols.map(function (c) { return UP(c.f(e, i)); }), 'H');
+        var l = lay(cols.map(function (c) { return UP(c.f(e, i)); }), 'H', true);
         if (y + l.h > BOTTOM) { d.addPage(); y = TOP; draw(head, 'HB', 0.88); }
         draw(l, 'H', null);
       });
       y += 8;
     });
+    if (o.note && o.groups.length) {                     // 18-11-2026: e.g. what the short outcomes mean (Today's list)
+      var nl = P.wrap(o.note, 'I', 8, CW);
+      if (y + nl.length * 10.5 + 6 > BOTTOM) { d.addPage(); y = TOP; }
+      nl.forEach(function (t) { y += 10.5; d.text(L, y, t, 'I', 8, 'left', 0.25); });
+    }
     var nP = d.pages.length;
     for (var i = 0; i < nP; i++) {
       d.usePage(i);
@@ -2850,13 +2928,13 @@ var CEC = (function () {
      the print desk rebuilds the same list from those cells (listPlainPdf). */
   function listPlain(o) {
     var cols = o.cols.filter(function (c) { return !c.csvOnly; });
-    return { title: o.title, sub: o.sub, portrait: !!o.portrait, empty: o.empty || '',
-      cols: cols.map(function (c) { return { h: c.h, a: c.a || '', m: c.m || 0, wt: c.wt || 0, w: c.w || 0 }; }),
+    return { title: o.title, sub: o.sub, portrait: !!o.portrait, empty: o.empty || '', note: o.note || '',
+      cols: cols.map(function (c) { var o = { h: c.h, a: c.a || '', m: c.m || 0, wt: c.wt || 0, w: c.w || 0 }; if (c.tick) o.tick = true; return o; }),
       groups: o.groups.map(function (g) { return { h: g.h || '', plain: !!g.plain, rows: g.list.map(function (e, i) { return cols.map(function (c) { var v = c.f(e, i); return v == null ? '' : String(v); }); }) }; }) };
   }
   function listPlainPdf(p, logo) {
-    var cols = (p.cols || []).map(function (c, k) { var o = { h: c.h, f: function (r) { return r[k]; } }; if (c.a) o.a = c.a; if (c.m) o.m = c.m; if (c.wt) o.wt = c.wt; if (c.w) o.w = c.w; return o; });
-    return listPdf({ title: p.title, sub: p.sub, portrait: p.portrait, empty: p.empty, cols: cols, groups: (p.groups || []).map(function (g) { return { h: g.h, plain: g.plain, list: g.rows || [] }; }) }, logo);
+    var cols = (p.cols || []).map(function (c, k) { var o = { h: c.h, f: function (r) { return r[k]; } }; if (c.a) o.a = c.a; if (c.m) o.m = c.m; if (c.wt) o.wt = c.wt; if (c.w) o.w = c.w; if (c.tick) o.tick = true; return o; });
+    return listPdf({ title: p.title, sub: p.sub, portrait: p.portrait, empty: p.empty, note: p.note || '', cols: cols, groups: (p.groups || []).map(function (g) { return { h: g.h, plain: g.plain, list: g.rows || [] }; }) }, logo);
   }
   /* ---------- Echocardiography report (14-11-2026 night): the CEC's report (Miss Erum / Dr. Maheen Alvi), made by ticking lines ----------
      Each line: k key, s part (st Structural interpretation, dp Doppler colour flow, nt Note, fin Final report only), g heading in the form,
@@ -3257,7 +3335,7 @@ var CEC = (function () {
     shiftModel: shiftModel, dayModel: dayModel, monthModel: monthModel, letterHtml: letterHtml, letterPdf: letterPdf, summaryText: summaryText, esc: h,
     EXAMS: EXAMS, deathCertPdf: deathCertPdf, deathCertSvg: deathCertSvg, svgOf: svgOf, listPlain: listPlain, listPlainPdf: listPlainPdf, opdSlipPdf: opdSlipPdf, slipOps: slipOps, slipPdf: slipPdf, slipPdfMany: slipPdfMany, slipSvg: slipSvg, slipSvgMany: slipSvgMany, slipSheets: slipSheets, isErSlip: isErSlip, slipVitals: slipVitals, SLIP_TOP: SLIP_TOP, STAFF_PROCS: STAFF_PROCS, listPdf: listPdf, listCsv: listCsv,
     LIST_CATS: LIST_CATS, listCatOf: listCatOf, certHtml: certHtml, setDemo: setDemo, DEMO_LINE: DEMO_LINE, weekday: weekday, MEDS: MEDS, DX_GROUPS: DX_GROUPS, DX_LIST: DX_LIST, DXKW: DXKW, FREQ_DX: FREQ_DX, canonDx: canonDx, canonList: canonList, dxMatch: dxMatch, dxKey: dxKey, LIST_KINDS: LIST_KINDS, listSpec: listSpec, LIST_COLS: LIST_COLS, LIST_COLSETS: LIST_COLSETS, LIST_PRESETS: LIST_PRESETS, LIST_DEF: LIST_DEF,
-    listCfg: listCfg, presetCfg: presetCfg, listColsFor: listColsFor, buildList: buildList, listText: listText, listTitle: listTitle, APPTS: APPTS, APPT_STATUS: APPT_STATUS, apptType: apptType,
+    listCfg: listCfg, presetCfg: presetCfg, listColsFor: listColsFor, buildList: buildList, todayLists: todayLists, listText: listText, listTitle: listTitle, APPTS: APPTS, APPT_STATUS: APPT_STATUS, apptType: apptType,
     ECHO_LIB: ECHO_LIB, ECHO_BY: ECHO_BY, echoClash: echoClash, echoReplaces: echoReplaces, echoGroups: echoGroups, echoProv: echoProv, ECHO_IFL_AF: ECHO_IFL_AF, ECHO_MEAS: ECHO_MEAS, ECHO_DD: ECHO_DD, echoNew: echoNew, echoPickList: echoPickList, echoFill: echoFill, echoEA: echoEA, echoPh: echoPh, echoAutoFin: echoAutoFin, echoLines: echoLines,
     echoPdf: echoPdf, echoFileName: echoFileName,
     apptSpec: apptSpec, apptSlipPdf: apptSlipPdf, apptMessage: apptMessage, parseYmd: parseYmd, yearModel: yearModel, yearSummary: yearSummary, MONTHS: MONTHS, sexCountOf: sexCount
@@ -3349,13 +3427,20 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   var IDLE_MS = 4 * 3600000;
   /* 14-11-2026: the version of this page (Index.html / phone app) and of the server (Code.gs). Both come from the same build, so they must be the same. */
-  var APP_VER = '17-11-2026 02:48';
+  var APP_VER = 'CEC V2.2 (18-11-2026 03:04)';
   function verSame() { return S.serverVer === APP_VER; }
-  function verKey(v) { v = String(v || ''); return v.slice(6, 10) + v.slice(3, 5) + v.slice(0, 2) + v.slice(11); }   // DD-MM-YYYY HH:MM in time order
-  function verText() { return 'Version ' + APP_VER + (verSame() ? '' : ' (server: ' + (S.serverVer || 'older') + ')'); }
+  function verKey(v) { var m = /(\d\d)-(\d\d)-(\d{4}) (\d\d:\d\d)/.exec(String(v || '')); return m ? m[3] + m[2] + m[1] + m[4] : ''; }   // the build time, in time order
+  /* 18-11-2026 (night): shown as "CEC V2.1" (versions before V2.1 were named by their date) */
+  function verName(v) { var m = /CEC V[\d.]+/.exec(String(v || '')); return m ? m[0] : v ? 'the version of ' + v : 'an older version'; }
+  function verText() {
+    if (verSame()) return 'Version: ' + verName(APP_VER);
+    var a = verName(APP_VER), b = S.serverVer ? verName(S.serverVer) : 'older';
+    return 'Version: ' + (a === b ? APP_VER + ' (server: ' + S.serverVer + ')' : a + ' (server: ' + b + ')');
+  }
   function verWarn() {
     if (verSame() || S.serverVer == null) return '';
-    return '<section class="card verwarn"><b>Update not complete.</b> This page is version ' + h(APP_VER) + ' but the server (Code.gs) is ' + h(S.serverVer ? 'version ' + S.serverVer : 'older') + '. ' +
+    var a = verName(APP_VER), b = S.serverVer ? verName(S.serverVer) : 'older'; if (a === b) { a = APP_VER; b = S.serverVer; }
+    return '<section class="card verwarn"><b>Update not complete.</b> This page is ' + h(a) + ' but the server (Code.gs) is ' + h(b) + '. ' +
       (S.serverVer && verKey(S.serverVer) > verKey(APP_VER) ? 'Close the app or page and open it again.' : 'In Apps Script replace Code.gs, then Deploy &gt; Manage deployments &gt; Edit &gt; Version: New version &gt; Deploy.') + '</section>';
   }
   var IDLE_MSG = 'You were signed out after 4 hours without activity. Please sign in again.';
@@ -3598,6 +3683,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
     return modal('File ready', '<p>' + h(filename) + '</p><a class="btn pri block" href="' + url + '" target="_blank" rel="noopener">Open (to view or print)</a>' +
       '<a class="btn block" href="' + url + '" download="' + h(filename) + '">Download</a><p class="muted small" style="margin-top:8px">If Download does nothing on your phone, use Open and save it from there.</p>', btns)
       .then(function (v) { if (v === 'drive') return saveToDrive(filename, bytes, mime); });
+  }
+  /* 18-11-2026: several files made with one tap (Today's list on an OPD day): one Download (and Open) for each */
+  function offerFiles(files) {
+    var urls = files.map(function (f) { var u = URL.createObjectURL(new Blob([f.bytes], { type: f.mime || 'application/pdf' })); setTimeout(function () { URL.revokeObjectURL(u); }, 10 * 60000); return u; });
+    return modal(files.length === 1 ? 'File ready' : files.length + ' files ready', files.map(function (f, i) {
+      return '<div class="fready"><p><b>' + h(f.label || f.name) + '</b><br><span class="muted small">' + h(f.name) + '</span></p>' +
+        '<div class="sbtns"><a class="btn pri" href="' + urls[i] + '" download="' + h(f.name) + '">Download</a><a class="btn" href="' + urls[i] + '" target="_blank" rel="noopener">Open (to view or print)</a></div></div>';
+    }).join('') + '<p class="muted small" style="margin-top:8px">If Download does nothing on your phone, use Open and save it from there.</p>', [{ label: 'Close', value: false }]);
   }
   function fromB64(s) { var bin = atob(s), a = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a; }
 
@@ -4408,10 +4501,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
         '<div class="fsec">Doctor\u2019s assessment</div>' + (e.signed ? '<div class="signed">&#10003; Signed off ' + h(fmtTime(e.signedAt)) + (isAdmin() && e.signedBy ? ' by ' + h(e.signedBy) : '') + '</div>' : '') +
         '<label class="lb" for="fDx">Working diagnosis <span class="muted">(add one or more)</span></label><div id="dxBox"></div>' +
         '<div id="outWrap"><label class="lb">Disposal / outcome</label><div class="seg outs" id="fOut">' +
-        CEC.OUTS.filter(function (o) { return o.c !== 'BD'; }).map(function (o) { return '<button type="button" data-act="f-out" data-v="' + o.c + '">' + h(o.l) + '</button>'; }).join('') + '</div>' +
-        '<div id="obsWrap" class="hidden"><label class="lb" for="fObs">Hours kept under observation</label><input class="in" id="fObs" inputmode="numeric" maxlength="2" value="' + h(e.obsH || '4') + '"></div>' +
-        '<div id="rinWrap" class="hidden"><label class="lb">Referred to <span class="muted">(optional)</span></label><div class="seg" id="fRin">' +
-        ['Ward', 'OPD', 'ER'].map(function (x) { return '<button type="button" data-act="f-rin" data-v="' + x + '">SGHL ' + x + '</button>'; }).join('') + '</div></div></div>' +
+        /* 18-11-2026: the outcomes offered; an outcome no longer offered still shows on a patient saved with it */
+        CEC.OUTS.filter(function (o) { return o.c !== 'BD' && (!o.old || o.c === e.out); }).map(function (o) { return '<button type="button" data-act="f-out" data-v="' + o.c + '">' + h(o.l) + '</button>'; }).join('') + '</div></div>' +
         '<label class="lb" for="fNote">Comments <span class="muted">(optional)</span></label><textarea class="in" id="fNote" rows="2" placeholder="e.g. referred to NICVD, BP 190/110 on arrival">' + h(e.note || '') + '</textarea>' +
         '<p class="muted small" style="margin:6px 0 0">ER procedures and ER medications are added from the home page button <b>ER procedures &amp; medications</b> (patients of the last 24 hours).</p>'
         : regOnly ? '<p class="muted small fnote" id="fRegNote">After saving, take the vitals on the <b>Vitals</b> page (or tap Save &amp; add vitals). The OPD / ER slip is then ready on the <b>OPD / ER slip</b> page.</p>'
@@ -4608,50 +4699,103 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   var VIT_LIST_MS = 30 * 60000;                       // 12-11-2026: on the Vitals page for 30 minutes after registration
   var Q_KINDS = {
-    vit: { title: 'Vitals', sub: 'Tap a patient to enter the vitals. After Save the patient leaves this list at once. Patients stay here for 30 minutes after registration (Emergency / Resus until the vitals are saved); later, vitals can be added from the patient record. A slip not printed yet carries the vitals (a printed slip is not printed again). Vitals done: every patient of this shift whose vitals are saved, newest first, to read them again.',
+    vit: { title: 'Vitals', sub: 'Tap a patient to enter the vitals. After Save the patient leaves this list at once. Patients stay here for 30 minutes after registration (Emergency / Resus until the vitals are saved); later, vitals can be added from the patient record. For an OPD patient: BP only (no slip) or Print slip (asked in Urdu if the patient wants the doctor). BP check only: the patients without a slip (Print slip there if they change their mind). Printed slips: patients whose vitals are saved with a slip, newest first.',
       lists: [['Pending vitals', function (e) { return !e.signed && e.cat !== 'BD' && !e.man && !hasVitals(e) && (e.cat === 'EMR' || Date.now() - (Date.parse(e.t) || 0) < VIT_LIST_MS); }],
         ['Pending RBS (advised by the doctor)', function (e) { return hasVitals(e) && advLeft(e).indexOf('RBS') >= 0; }]], empty: 'No patient is waiting for vitals.' },
     slipq: { title: 'OPD / ER slips', sub: 'An OPD or Emergency patient\u2019s slip is ready as soon as the patient is registered. Tick the slips you want and tap Print selected, or tap Print all. ' +
       'Once printed, a slip is not printed again when vitals or an ECG are added later. A print that did not come out (paper jam, two sheets pulled, print cancelled) can be printed again below, under Printed this shift.',
       lists: [['Ready to print', slipWaiting]],
       empty: 'No slip is waiting. Slips appear here as soon as patients are registered.' },
-    ecgq: { title: 'ECG', sub: 'Every patient registered in the last hour and every patient the doctor advised ECG. Tick when the ECG is done. Search to find any other patient of this shift.',
-      empty: 'No patient was registered in the last hour.' }
+    ecgq: { title: 'ECG', sub: 'Every patient of this shift and the two before it (about 24 hours). Tap a shift to see its patients. Tick when the ECG is done; ECG can be ticked for these three shifts.',
+      empty: 'No patient in this shift yet.' },
+    rbsq: { title: 'RBS', sub: 'Every patient of this shift and the two before it (about 24 hours). Tap a shift to see its patients. Tick when the RBS is checked; a patient whose RBS reading was entered is ticked already (the reading is changed in Vitals).',
+      empty: 'No patient in this shift yet.' }
   };
   var ECG_MS = 60 * 60000;
   function ecgDone(e) { return (e.procs || []).indexOf('ECG') >= 0; }
   function ecgAdvised(e) { return (e.adv || []).indexOf('ECG') >= 0; }
-  function ecgGroups() {
-    var now = Date.now();
-    var adv = qItems(function (e) { return ecgAdvised(e) && (!ecgDone(e) || recent(e.advDone)); });
-    var ids = adv.map(function (x) { return x.e.id; });
-    /* ECG only: the whole shift (also after it closed by itself as a regular check-up), so the ECG can still be ticked; not done first, newest first */
-    var only = qItems(function (e) { return e.only === 'ECG' && ids.indexOf(e.id) < 0; }).filter(function (x) { return x.src === 'work' || now - (Date.parse(x.e.t) || 0) < ECG_MS; })
-      .sort(function (a, b) { return (ecgDone(a.e) ? 1 : 0) - (ecgDone(b.e) ? 1 : 0) || (a.e.t < b.e.t ? 1 : -1); });
-    only.forEach(function (x) { ids.push(x.e.id); });
-    var lately = qItems(function (e) { var t = Date.parse(e.t || ''); return ids.indexOf(e.id) < 0 && e.only !== 'BP' && !e.petty && t > 0 && now - t < ECG_MS; }).reverse();   // newest first (BP check only: no ECG)
-    return [{ h: 'ECG advised by the doctor', items: adv }, { h: 'ECG only (this shift)', items: only }, { h: 'Registered in the last hour', items: lately }];
+  /* 18-11-2026: the RBS page works like the ECG page (same three shift tiles and the same ticks); an RBS reading counts as done */
+  function rbsDone(e) { return !!e.rbs || (e.procs || []).indexOf('BSR') >= 0; }
+  function rbsAdvised(e) { return (e.adv || []).indexOf('RBS') >= 0; }
+  var CHK = { ecg: { done: ecgDone, adv: ecgAdvised, code: 'ECG', n: 'ECG', fn: 'apiEcgDone', view: 'ecgq', res: 'ecgRes', q: 'ecgQ', tick: 'q-tick' },
+    rbs: { done: rbsDone, adv: rbsAdvised, code: 'BSR', n: 'RBS', fn: 'apiRbsDone', view: 'rbsq', res: 'rbsRes', q: 'rbsQ', tick: 'q-rtick' } };
+  function chkOf(k) { return CHK[k] || CHK.ecg; }
+  /* 18-11-2026 (night): the ECG page has a tile for the shift running now and for each of the two before it (about 24 hours).
+     The shift running now comes from this page's own copy (always the latest); the two before from the census, every minute. */
+  function ecgTiles() {
+    var cur = S.open, out = [], old = (S.ecgOld && S.ecgOld.list) || [];
+    if (cur && S.work && S.work.id === cur.id) out.push({ sh: S.work, src: 'work' });
+    old.forEach(function (sh, i) {
+      if (out.some(function (x) { return x.sh.id === sh.id; })) return;
+      if (S.prevShift && S.prevShift.id === sh.id && (S.prevShift.entries || []).length >= (sh.entries || []).length) return out.push({ sh: S.prevShift, src: 'prev' });
+      out.push({ sh: sh, src: 'e' + i });
+    });
+    if (!out.length && S.work) out.push({ sh: S.work, src: 'work' });
+    return out.slice(0, 3);
   }
-  function ecgRow(x) {
-    var e = x.e, done = ecgDone(e), busy = S.ecgBusy && S.ecgBusy[e.id];
+  function ecgLoad(force) {
+    var E = S.ecgOld || (S.ecgOld = { list: null, at: 0 });
+    if (E.busy || isOff() || (!force && Date.now() - E.at < 60000)) return;
+    E.busy = true;
+    api('apiEcgShifts').then(function (l) {
+      E.busy = false; E.at = Date.now(); E.err = '';
+      (l || []).forEach(function (sh) {                 // a tick still being sent stays as ticked
+        sh.entries.forEach(function (e, k) { var o = S.opt[e.id]; if (o && o.e) sh.entries[k] = Object.assign({}, e, { procs: o.e.procs, advDone: o.e.advDone }); });
+      });
+      E.list = l || [];
+      ecgPaint('ecg'); ecgPaint('rbs');
+    }, function (x) { E.busy = false; E.at = Date.now(); E.err = errText(x); ecgPaint('ecg'); ecgPaint('rbs'); });
+  }
+  function ecgItems(t, test) {
+    var out = [];
+    (t.sh.entries || []).forEach(function (e) { if (!/^(q-|tmp)/.test(e.id) && (!test || test(e))) out.push({ e: e, sh: t.sh, src: t.src }); });
+    return out;
+  }
+  function ecgGroups(t, k) {
+    var C = chkOf(k), all = ecgItems(t), byNew = function (a, b) { return (C.done(a.e) ? 1 : 0) - (C.done(b.e) ? 1 : 0) || (a.e.t < b.e.t ? 1 : -1); };   // not done first, newest first
+    var adv = all.filter(function (x) { return C.adv(x.e) && (!C.done(x.e) || recent(x.e.advDone)); }).sort(function (a, b) { return a.e.t < b.e.t ? -1 : 1; });
+    var ids = {}; adv.forEach(function (x) { ids[x.e.id] = 1; });
+    var only = C.code === 'ECG' ? all.filter(function (x) { return !ids[x.e.id] && x.e.only === 'ECG'; }).sort(byNew) : [];
+    only.forEach(function (x) { ids[x.e.id] = 1; });
+    var rest = all.filter(function (x) { return !ids[x.e.id]; }).sort(byNew);   // every registered patient (18-11-2026 night)
+    return [{ h: C.n + ' advised by the doctor', items: adv }, { h: 'ECG only', items: only }, { h: 'All patients of this shift', items: rest }];
+  }
+  function ecgTileHtml(ts, sel, k) {
+    var C = chkOf(k);
+    return '<div class="etiles">' + ts.map(function (t, i) {
+      var all = ecgItems(t), left = all.filter(function (x) { return !C.done(x.e); }).length, p = String(t.sh.censusDate || '').split('-');
+      return '<button type="button" class="etile' + (t.sh.id === sel ? ' on' : '') + '" data-act="ecg-tile" data-k="' + (k || 'ecg') + '" data-v="' + h(t.sh.id) + '" aria-pressed="' + (t.sh.id === sel) + '">' +
+        '<b>' + h(CEC.shiftName(t.sh.shift)) + '</b><span class="ed">' + h(p[2] + '-' + p[1]) + (i === 0 && S.open && t.sh.id === S.open.id ? ' &middot; now' : '') + '</span>' +
+        '<span class="en">' + all.length + ' patient' + (all.length === 1 ? '' : 's') + '</span><span class="el' + (left ? '' : all.length ? ' none' : ' zero') + '">' + (left ? left + ' without ' + C.n : all.length ? 'all ' + C.n + ' done' : 'none yet') + '</span></button>';
+    }).join('') + '</div>';
+  }
+  function ecgRow(x, k) {
+    var C = chkOf(typeof k === 'string' ? k : 'ecg'), e = x.e, done = C.done(e), fixed = C.code === 'BSR' && !!e.rbs;   // an RBS reading: ticked, changed in Vitals only
     return '<div class="prow qrow"><div class="pr-l"><div class="pr-t">' + CEC.hm(e.t) + '</div></div><div class="pr-m"><div class="pr-name">' + h(e.name || '(no name)') +
       ' <span class="muted">&middot; ' + (e.opd ? 'OPD No. ' : 'MR ') + h(e.mr || '-') + '</span></div><div class="pr-sub">' + (e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '') + (e.age !== '' && e.age != null ? ', ' + h(e.age) + ' y' : '') +
-      ' &middot; ' + h(catLabel(e)) + (e.only && e.signed ? ' (closed: regular check-up)' : '') + (x.src === 'prev' ? ' &middot; ' + h(CEC.shiftName(x.sh.shift)) + ' shift' : '') + '</div>' +
-      (ecgAdvised(e) && !done ? '<div class="pr-proc"><b class="advt">ECG advised</b></div>' : '') + '</div>' +
-      '<button class="tick' + (done ? ' on' : '') + '" data-act="q-tick" data-src="' + x.src + '" data-id="' + h(e.id) + '" aria-pressed="' + done + '">' +
-      '<span class="box" aria-hidden="true">' + (done ? '&#10003;' : '') + '</span>' + (done ? 'ECG done' : 'ECG done?') + '</button></div>';
+      ' &middot; OPD' + (x.showSh ? ' &middot; ' + h(CEC.shiftName(x.sh.shift)) + ' shift' : '') + '</div>' +
+      (C.adv(e) && !done ? '<div class="pr-proc"><b class="advt">' + C.n + ' advised</b></div>' : '') + '</div>' +
+      '<button class="tick' + (done ? ' on' : '') + (fixed ? ' fixed' : '') + '" data-act="' + C.tick + '" data-src="' + x.src + '" data-id="' + h(e.id) + '" aria-pressed="' + done + '"' + (fixed ? ' aria-disabled="true"' : '') + '>' +
+      '<span class="box" aria-hidden="true">' + (done ? '&#10003;' : '') + '</span>' + (fixed ? 'RBS ' + h(e.rbs) : done ? C.n + ' done' : C.n + ' done?') + '</button></div>';
   }
-  function ecgSearchHtml() {
-    var q = (S.ecgQ || '').trim().toLowerCase();
+  function ecgSearchHtml(k) {
+    k = k === 'rbs' ? 'rbs' : 'ecg';
+    var C = chkOf(k), q = (S[C.q] || '').trim().toLowerCase(), ts = ecgTiles(), row = function (x) { return ecgRow(x, k); }, sk = k + 'Tile';
+    ecgLoad(false);                                       // the two shifts before: fetched again every minute while this page is open
+    var sel = ts.some(function (t) { return t.sh.id === S[sk]; }) ? S[sk] : ts.length ? ts[0].sh.id : '';
+    var wait = !S.ecgOld || !S.ecgOld.list ? '<p class="muted small" style="margin:0 0 6px">' + (S.ecgOld && S.ecgOld.err ? 'The two shifts before could not be fetched (' + h(S.ecgOld.err) + '). Tap Refresh.' : '<span class="spin"></span>Fetching the two shifts before&hellip;') + '</p>' : '';
     if (!q) {
-      var gs = ecgGroups(), any = gs.some(function (g) { return g.items.length; });
-      if (!any) return '<div class="plist"><div class="empty">' + h(Q_KINDS.ecgq.empty) + '</div></div>';
-      return gs.filter(function (g) { return g.items.length; }).map(function (g) {
-        return '<div class="gh2">' + h(g.h) + ' (' + g.items.length + ')</div><div class="plist">' + g.items.map(ecgRow).join('') + '</div>';
-      }).join('');
+      var t = ts.filter(function (x) { return x.sh.id === sel; })[0];
+      if (!t) return ecgTileHtml(ts, sel, k) + wait + '<div class="plist"><div class="empty">' + h(Q_KINDS[C.view].empty) + '</div></div>';
+      var gs = ecgGroups(t, k), any = gs.some(function (g) { return g.items.length; });
+      return ecgTileHtml(ts, sel, k) + wait + (!any ? '<div class="plist"><div class="empty">' + h(Q_KINDS[C.view].empty) + '</div></div>' : gs.filter(function (g) { return g.items.length; }).map(function (g) {
+        return '<div class="gh2">' + h(g.h) + ' (' + g.items.length + ')</div><div class="plist">' + g.items.map(row).join('') + '</div>';
+      }).join(''));
     }
-    var hits = qItems(function (e) { return (e.name + ' ' + e.mr + ' ' + (e.tok || '')).toLowerCase().indexOf(q) >= 0; }).reverse().slice(0, 40);
-    return '<div class="gh2">Search: ' + hits.length + ' patient' + (hits.length === 1 ? '' : 's') + '</div><div class="plist">' + (hits.length ? hits.map(ecgRow).join('') : '<div class="empty">No patient of this shift matches.</div>') + '</div>';
+    var hits = [];
+    ts.forEach(function (t) { ecgItems(t, function (e) { return (e.name + ' ' + e.mr + ' ' + (e.tok || '')).toLowerCase().indexOf(q) >= 0; }).forEach(function (x) { x.showSh = true; hits.push(x); }); });
+    hits.sort(function (a, b) { return a.e.t < b.e.t ? 1 : -1; }); hits = hits.slice(0, 40);
+    return wait + '<div class="gh2">Search (all three shifts): ' + hits.length + ' patient' + (hits.length === 1 ? '' : 's') + '</div><div class="plist">' + (hits.length ? hits.map(row).join('') : '<div class="empty">No patient of these three shifts matches.</div>') + '</div>';
   }
   function qRow(x, kind, done) {
     var e = x.e, vt = vitalsText(e), left = advLeft(e);
@@ -4672,15 +4816,17 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function queueHtml(kind) {
     var K = Q_KINDS[kind];
     if (!S.work) return '<section class="card center muted"><span class="spin"></span>Loading the shift&hellip;</section>';
-    var head = '<div class="narrow"><div class="listhead"><h3>' + h(K.title) + ' &middot; ' + h(CEC.shiftName(S.work.shift)) + ' shift</h3><button class="btn sm" data-act="q-refresh" aria-label="Refresh list">&#8635; ' +
+    var head = '<div class="narrow"><div class="listhead"><h3>' + h(K.title) + (kind === 'ecgq' || kind === 'rbsq' ? '' : ' &middot; ' + h(CEC.shiftName(S.work.shift)) + ' shift') + '</h3><button class="btn sm" data-act="q-refresh" aria-label="Refresh list">&#8635; ' +
       (S.synced ? CEC.hm(S.synced.toISOString()) : 'Refresh') + '</button></div><p class="muted small" style="margin:0 0 10px">' + h(K.sub) + '</p>' + (S.saving ? '<div class="qsave"><span class="spin"></span>Saving ' + S.saving + ' patient' + (S.saving === 1 ? '' : 's') + ' in the background&hellip;</div>' : '');
     if (kind === 'ecgq') return head + '<input class="in" id="ecgQ" type="search" placeholder="Search name, MR No. or slip number" value="' + h(S.ecgQ || '') + '" autocomplete="off" enterkeyhint="search" style="margin-bottom:6px"><div id="ecgRes">' + ecgSearchHtml() + '</div></div>';
+    if (kind === 'rbsq') return head + '<input class="in" id="rbsQ" type="search" placeholder="Search name, MR No. or slip number" value="' + h(S.rbsQ || '') + '" autocomplete="off" enterkeyhint="search" style="margin-bottom:6px"><div id="rbsRes">' + ecgSearchHtml('rbs') + '</div></div>';
     var groups = K.lists.map(function (l, i) { return { h: l[0], items: qItems(l[1]), done: i > 0 }; });
     if (kind === 'vit') {                                      // 14-11-2026 (night): two parts, Pending vitals and Vitals done
-      var vdone = vitDoneItems(''), npend = groups.reduce(function (n, g) { return n + g.items.length; }, 0), vtab = S.vitTab === 'done' ? 'done' : 'pend';
-      head += '<div class="seg vtabs">' + [['pend', 'Pending vitals', npend], ['done', 'Vitals done', vdone.length]].map(function (t) {
+      /* 18-11-2026: three parts: Pending (vitals not taken), BP check only (no slip), Printed slips (vitals taken, slip given) */
+      var vdone = vitDoneItems('', 'done'), vbp = vitDoneItems('', 'bp'), npend = groups.reduce(function (n, g) { return n + g.items.length; }, 0), vtab = S.vitTab === 'done' || S.vitTab === 'bp' ? S.vitTab : 'pend';
+      head += '<div class="seg vtabs">' + [['pend', 'Pending', npend], ['bp', 'BP check only', vbp.length], ['done', 'Printed slips', vdone.length]].map(function (t) {
         return '<button type="button" data-act="vit-tab" data-v="' + t[0] + '" class="' + (vtab === t[0] ? 'on' : '') + '" aria-pressed="' + (vtab === t[0]) + '">' + t[1] + ' <span class="cnt">' + t[2] + '</span></button>'; }).join('') + '</div>';
-      if (vtab === 'done') return head + '<input class="in" id="vitQ" type="search" placeholder="Search name, MR No. or slip number" value="' + h(S.vitQ || '') + '" autocomplete="off" enterkeyhint="search" style="margin-bottom:6px">' +
+      if (vtab !== 'pend') return head + '<input class="in" id="vitQ" type="search" placeholder="Search name, MR No. or slip number" value="' + h(S.vitQ || '') + '" autocomplete="off" enterkeyhint="search" style="margin-bottom:6px">' +
         '<div id="vitRes">' + vitDoneHtml() + '</div></div>';
     }
     var any = groups.some(function (g) { return g.items.length; });
@@ -4706,13 +4852,22 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   /* Vitals done: every patient of this shift (and the last one, while it shows) whose vitals are saved, newest first, the vitals in large
      letters; tap to see or correct them. For the patient whose slip printed before the vitals were taken. */
-  function vitDoneItems(q) {
+  function bpOnlyE(e) { return e.only === 'BP' && !e.tok; }
+  function vitDoneItems(q, tab) {
     q = (q || '').trim().toLowerCase();
-    return qItems(function (e) { return hasVitals(e) && e.cat !== 'BD' && (!q || ((e.name || '') + ' ' + (e.mr || '') + ' ' + (e.tok || '')).toLowerCase().indexOf(q) >= 0); }).reverse();
+    return qItems(function (e) { return hasVitals(e) && e.cat !== 'BD' && (tab === 'bp' ? bpOnlyE(e) : !bpOnlyE(e)) && (!q || ((e.name || '') + ' ' + (e.mr || '') + ' ' + (e.tok || '')).toLowerCase().indexOf(q) >= 0); }).reverse();
   }
   function vitDoneHtml() {
-    var q = (S.vitQ || '').trim(), list = vitDoneItems(q), shown = list.slice(0, 150);
-    if (!list.length) return '<div class="plist"><div class="empty">' + (q ? 'No patient with vitals matches.' : 'No vitals saved yet in this shift.') + '</div></div>';
+    var q = (S.vitQ || '').trim(), tab = S.vitTab === 'bp' ? 'bp' : 'done', list = vitDoneItems(q, tab), shown = list.slice(0, 150);
+    if (!list.length) return '<div class="plist"><div class="empty">' + (q ? 'No patient matches.' : tab === 'bp' ? 'No BP check only patient in this shift.' : 'No vitals saved yet in this shift.') + '</div></div>';
+    if (tab === 'bp') return '<div class="gh2">' + (q ? 'Search: ' : 'Newest first: ') + list.length + ' patient' + (list.length === 1 ? '' : 's') + ' &middot; no slip</div><div class="plist">' + shown.map(function (x) {
+      var e = x.e, busy = S.bpBusy && S.bpBusy[e.id];
+      return '<div class="prow qrow vdone"><div class="pr-l"><div class="pr-t">' + CEC.hm(e.t) + '</div></div>' +
+        '<button class="pr-m lnkrow" data-act="q-open" data-v="vit" data-src="' + x.src + '" data-id="' + h(e.id) + '"><div class="pr-name">' + h(e.name || '(no name)') + ' <span class="muted">&middot; ' + mrTagH(e) + '</span></div>' +
+        '<div class="pr-sub">' + (e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '') + (e.age !== '' && e.age != null ? ', ' + h(e.age) + ' y' : '') + (x.src === 'prev' ? ' &middot; ' + h(CEC.shiftName(x.sh.shift)) + ' shift' : '') + '</div>' +
+        '<div class="vbig">' + h(vitalsText(e)) + '</div></button>' +
+        '<div class="qbtns"><button class="btn pri" data-act="vit-bpslip" data-src="' + x.src + '" data-id="' + h(e.id) + '"' + (busy ? ' disabled' : '') + '>' + (busy ? '<span class="spin"></span>' : ICON.print + ' ') + 'Print slip</button></div></div>';
+    }).join('') + '</div>' + (list.length > shown.length ? '<p class="muted small">The newest 150 are shown. Search to find an older one.</p>' : '');
     return '<div class="gh2">' + (q ? 'Search: ' : 'Newest first: ') + list.length + ' patient' + (list.length === 1 ? '' : 's') + '</div><div class="plist">' + shown.map(function (x) {
       var e = x.e;
       return '<button class="prow vdone" data-act="q-open" data-v="vit" data-src="' + x.src + '" data-id="' + h(e.id) + '"><div class="pr-l"><div class="pr-t">' + CEC.hm(e.t) + '</div></div>' +
@@ -4724,29 +4879,34 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function openQueue(kind) {
     if (isOff()) return toast('This page needs internet.');
-    if (kind === 'ecgq') S.ecgQ = '';
+    if (kind === 'ecgq') { S.ecgQ = ''; S.ecgTile = S.open ? S.open.id : ''; ecgLoad(true); }   // your own shift opens first
+    if (kind === 'rbsq') { S.rbsQ = ''; S.rbsTile = S.open ? S.open.id : ''; ecgLoad(true); }
     if (kind === 'vit') { S.vitTab = 'pend'; S.vitQ = ''; }
     setView(kind); refresh(true);
   }
   /* ECG page: tick or untick at once; it is saved in the background. */
-  function tickEcg(id, src) {
-    var sh = src === 'prev' ? S.prevShift : S.work, e = sh && sh.entries.filter(function (x) { return x.id === id; })[0];
+  function tickEcg(id, src, k) {
+    var C = chkOf(k), m = /^e(\d)$/.exec(src || ''), sh = m ? ((S.ecgOld && S.ecgOld.list) || [])[+m[1]] : src === 'prev' ? S.prevShift : S.work, e = sh && sh.entries.filter(function (x) { return x.id === id; })[0];
     if (!e) return;
     if (/^(q-|tmp)/.test(e.id)) return toast('Wait until this patient is saved.');
+    if (C.code === 'BSR' && e.rbs) return toast('The RBS reading (' + e.rbs + ') is saved for ' + e.name + '. Change it in Vitals.');
     if (S.ecgBusy && S.ecgBusy[id]) return;                 // still sending the last tap
-    var want = !ecgDone(e), was = (e.procs || []).slice(), wasDone = e.advDone;
-    e.procs = want ? was.concat(['ECG']) : was.filter(function (p) { return p !== 'ECG'; });
-    if (want && ecgAdvised(e) && !advLeft(e).length) e.advDone = new Date().toISOString();
+    var want = !C.done(e), was = (e.procs || []).slice(), wasDone = e.advDone;
+    e.procs = want ? was.concat([C.code]) : was.filter(function (p) { return p !== C.code; });
+    if (want && C.adv(e) && !advLeft(e).length) e.advDone = new Date().toISOString();
     S.ecgBusy = S.ecgBusy || {}; S.ecgBusy[id] = 1; S.pending++; S.opt[id] = { sh: sh.id, e: e };
-    ecgPaint();
-    apiRetry('apiEcgDone', sh.id, id, want).then(function (saved) {
-      S.pending--; delete S.ecgBusy[id]; delete S.opt[id]; putEntry(sh, saved); ecgPaint();
+    ecgPaint(k);
+    apiRetry(C.fn, sh.id, id, want).then(function (saved) {
+      S.pending--; delete S.ecgBusy[id]; delete S.opt[id];
+      if (m) { var k = sh.entries.indexOf(e); if (k >= 0) sh.entries[k] = Object.assign({}, e, { procs: saved.procs || e.procs, advDone: saved.advDone || '', updatedAt: saved.updatedAt || e.updatedAt }); }   // the light copy of an earlier shift
+      else putEntry(sh, saved);
+      ecgPaint(k);
     }, function (x) {
-      S.pending--; delete S.ecgBusy[id]; delete S.opt[id]; e.procs = was; e.advDone = wasDone; ecgPaint();
-      toast('ECG not saved for ' + e.name + ': ' + errText(x) + '. Tick it again.');
+      S.pending--; delete S.ecgBusy[id]; delete S.opt[id]; e.procs = was; e.advDone = wasDone; ecgPaint(k);
+      toast(C.n + ' not saved for ' + e.name + ': ' + errText(x) + '. Tick it again.');
     });
   }
-  function ecgPaint() { if (S.view !== 'ecgq') return; var r = $('ecgRes'); if (r) r.innerHTML = ecgSearchHtml(); else render(); }
+  function ecgPaint(k) { var C = chkOf(k); if (S.view !== C.view) return; var r = $(C.res); if (r) r.innerHTML = ecgSearchHtml(k); else render(); }
   /* ---------- ER procedures and ER medications given (doctors and nursing staff; also after the doctor's sign-off) ---------- */
   /* One page for both (11-11-2026): ER procedures and ER medications given are added to a patient in one sheet and saved together. */
   var ER_KINDS = { erx: { title: 'ER procedures & medications', what: 'procedures and medications' } };
@@ -4889,34 +5049,55 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (r && (anyOverlay() || (a && a.id === 'erQ'))) r.innerHTML = erListHtml(); else render();
   }
   function openQuick(e, kind, src) {
-    var sug = e.only ? '' : e.tok ? e.tok.split(' ')[0] : e.cat === 'EMR' ? 'ER' : e.cat === 'BD' || e.petty || e.man ? '' : 'OPD';   // 14-11-2026: ETT / Echo get an OPD slip
+    var bpo = e.only === 'BP' && !e.tok;                // 18-11-2026: BP check only (no slip): Print slip still possible
+    var sug = bpo ? 'OPD' : e.only ? '' : e.tok ? e.tok.split(' ')[0] : e.cat === 'EMR' ? 'ER' : e.cat === 'BD' || e.petty || e.man ? '' : 'OPD';   // 14-11-2026: ETT / Echo get an OPD slip
     S.qe = { id: e.id, kind: 'vitals', src: src || 'work', slip: sug };
     var el = $('sheet'), rbsOnly = hasVitals(e) && advLeft(e).indexOf('RBS') >= 0;
     el.innerHTML = '<div class="sh-head"><button data-act="qe-close">Cancel</button><h3>Vitals</h3><span>' + (e.tok ? h(e.tok) : '') + '</span></div><div class="sh-body"><form id="qf" novalidate autocomplete="off">' +
       '<div class="kv" style="margin-top:12px"><b>' + h(e.name) + '</b> &middot; ' + mrTagH(e) + '<div class="muted small">' + h(catLabel(e)) + ' &middot; ' +
       (e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '') + (e.age !== '' && e.age != null ? ', ' + h(e.age) + ' y' : '') + ' &middot; registered ' + CEC.hm(e.t) + '</div>' +
       ((e.adv || []).length ? '<div class="small" style="margin-top:4px"><b class="advt">Doctor advised: ' + h(e.adv.join(' + ')) + '</b></div>' : '') + '</div>' +
-      vitalsHtml(Object.assign({}, e, (S.vdraft || {})[e.id] || {})) + (e.only ? '<div class="slipln onlyn"><span>' + onlyNote(formCat(e), e) + '</span></div>'
+      vitalsHtml(Object.assign({}, e, (S.vdraft || {})[e.id] || {})) + (bpo ? '<div class="slipln onlyn"><span><b>BP check only</b>: no slip (Hypertension, planned for cardiac follow-up). If the patient wants to see the doctor, tap <b>Print slip</b>.</span></div>'
+        : e.only ? '<div class="slipln onlyn"><span>' + onlyNote(formCat(e), e) + '</span></div>'
         : e.man ? '<div class="slipln"><span><b>Manual slip</b>: written by hand; no slip is printed.</span></div>'
-        : e.tok ? '<div class="slipln"><span>Slip <b>' + h(e.tok) + '</b>: ' + (e.tokPr ? 'printed already, so it is not printed again; the vitals are saved in the patient\u2019s record' : 'the vitals are added to it when you save') + '</span></div>'
+        : e.tok ? '<div class="slipln"><span>Slip <b>' + h(e.tok) + '</b>: ' + (e.tokPr ? 'printed already, so it is not printed again; the vitals are saved in the patient\u2019s record' : qeChoice(e) ? '<b>Print slip</b> prints it with the vitals. <b>BP only</b>: no slip (Hypertension, planned for cardiac follow-up)' : 'the vitals are added to it when you save') + '</span></div>'
         : '<div class="fsec">OPD / ER slip</div><div class="seg" id="qSlip"><button type="button" data-act="qe-slipk" data-v="OPD">OPD</button><button type="button" data-act="qe-slipk" data-v="ER">ER</button></div>' +
           '<p class="muted small" style="margin:4px 0 0">The slip number is given when you save, so the slip is ready on the OPD / ER slip page. ' + (e.cat === 'ETT' || e.cat === 'ECHO' ? 'ETT / Echo patients get an OPD slip (ER if needed).' : 'Choosing the other one also changes the category.') + '</p>') +
-      '<div id="qErr"></div></form></div><div class="sh-foot"><button class="btn pri" data-act="qe-save">Save</button></div>';
+      '<div id="qErr"></div></form></div><div class="sh-foot" id="qFoot">' + qeFoot(e) + '</div>';
     el.classList.remove('hidden'); document.body.style.overflow = 'hidden'; overlayOpened();
     setOn('qSlip', S.qe.slip);
     setTimeout(function () { var b = rbsOnly ? $('fRbs') : $('fBp'); if (b && !b.value) b.focus(); }, 60);
   }
   function quickShift(Q) { Q = Q || S.qe; return Q && Q.src === 'prev' ? S.prevShift : S.work; }
+  /* 18-11-2026: an OPD patient (no slip yet): "BP only" (no slip, no paper) or "Print slip" (asked first in Urdu whether the patient wants the
+     doctor; No is BP only). Emergency and other slips: Save as before. */
+  function qeChoice(e) {
+    if (!e || !S.qe || S.qe.slip !== 'OPD' || e.man || e.petty || e.only === 'ECG' || e.cat === 'BD' || e.cat === 'ETT' || e.cat === 'ECHO' || (e.signed && !(e.only === 'BP'))) return false;
+    if (e.tok && (e.tokPr || e.rel || e.tok.split(' ')[0] !== 'OPD')) return false;   // the slip number given at registration: only while it is not printed yet
+    return true;
+  }
+  function qeFoot(e) {
+    return qeChoice(e) ? '<button class="btn bponly" data-act="qe-bp">BP only</button><button class="btn pri" data-act="qe-print">' + ICON.print + ' Print slip</button>'
+      : '<button class="btn pri" data-act="qe-save">Save</button>';
+  }
+  function qeEntry() { var sh = quickShift(), Q = S.qe; return sh && Q && sh.entries.filter(function (x) { return x.id === Q.id; })[0]; }
+  function askDoctor() {                              // the question in Urdu, in large letters: does the patient want to see the doctor?
+    return modal('Print slip', '<p class="urq" dir="rtl" lang="ur">\u06A9\u06CC\u0627 \u0645\u0631\u06CC\u0636 \u0688\u0627\u06A9\u0679\u0631 \u06A9\u0648 \u062F\u06A9\u06BE\u0627\u0646\u0627 \u0686\u0627\u06C1\u062A\u06D2 \u06C1\u06CC\u06BA\u061F</p>' +
+      '<p class="muted small" style="text-align:center;margin:0">Does the patient want to see the doctor? <b>No</b>: BP only, no slip.</p>',
+      [{ label: 'No', cls: 'urb', value: false }, { label: 'Yes', cls: 'pri urb', value: true }]);
+  }
   /* Vitals: the sheet closes at once and the list moves on; the saving (and the slip number) carries on in the background. */
-  function saveQuick() {
+  function saveQuick(mode) {                          // mode (18-11-2026): 'bp' BP only (no slip), 'slip' print the slip
     var Q = S.qe, err = [], vit = readVitals(err);
     if (err.length) { $('qErr').innerHTML = '<div class="err">Please check: ' + h(err.join(', ')) + '.</div>'; return; }
     if (!VIT.some(function (x) { return vit[x[0]]; })) { $('qErr').innerHTML = '<div class="err">Enter at least one vital (for example the BP).</div>'; return; }
     var sh = quickShift(Q), e = sh && sh.entries.filter(function (x) { return x.id === Q.id; })[0];
     if (!e) { closeQuick(); return toast('This patient is no longer in the list. Refresh the page.'); }
     Q.vit = vit;
+    if (mode === 'bp') { Q.bp = true; Q.slip = ''; } else if (mode === 'slip' && e.only === 'BP' && !e.tok) Q.bpSlip = true;
     var shown = Object.assign({}, e);                    // shown at once: the patient leaves the waiting list
     VIT.forEach(function (x) { shown[x[0]] = vit[x[0]] || ''; });
+    if (Q.bp) { shown.only = 'BP'; shown.tok = ''; } else if (Q.bpSlip) shown.only = '';   // BP only: its slip number (not printed) is not used
     putEntry(sh, shown); S.opt[e.id] = { sh: sh.id, e: shown };
     closeQuick();
     // 12-11-2026: BP check only with vitals gets its OPD slip by itself, so it is no longer registered again as a new OPD patient (againAsOpd is not used)
@@ -4925,7 +5106,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var fin = function () { S.pending--; S.saving = Math.max(0, S.saving - 1); delete S.opt[e.id]; };
     sendVitals(Q, sh, e, false).then(function (saved) {
       fin(); putEntry(sh, saved); if (S.vdraft) delete S.vdraft[e.id];
-      toast('Vitals saved: ' + saved.name + (saved.tok ? '. Slip ' + saved.tok + ' is ready.' : '.'));
+      toast('Vitals saved: ' + saved.name + (Q.bp && saved.tok ? '. Slip ' + saved.tok + ' had been printed already.' : saved.tok ? '. Slip ' + saved.tok + ' is ready.' : saved.only === 'BP' ? ' (BP only, no slip).' : '.'));
       if (!typing() || S.qe) render();
     }, function (x) {
       fin();
@@ -4940,6 +5121,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (d.bp && d.procs.indexOf('BP') < 0) d.procs.push('BP');
     if (d.rbs && d.procs.indexOf('BSR') < 0) d.procs.push('BSR');
     if (!e.tok) d.slip = Q.slip || (e.only ? '' : 'none');     // BP / ECG only: the OPD slip is made once vitals are saved (12-11-2026)
+    if (Q.bp) { d.bpOnly = true; d.slip = 'none'; }        // 18-11-2026: BP only: no slip
+    if (Q.bpSlip) { d.bpSlip = true; d.slip = 'OPD'; }     // ... and BP only made a patient for the doctor (Print slip)
     d.v = e.v; d.dxs = CEC.dxOf(e); delete d.queued;
     return apiRetry('apiUpdateEntry', sh.id, JSON.stringify(d)).then(null, function (x) {
       var tries = +retried || 0;
@@ -4962,7 +5145,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function vqMine() { return S.me ? vqAll().filter(function (x) { return x.uid === S.me.id; }) : []; }
   function vqAdd(Q, sh, e) {
     var q = vqAll().filter(function (x) { return x.id !== e.id; });
-    q.push({ id: e.id, sh: sh.id, vit: Q.vit, slip: Q.slip || '', uid: S.me.id, t: new Date().toISOString(), name: e.name, mr: e.mr });
+    q.push({ id: e.id, sh: sh.id, vit: Q.vit, slip: Q.slip || '', bp: !!Q.bp, bpSlip: !!Q.bpSlip, uid: S.me.id, t: new Date().toISOString(), name: e.name, mr: e.mr });
     store_('cec_vq', q); renderBanner();
   }
   function vqDrop(id) { store_('cec_vq', vqAll().filter(function (x) { return x.id !== id; })); }
@@ -4988,7 +5171,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       });
       return got.then(function (x) {
         if (!x) { vqDrop(it.id); return next(); }        // the patient was deleted meanwhile
-        return sendVitals({ vit: it.vit, slip: it.slip }, x.sh, x.e, false).then(function (saved) {
+        return sendVitals({ vit: it.vit, slip: it.slip, bp: !!it.bp, bpSlip: !!it.bpSlip }, x.sh, x.e, false).then(function (saved) {
           vqDrop(it.id); sent++; putEntry(x.sh, saved); return next();
         }, function (err) {
           if (transient(err) || isAuthErr(err)) throw err;     // try again later; nothing is lost
@@ -5229,7 +5412,6 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (signing || f.signed) {
       if (!dxs.length) err.push('working diagnosis');
       if (!out) err.push('outcome');
-      if (out === 'OBS' && !/^\d{1,2}$/.test(obsH)) err.push('hours of observation');
     }
     var newOpts = canEdit() ? {
       dx: dxs.filter(function (d) { return d !== 'Brought dead' && CEC.DX_LIST.indexOf(d) < 0 && S.custom.dx.indexOf(d) < 0; }),
@@ -5582,7 +5764,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   var STAGES = [['vit', 'Waiting for vitals'], ['doc', 'Waiting for doctor'], ['adv', 'ECG / RBS advised'], ['back', 'Tests done: back to doctor'], ['done', 'Signed off']];
   var HOME_CATS = ['EMR', 'OPD', 'BD'];
   function hasVitals(e) { return VIT.some(function (x) { return e[x[0]] !== '' && e[x[0]] != null; }); }
-  function advLeft(e) { return (e.adv || []).filter(function (a) { return a === 'ECG' ? (e.procs || []).indexOf('ECG') < 0 : !e.rbs; }); }
+  function advLeft(e) { return (e.adv || []).filter(function (a) { return a === 'ECG' ? (e.procs || []).indexOf('ECG') < 0 : !e.rbs && (e.procs || []).indexOf('BSR') < 0; }); }   // 18-11-2026: RBS ticked counts as done
   function stageOf(e) {
     if (e.signed) return 'done';
     if (e.only === 'BP') return hasVitals(e) ? 'done' : 'vit';         // closes by itself after 1 hour
@@ -5848,7 +6030,17 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (j.err) return toast('Print desk: ' + j.err);
     if (j.kind === 'slips') return printSlips((j.list || []).map(function (e) { return { e: e }; }), paper, { claimed: true });
     if (j.kind === 'blankslips') { for (i = 0; i < j.n; i++) list.push({ e: { blank: true } }); return printSlips(list, paper, { claimed: true, blank: true }); }
-    if (j.kind === 'tmpdoc') return printImages((j.pages || []).map(function (b) { return 'data:image/jpeg;base64,' + b; }), 'Print desk: ' + j.what);
+    if (j.kind === 'tmpdoc') {                        // 18-11-2026: a long document: its pages taken in parts, printed 50 at a time
+      var jp = function (b) { return 'data:image/jpeg;base64,' + b; };
+      if (j.next == null) return printImages((j.pages || []).map(jp), 'Print desk: ' + j.what);
+      toast('Print desk: printing ' + j.what + '\u2026');
+      S.jobBusy = true;                               // no other job starts until the whole document has gone out
+      printLong(function (each) {
+        var more = function (from) { return apiRetry('apiJobTmpPart', JSON.stringify({ tid: j.tid, from: from, pages: j.pg || '' })).then(function (r) { return Promise.resolve(each(r.pages.map(jp))).then(function () { return r.next != null ? more(r.next) : null; }); }); };
+        return Promise.resolve(each((j.pages || []).map(jp))).then(function () { return more(j.next); });
+      }, 'Print desk: ' + j.what, j.pg ? (pgParse(j.pg, 1e6).sel || []).length : j.n).then(function () { S.jobBusy = false; setTimeout(deskJobs, 1500); });
+      return;
+    }
     if (j.kind === 'testslip') return printSlips([{ e: testSlipE() }], paper, { claimed: true });
     if (j.kind === 'cert') return printPages(CEC.deathCertSvg(j.cert, S.settings, logoBytes()), 'Print desk: ' + j.what);
     if (j.kind === 'blankcert') return printPages(CEC.deathCertSvg({}, S.settings, logoBytes(), j.n), 'Print desk: ' + j.what);
@@ -5893,11 +6085,11 @@ if (typeof module !== 'undefined') module.exports = CEC;
     }, 30);
   }
   function svgPages(str) { return String(str).split('</svg>').filter(function (x) { return /<svg/.test(x); }).map(function (x) { return x + '</svg>'; }); }
-  function closePreview() { var el = $('pvw'); S.pv = null; if (el) { el.classList.add('hidden'); el.innerHTML = ''; } overlayClosed(); }
+  function closePreview() { var el = $('pvw'); S.pv = null; tpvClose(); if (el) { el.classList.add('hidden'); el.innerHTML = ''; } overlayClosed(); }
   function pvAct(k) { var a = S.pv && S.pv.acts[k]; if (!a) return; if (k === 'print') closePreview(); a(); }
   /* a census document (letter, register, list, echo report...): its pages; Print and Download as on the page */
   function previewDoc(fn, args, title, print, dl) { preview(title, function () { return CEC.svgOf(fn, args.concat([logoBytes()])); }, { print: print, dl: dl }); }
-  function printImages(srcs, what) { printReady(srcs[0], function () { printA4(srcs.map(function (s) { return '<div class="imgjob"><img src="' + s + '" alt=""></div>'; }).join(''), what, '8mm'); }); }
+  function printImages(srcs, what, after) { printReady(srcs[0], function () { printA4(srcs.map(function (s) { return '<div class="imgjob"><img src="' + s + '" alt=""></div>'; }).join(''), what, '8mm', false, after); }); }
   function printImage(src, what) { printReady(src, function (ok) { if (!ok) return toast(what + ' could not be opened.'); printA4('<div class="imgjob"><img src="' + src + '" alt=""></div>', what, '8mm'); }); }
   function printReady(src, go) {
     if (!src) return go(true);
@@ -5906,15 +6098,15 @@ if (typeof module !== 'undefined') module.exports = CEC;
     setTimeout(function () { once(true); }, 4000);
     img.src = src;
   }
-  function printA4(html, what, margin, land) {
-    if (!canPrintHere()) return phoneNoDesk(function () { });   // 15-11-2026: only the print desk prints
+  function printA4(html, what, margin, land, after) {
+    if (!canPrintHere()) { if (after) after(); return phoneNoDesk(function () { }); }   // 15-11-2026: only the print desk prints
     var pa = $('printArea'); if (!pa) return;
     pa.innerHTML = html;
     var ps = $('pageSize');
     if (!ps) { ps = document.createElement('style'); ps.id = 'pageSize'; document.head.appendChild(ps); }
     ps.textContent = '@page{size:A4 ' + (land ? 'landscape' : 'portrait') + ';margin:' + (margin || '0') + '}';
     document.body.classList.add('printing');
-    var end = function () { document.body.classList.remove('printing'); ps.textContent = ''; pa.innerHTML = ''; window.removeEventListener('afterprint', end2); };
+    var ended = false, end = function () { if (ended) return; ended = true; document.body.classList.remove('printing'); ps.textContent = ''; pa.innerHTML = ''; window.removeEventListener('afterprint', end2); if (after) after(); };
     var end2 = function () { setTimeout(end, 1000); };
     window.addEventListener('afterprint', end2);
     whenDrawn(pa, function () { try { window.print(); toast(what + ' sent to the printer.'); } catch (x) { toast(what + ' could not be printed.'); } setTimeout(end, 1500); });
@@ -6667,6 +6859,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       (canEnter() ? '<div class="modetabs mrgo">' +             // 14-11-2026: register the next patient from here (same as the home tiles)
         '<button class="mtab mblue" data-act="mode" data-v="e"><span class="mti" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg></span><b>Electronic slip</b><span>The system prints the OPD / ER slip</span></button>' +
         '<button class="mtab mred" data-act="mode" data-v="m"><span class="mti" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg></span><b>Manual slip</b><span>The staff write the paper slip by hand</span></button></div>' : '');
+    html += todayCardHtml(true);                          // 18-11-2026
     if (!R) return html + '<section class="card center muted"><span class="spin"></span>Loading&hellip;</section></div>';
     html += '<div class="mrsum">' + (R.mr ? '<span>Last MR given: <b>' + h(R.mr) + '</b></span>' : '') + (R.opd ? '<span>Last OPD No. given: <b>' + h(R.opd) + '</b></span>' : '') +
       (canEnter() ? '<span><button class="lnk" data-act="nums-set">Set numbers</button></span>' : '') + '<span>Today: <b>' + R.rows.length + '</b></span></div>';
@@ -6682,6 +6875,40 @@ if (typeof module !== 'undefined') module.exports = CEC;
         '<span class="muted small">' + (x.sex === 'M' ? 'M' : x.sex === 'F' ? 'F' : '-') + (x.age !== '' && x.age != null ? ', ' + h(x.age) : '') + ' &middot; ' + CEC.hm(x.t) + ' &middot; ' +
         h(x.ecgOf ? 'for ECG (OPD No. ' + x.ecgOf + ')' : x.only ? (x.only === 'BP' ? 'BP check only' : 'ECG only') : (CEC.label(CEC.CATS, x.cat) || x.cat)) + '</span></span></li>';
     }).join('') + '</ol></div>';
+  }
+  /* ---------- 18-11-2026: Today's list: the shift running now up to this minute (MR register list; on an OPD day also the OPD register list) ---------- */
+  function todayCardHtml(compact) {
+    if (compact) return '<div class="tlbar"><span><b>Today\u2019s list</b><small class="muted">this shift up to now, for the paper register</small></span><button class="btn sm pri" data-act="tl-dl">' + ICON.dl + ' Download</button><button class="btn sm" data-act="tl-print">' + ICON.print + ' Print</button></div>';
+    return '<section class="card tlist"><div class="ct">Today\u2019s list</div><p class="muted small" style="margin:0 0 8px">The shift running now, up to this minute: S.No., MR No., name, age/sex, ticks for BP, ECG and RBS, and the outcome (sent home, referred, expired, BD\u2026), to put with the paper MR register. ' +
+      'On an OPD day the OPD register list (OPD Nos.) comes as a separate list with the same tap.</p><div class="sbtns"><button class="btn pri" data-act="tl-dl">' + ICON.dl + ' Download</button><button class="btn" data-act="tl-print">' + ICON.print + ' Print</button></div></section>';
+  }
+  function todaySpec(sp) { return { title: sp.title, sub: sp.sub, cols: sp.cols, groups: sp.groups, portrait: true, empty: 'No patients.', note: sp.note || '' }; }
+  function todayGet() {
+    if (isOff()) { toast('Today\u2019s list needs internet.'); return Promise.reject(null); }
+    if (S.tlBusy) return Promise.reject(null);
+    S.tlBusy = true; toast('Preparing today\u2019s list\u2026');
+    return api('apiTodayList').then(function (r) {
+      S.tlBusy = false;
+      var ls = r && r.shift ? CEC.todayLists(r.shift, S.settings, r.now, lbWho()) : [];   // the outcome column: doctors, nursing staff and the admin (as in Registers)
+      if (!ls.length || !ls.some(function (x) { return x.n; })) { toast('No patient in this shift yet.'); throw null; }
+      return ls;
+    }, function (e) { S.tlBusy = false; toast(errText(e)); throw null; });
+  }
+  function todayDl() {
+    todayGet().then(function (ls) {
+      offerFiles(ls.map(function (sp) { return { name: sp.file + '.pdf', label: sp.label + ' (' + sp.n + ' patient' + (sp.n === 1 ? '' : 's') + ')', bytes: CEC.listPdf(todaySpec(sp), logoBytes()) }; }));
+    }, function () { });
+  }
+  function todayPrint() {
+    todayGet().then(function (ls) {
+      withDesk(function () {
+        if (canDesk()) return ls.forEach(function (sp) { deskJob({ kind: 'pages', fn: 'listPlainPdf', args: [CEC.listPlain(todaySpec(sp))], label: sp.label }, sp.label); });
+        phoneNoDesk(function () {
+          var pages = []; ls.forEach(function (sp) { pages = pages.concat(CEC.svgOf('listPdf', [todaySpec(sp), logoBytes()])); });
+          printPages(pages, 'Today\u2019s list');
+        });
+      });
+    }, function () { });
   }
   function mrRegLoad() {
     if (isOff() || S.mrregBusy) return;
@@ -6962,7 +7189,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
      at sign-out, on Remove, and 1 hour after upload. The file name never leaves this device. ---------- */
   function canTmp() { return !!(S.me && (S.me.canEdit || S.me.admin) && !isEchoId()); }
   var PDFJS_V = '3.11.174', PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/' + PDFJS_V + '/pdf.min.js', PDFJS_W = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/' + PDFJS_V + '/pdf.worker.min.js';
-  var TMP_W = 1240, TMP_H = 1754, TMP_MAXP = 10;      // A4 at 150 dots an inch; up to 10 pages
+  var TMP_W = 1240, TMP_H = 1754, TMP_MAXP = 2000, TMP_MB = 100;   // A4 at 150 dots an inch; 18-11-2026: any length (2000 pages at most), files up to 100 MB
+  var TMP_KEEP = 20;                                  // pages kept on this device for Preview / Print (a longer document is read again in parts)
   function pdfLib() {
     if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
     if (S.pdfLoad) return S.pdfLoad;
@@ -6987,10 +7215,11 @@ if (typeof module !== 'undefined') module.exports = CEC;
     x.drawImage(src, 0, 0, turn ? c.height : c.width, turn ? c.width : c.height);
     return c.toDataURL('image/jpeg', 0.85);
   }
+  /* 18-11-2026: a document is { n: pages, page(i): its A4 picture }; pages are made one at a time, as they are sent */
   function tmpPhoto(file) {
     return new Promise(function (res, rej) {
       var u = URL.createObjectURL(file), im = new Image();
-      im.onload = function () { try { res([tmpPage(im, im.naturalWidth, im.naturalHeight)]); } catch (x) { rej(x); } URL.revokeObjectURL(u); };
+      im.onload = function () { try { var one = tmpPage(im, im.naturalWidth, im.naturalHeight); res({ n: 1, page: function () { return Promise.resolve(one); } }); } catch (x) { rej(x); } URL.revokeObjectURL(u); };
       im.onerror = function () { URL.revokeObjectURL(u); rej(new Error('This photo could not be opened.')); };
       im.src = u;
     });
@@ -6998,17 +7227,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function tmpPdf(file) {
     return Promise.all([pdfLib(), file.arrayBuffer()]).then(function (r) { return r[0].getDocument({ data: new Uint8Array(r[1]) }).promise; }).then(function (pdf) {
       if (pdf.numPages > TMP_MAXP) throw new Error('This PDF has ' + pdf.numPages + ' pages. Up to ' + TMP_MAXP + ' pages can be printed at a time.');
-      var out = [], i = 1;
-      var next = function () {
-        if (i > pdf.numPages) return Promise.resolve(out);
-        return pdf.getPage(i).then(function (pg) {
+      return { n: pdf.numPages, page: function (i) {
+        return pdf.getPage(i + 1).then(function (pg) {
           var v1 = pg.getViewport({ scale: 1 }), sc = Math.min(TMP_H / Math.max(v1.width, v1.height), 3), vp = pg.getViewport({ scale: sc }), c = document.createElement('canvas');
           c.width = Math.round(vp.width); c.height = Math.round(vp.height);
           var cx = c.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, c.width, c.height);
-          return pg.render({ canvasContext: cx, viewport: vp }).promise.then(function () { out.push(tmpPage(c, c.width, c.height)); i++; S.tmp.prog = 'Reading page ' + Math.min(i, pdf.numPages) + ' of ' + pdf.numPages + '…'; tmpProg(); return next(); });
+          return pg.render({ canvasContext: cx, viewport: vp }).promise.then(function () { var u = tmpPage(c, c.width, c.height); c.width = c.height = 0; pg.cleanup(); return u; });
         });
-      };
-      return next();
+      } };
     });
   }
   function tmpInit() { if (!S.tmp) S.tmp = { list: null, pages: {}, names: {}, busy: false, prog: '' }; return S.tmp; }
@@ -7024,7 +7250,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var T = tmpInit();
     if (!T.list && !T.loading) setTimeout(tmpLoad, 0);
     var html = '<div class="narrow"><div class="listhead"><h3>Print a document</h3></div><section class="card"><div class="ct">Choose a PDF or a photo</div>' +
-      '<p class="muted small" style="margin:0 0 8px">Up to ' + TMP_MAXP + ' pages, printed on A4. It is kept <b>only for you on this device</b>, and deleted for good when you sign out, when you tap Remove, or 1 hour after upload. Its name is never sent.</p>' +
+      '<p class="muted small" style="margin:0 0 8px">Any number of pages (up to ' + TMP_MAXP + '), files up to ' + TMP_MB + ' MB, printed on A4. A long document takes 1 to 2 seconds a page to send. It is kept <b>only for you on this device</b>, and deleted for good when you sign out, when you tap Remove, or 1 hour after upload. Its name is never sent.</p>' +
       '<input type="file" id="tmpFile" accept="application/pdf,image/*" class="hidden">' +
       (T.busy ? '<p class="small"><span class="spin"></span><span id="tmpProg">' + h(T.prog || 'Preparing…') + '</span></p>'
         : '<button class="btn pri block" data-act="tmp-pick">' + ICON.dl + ' Choose a PDF or photo</button>') + '</section>';
@@ -7034,7 +7260,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     else html += '<div class="plist" style="margin-top:8px">' + T.list.map(function (x) {
       var nm = T.names[x.id] || (x.kind === 'pdf' ? 'PDF' : 'Photo'), ok = x.got >= x.n;
       return '<div class="drow"><div class="pr-name">' + h(nm) + '</div><div class="pr-sub">' + x.n + ' page' + (x.n === 1 ? '' : 's') + ' &middot; ' + (ok ? 'deleted at ' + CEC.hm(x.until) : 'not fully sent: choose it again') + '</div>' +
-        '<div class="sbtns ico">' + (ok ? '<button class="btn sm" data-act="tmp-pv" data-id="' + h(x.id) + '">' + ICON.eye + ' Preview</button><button class="btn sm pri" data-act="tmp-print" data-id="' + h(x.id) + '">' + ICON.print + ' Print</button>' : '') +
+        '<div class="sbtns ico">' + (ok ? '<button class="btn sm" data-act="tmp-pv" data-id="' + h(x.id) + '">' + ICON.eye + ' Preview &amp; choose pages</button><button class="btn sm pri" data-act="tmp-print" data-id="' + h(x.id) + '">' + ICON.print + ' Print all</button>' : '') +
         '<button class="btn sm dan" data-act="tmp-del" data-id="' + h(x.id) + '">Remove</button></div></div>';
     }).join('') + '</div>';
     return html + '</section></div>';
@@ -7042,25 +7268,29 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function tmpChosen(file) {
     var T = tmpInit(), pdf = /pdf$/i.test(file.type) || /\.pdf$/i.test(file.name || '');
     if (!pdf && !/^image\//.test(file.type)) return toast('Choose a PDF or a photo.');
-    if (file.size > (pdf ? 10 : 25) * 1024 * 1024) return toast(pdf ? 'This PDF is larger than 10 MB.' : 'This photo is too large.');
+    if (file.size > TMP_MB * 1024 * 1024) return toast((pdf ? 'This PDF' : 'This photo') + ' is larger than ' + TMP_MB + ' MB.');
     if (isOff()) return toast('Sending a document to print needs internet.');
     T.busy = true; T.prog = pdf ? 'Reading the PDF…' : 'Preparing the photo…'; render();
-    var pages = null, id = null;
-    (pdf ? tmpPdf(file) : tmpPhoto(file)).then(function (pg) {
-      pages = pg; T.prog = 'Sending page 1 of ' + pages.length + '…'; tmpProg();
-      return api('apiTmpStart', JSON.stringify({ dev: myDev(), n: pages.length, kind: pdf ? 'pdf' : 'photo' }));
+    var doc = null, id = null, kept = [];
+    (pdf ? tmpPdf(file) : tmpPhoto(file)).then(function (dc) {
+      doc = dc; T.prog = 'Sending page 1 of ' + doc.n + '…'; tmpProg();
+      return api('apiTmpStart', JSON.stringify({ dev: myDev(), n: doc.n, kind: pdf ? 'pdf' : 'photo' }));
     }).then(function (st) {
       id = st.id; T.names[id] = String(file.name || '').slice(0, 80) || (pdf ? 'PDF' : 'Photo');
       var i = 0;
-      var send = function () {
-        if (i >= pages.length) return Promise.resolve();
-        T.prog = 'Sending page ' + (i + 1) + ' of ' + pages.length + '…'; tmpProg();
-        return apiRetry('apiTmpPage', JSON.stringify({ dev: myDev(), id: id, i: i }), pages[i].split(',')[1]).then(function () { i++; return send(); });
+      var send = function () {                        // each page made, sent, and let go (a long PDF is never all in memory)
+        if (i >= doc.n) return Promise.resolve();
+        T.prog = 'Sending page ' + (i + 1) + ' of ' + doc.n + '…'; tmpProg();
+        return doc.page(i).then(function (u) {
+          if (doc.n <= TMP_KEEP) kept[i] = u;
+          return apiRetry('apiTmpPage', JSON.stringify({ dev: myDev(), id: id, i: i }), u.split(',')[1]);
+        }).then(function () { i++; return send(); });
       };
       return send();
     }).then(function () {
-      T.pages[id] = pages; T.busy = false; T.prog = '';
-      toast('Ready: ' + pages.length + ' page' + (pages.length === 1 ? '' : 's') + '. Preview or print it.');
+      if (doc.n <= TMP_KEEP) T.pages[id] = kept;
+      T.busy = false; T.prog = '';
+      toast('Ready: ' + doc.n + ' page' + (doc.n === 1 ? '' : 's') + '. Preview or print it.');
       tmpLoad(); render();
     }, function (e) {
       T.busy = false; T.prog = ''; render();
@@ -7072,25 +7302,184 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var T = tmpInit();
     if (T.pages[id]) return Promise.resolve(T.pages[id]);
     toast('Opening…');
-    return api('apiTmpGet', JSON.stringify({ dev: myDev(), id: id })).then(function (r) { T.pages[id] = r.pages.map(function (b) { return 'data:image/jpeg;base64,' + b; }); return T.pages[id]; });
+    var all = [];
+    var part = function (from) {                      // 18-11-2026: read in parts of a few MB
+      return api('apiTmpGet', JSON.stringify({ dev: myDev(), id: id, from: from })).then(function (r) {
+        all = all.concat(r.pages.map(function (b) { return 'data:image/jpeg;base64,' + b; }));
+        if (r.next != null) { toast('Opening: page ' + (r.next + 1) + ' of ' + r.n + '…'); return part(r.next); }
+        if (all.length <= TMP_KEEP) T.pages[id] = all;
+        return all;
+      });
+    };
+    return part(0);
+  }
+  /* 18-11-2026 (night): pages chosen in Preview, typed like 2, 5-8 or 1, 3, 5-8 (the census reads them the same way) */
+  function pgParse(str, n) {
+    str = String(str == null ? '' : str).trim();
+    if (!str) return { sel: [] };
+    if (/^all$/i.test(str)) return { sel: null };
+    var on = {}, bad = '';
+    str.replace(/[\u2013\u2014]/g, '-').replace(/\s*-\s*/g, '-').split(/[,;\s]+/).forEach(function (t) {
+      if (!t) return;
+      var m = /^(\d+)(?:-(\d*))?$/.exec(t);
+      if (!m) { bad = bad || t; return; }
+      var a = +m[1], b = m[2] ? +m[2] : a; if (m[2] === '') b = a;      // "5-" while typing: page 5 for now
+      if (a > b) { var x = a; a = b; b = x; }
+      if (a < 1 || b > n) { bad = bad || t; return; }
+      for (var i = a; i <= b; i++) on[i - 1] = 1;
+    });
+    if (bad) return { err: 'Page \u201c' + bad + '\u201d is not in this document (' + n + ' page' + (n === 1 ? '' : 's') + ').' };
+    var out = Object.keys(on).map(Number).sort(function (a, b) { return a - b; });
+    return { sel: out.length === n ? null : out };
+  }
+  function pgText(sel) {                              // [0,1,2,4] -> "1-3, 5"
+    var out = [], i = 0;
+    while (i < sel.length) { var j = i; while (j + 1 < sel.length && sel[j + 1] === sel[j] + 1) j++; out.push(sel[i] + 1 + (j > i ? '-' + (sel[j] + 1) : '')); i = j + 1; }
+    return out.join(', ');
   }
   function tmpPrintHere(pages, what) { printImages(pages, what); }
-  function tmpPrint(id) {
+  /* the pages of a document, or only the chosen ones (pg: "1-3, 5"; '' every page), read in parts */
+  function tmpPagesPick(id, pg, each) {
+    var all = [];
+    var part = function (from) {
+      return api('apiTmpGet', JSON.stringify({ dev: myDev(), id: id, from: from, pages: pg || '' })).then(function (r) {
+        var got = r.pages.map(function (b) { return 'data:image/jpeg;base64,' + b; });
+        if (each) return Promise.resolve(each(got, r)).then(function () { return r.next != null ? part(r.next) : null; });
+        all = all.concat(got);
+        if (r.next != null) { toast('Opening: page ' + (r.next + 1) + ' of ' + r.n + '\u2026'); return part(r.next); }
+        return all;
+      });
+    };
+    var first = pg ? (pgParse(pg, 1e6).sel || [0])[0] || 0 : 0;
+    return part(first);
+  }
+  function tmpPrint(id, pg) {
     var T = tmpInit(), x = (T.list || []).filter(function (d) { return d.id === id; })[0]; if (!x) return;
-    var label = 'your document (' + x.n + ' page' + (x.n === 1 ? '' : 's') + ')';
+    var sel = pg ? pgParse(pg, x.n).sel : null, k = sel ? sel.length : x.n;
+    if (sel && !sel.length) return toast('No page chosen.');
+    var label = 'your document (' + (sel ? k + ' of ' + x.n + ' pages' : x.n + ' page' + (x.n === 1 ? '' : 's')) + ')';
     withDesk(function () {
-      if (canDesk()) return deskJob({ kind: 'tmpdoc', tid: id, dev: myDev() }, label);
-      var here = function () { tmpPages(id).then(function (p) { tmpPrintHere(p, 'Your document'); }, function (e) { toast(errText(e)); }); };
+      if (canDesk()) return deskJob({ kind: 'tmpdoc', tid: id, dev: myDev(), pages: sel ? pgText(sel) : '' }, label);
+      var here = function () {
+        if (!sel && T.pages[id]) return tmpPrintHere(T.pages[id], 'Your document');
+        printLong(function (each) { return tmpPagesPick(id, sel ? pgText(sel) : '', each); }, 'Your document', k);
+      };
       if (!canPrintHere()) return phoneNoDesk(here);
       here();
     });
   }
+  /* A long document is printed in batches of 50 pages (each batch one print), the next part read while the last one prints. */
+  var PRINT_BATCH = 50;
+  function printLong(reader, what, n) {
+    var buf = [], done = 0, chain = Promise.resolve(), B = window.__printBatch || PRINT_BATCH;   // (__printBatch: smaller batches in the tests)
+    var flush = function (last) {
+      while (buf.length >= B || (last && buf.length)) {
+        var b = buf.splice(0, B);
+        chain = chain.then(function () { return new Promise(function (res) {
+          done += b.length;
+          printImages(b, what + (n > B ? ' (pages ' + (done - b.length + 1) + '-' + done + ' of ' + n + ')' : ''), res);
+        }); });
+      }
+      return chain;
+    };
+    S.printLong = (S.printLong || 0) + 1;
+    return reader(function (got) { buf = buf.concat(got); return buf.length >= B ? flush(false) : null; })
+      .then(function () { return flush(true); })
+      .then(function () { S.printLong--; }, function (e) { S.printLong--; toast(what + ' could not be printed: ' + errText(e)); });
+  }
+  /* ---------- 18-11-2026 (night): Preview of a document kept for printing, in this page (never the phone's or computer's own print preview).
+     Every page with a tick; type 2, 5-8 or 1, 3, 5-8, or tick and untick; Print prints only the ticked pages.
+     Pages are fetched a few at a time as they come into view, and pages far away are let go (a long PDF never fills the phone). ---------- */
+  var TPV_KEEP = 30;
   function tmpPreview(id) {
     var T = tmpInit(), x = (T.list || []).filter(function (d) { return d.id === id; })[0]; if (!x) return;
-    tmpPages(id).then(function (p) {
-      preview(T.names[id] || 'Document', function () { return p.map(function (src) { return '<div class="pvA4"><img src="' + src + '" alt=""></div>'; }); }, { print: function () { tmpPrint(id); } });
-    }, function (e) { toast(errText(e)); });
+    var el = $('pvw');
+    if (!el) { el = document.createElement('div'); el.id = 'pvw'; el.className = 'pvw hidden'; el.setAttribute('role', 'dialog'); document.body.appendChild(el); }
+    var P = S.tpv = { id: id, n: x.n, sel: [], small: false, cache: {}, order: [], seen: {}, busy: false, obs: null };
+    for (var i = 0; i < x.n; i++) P.sel.push(i);
+    (T.pages[id] || []).forEach(function (u, i) { P.cache[i] = u; P.order.push(i); });
+    S.pv = { acts: {}, tpv: true };
+    el.innerHTML = '<div class="pv-head"><button class="btn sm" data-act="pv-back">&lsaquo; Back</button><h3>' + h(T.names[id] || 'Document') + '</h3>' +
+      '<div class="seg tpvsz"><button type="button" data-act="tpv-size" data-v="big" class="on">Large</button><button type="button" data-act="tpv-size" data-v="small">Small</button></div></div>' +
+      '<div class="tpvbar"><label for="tpvPg">Pages</label><input class="in" id="tpvPg" inputmode="text" autocomplete="off" placeholder="e.g. 2 or 5-8 or 1, 3, 5-8" value="' + h(pgText(P.sel)) + '">' +
+      '<button class="btn sm" data-act="tpv-all">All</button><button class="btn sm" data-act="tpv-none">None</button><div class="tpvn" id="tpvN"></div></div>' +
+      '<div class="pv-body" id="tpvBody"></div>' +
+      '<div class="pv-foot"><button class="btn pri" data-act="tpv-print" id="tpvPr">' + ICON.print + ' Print</button></div>';
+    el.classList.remove('hidden'); overlayOpened();
+    tpvBody(); tpvCount();
   }
+  function tpvBody() {
+    var P = S.tpv, b = $('tpvBody'); if (!P || !b) return;
+    if (P.obs) P.obs.disconnect();
+    b.className = 'pv-body' + (P.small ? ' tpvsm' : '');
+    var out = [];
+    for (var i = 0; i < P.n; i++) {
+      var on = P.selOn ? P.selOn[i] : P.sel.indexOf(i) >= 0;
+      out.push('<div class="tpg' + (on ? ' on' : '') + '" data-i="' + i + '"' + (P.small ? ' data-act="tpv-pg"' : '') + '><label class="tpck"><input type="checkbox" data-act="tpv-ck" data-i="' + i + '"' + (on ? ' checked' : '') +
+        ' aria-label="Print page ' + (i + 1) + '"><span>Page ' + (i + 1) + '</span></label><div class="pvA4"><img alt="Page ' + (i + 1) + '"' + (P.cache[i] ? ' src="' + P.cache[i] + '"' : '') + '><span class="tpld">' + (i + 1) + '</span></div></div>');
+    }
+    b.innerHTML = out.join('');
+    if ('IntersectionObserver' in window) {
+      P.obs = new IntersectionObserver(function (ents) {
+        ents.forEach(function (en) { var k = +en.target.getAttribute('data-i'); if (en.isIntersecting) P.seen[k] = 1; else delete P.seen[k]; });
+        tpvFetch();
+      }, { root: b, rootMargin: '900px 0px' });
+      Array.prototype.forEach.call(b.querySelectorAll('.tpg'), function (g) { P.obs.observe(g); });
+    } else { for (var k = 0; k < Math.min(P.n, 30); k++) P.seen[k] = 1; tpvFetch(); }
+  }
+  function tpvFetch() {
+    var P = S.tpv; if (!P || P.busy) return;
+    var want = Object.keys(P.seen).map(Number).filter(function (i) { return !P.cache[i]; }).sort(function (a, b) { return a - b; })[0];
+    if (want == null) return;
+    P.busy = true;
+    api('apiTmpGet', JSON.stringify({ dev: myDev(), id: P.id, from: want, max: P.small ? 12 : 4 })).then(function (r) {
+      if (S.tpv !== P) return;
+      P.busy = false;
+      (r.idx || []).forEach(function (i, k) {
+        var u = 'data:image/jpeg;base64,' + r.pages[k];
+        P.cache[i] = u; P.order.push(i);
+        var im = document.querySelector('#tpvBody .tpg[data-i="' + i + '"] img'); if (im) im.src = u;
+      });
+      while (P.order.length > TPV_KEEP) {             // let go of the pages furthest from the ones in view
+        var near = Object.keys(P.seen).map(Number), mid = near.length ? near.reduce(function (a, b) { return a + b; }, 0) / near.length : want;
+        P.order.sort(function (a, b) { return Math.abs(a - mid) - Math.abs(b - mid); });
+        var gone = P.order.pop(); if (P.seen[gone]) { P.order.push(gone); break; }
+        delete P.cache[gone];
+        var gi = document.querySelector('#tpvBody .tpg[data-i="' + gone + '"] img'); if (gi) gi.removeAttribute('src');
+      }
+      tpvFetch();
+    }, function (e) { if (S.tpv !== P) return; P.busy = false; toast(errText(e)); });
+  }
+  function tpvCount() {
+    var P = S.tpv; if (!P) return;
+    var k = P.sel.length, n = P.n, t = $('tpvN'), b = $('tpvPr');
+    if (t && !P.err) t.textContent = !k ? 'No page chosen' : k === n ? 'All ' + n + ' page' + (n === 1 ? '' : 's') + ' will print' : k + ' of ' + n + ' pages will print';
+    if (t) t.classList.toggle('bad', !!P.err || !k);
+    if (b) { b.disabled = !k || !!P.err; b.innerHTML = ICON.print + ' ' + (P.err ? 'Print' : !k ? 'Print' : k === n ? 'Print all ' + n + ' page' + (n === 1 ? '' : 's') : 'Print ' + k + ' of ' + n + ' pages'); }
+  }
+  function tpvSet(sel, fromBox) {                     // the ticks follow the box, and the box follows the ticks
+    var P = S.tpv; if (!P) return;
+    P.sel = sel; P.err = '';
+    var on = {}; sel.forEach(function (i) { on[i] = 1; });
+    Array.prototype.forEach.call(document.querySelectorAll('#tpvBody .tpg'), function (g) {
+      var i = +g.getAttribute('data-i'), c = g.querySelector('input'); g.classList.toggle('on', !!on[i]); if (c) c.checked = !!on[i];
+    });
+    if (!fromBox) { var bx = $('tpvPg'); if (bx) bx.value = pgText(sel); }
+    tpvCount();
+  }
+  function tpvBox(v) {
+    var P = S.tpv; if (!P) return;
+    var r = pgParse(v, P.n), t = $('tpvN');
+    if (r.err) { P.err = r.err; if (t) { t.textContent = r.err; t.classList.add('bad'); } var b = $('tpvPr'); if (b) b.disabled = true; return; }
+    var all = []; for (var i = 0; i < P.n; i++) all.push(i);
+    tpvSet(r.sel == null ? all : r.sel, true);
+  }
+  function tpvToggle(i, on) {
+    var P = S.tpv; if (!P) return;
+    var sel = P.sel.filter(function (x) { return x !== i; }); if (on) sel.push(i);
+    tpvSet(sel.sort(function (a, b) { return a - b; }), false);
+  }
+  function tpvClose() { var P = S.tpv; if (P && P.obs) P.obs.disconnect(); S.tpv = null; }
   function tmpDel(id) {
     api('apiTmpDel', JSON.stringify({ dev: myDev(), id: id })).then(function () { var T = tmpInit(); delete T.pages[id]; delete T.names[id]; T.list = (T.list || []).filter(function (x) { return x.id !== id; }); toast('Removed and deleted.'); render(); },
       function (e) { toast(errText(e)); });
@@ -7855,10 +8244,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (clin) procOpts = procOpts.concat([['ETT', 'ETT'], ['ECHO', 'Echo'], ['*er', 'Any ER procedure']],
       CEC.PROCS.filter(function (p) { return p.g === 'er' && p.c !== 'NEB'; }).map(function (p) { return [p.c, p.l]; }), (S.custom.proc || []).map(function (x) { return [x, x]; }));
     var medOpts = [['*', 'Any medication']].concat(CEC.MEDS.concat(S.custom.med || []).map(function (m) { return [m, m]; }));
-    var outOpts = CEC.OUTS.map(function (o) { return [o.c, o.l]; }).concat([['_', 'Awaiting doctor (no outcome yet)']]);
+    var outOpts = CEC.OUTS.map(function (o) { return [o.c, o.l + (o.old ? ' (earlier records)' : '')]; }).concat([['_', 'Awaiting doctor (no outcome yet)']]);
     var cols = CEC.listColsFor(who), sel = function (id, k, opts) {
       return '<select class="in" id="' + id + '">' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (f[k] === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>'; };
-    var html = '<div class="narrow lbw">' +
+    var html = '<div class="narrow lbw">' + todayCardHtml() +
       '<section class="card lbmain"><div class="ct">Registers</div>' +
       '<label class="lb" style="margin-top:6px">Dates</label><div class="sbtns lbdays">' + quick + '</div>' +
       '<div class="seg lbrange">' + [['0', 'One day'], ['1', 'Several days']].map(function (o) { var on = (L.range ? '1' : '0') === o[0];
@@ -7887,7 +8276,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         '<label class="lb" for="lbDx">Diagnosis <span class="muted">(any of these; separate with commas)</span></label><input class="in" id="lbDx" placeholder="e.g. ACS, Hypertension, DKA" value="' + h(f.dx) + '">' : '') +
       '<details class="lbd"' + (lbColsIs('entry') || lbColsIs('readings') ? '' : ' open') + '><summary>Columns, one by one</summary><div class="sbtns">' + (clin ? [['clinical', 'Clinical']] : []).concat([['all', 'All columns']]).map(function (c) {
         return '<button class="btn sm" data-act="lb-cols" data-v="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div>' +
-      '<div class="lbgrid">' + cols.map(function (c) { return lbTick('cols', c.k, c.h, c.k === 'remarks' || c.k === 'sign' ? ' <span class="muted small">(blank)</span>' : ''); }).join('') + '</div></details>' +
+      '<div class="lbgrid">' + cols.filter(function (c) { return !c.quick; }).map(function (c) { return lbTick('cols', c.k, c.h, c.k === 'remarks' || c.k === 'sign' ? ' <span class="muted small">(blank)</span>' : ''); }).join('') + '</div></details>' +
       '<div class="row2" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div><label class="lb" for="lbGroup">Group by</label>' +
       sel('lbGroup', 'group', [['none', 'One list'], ['cat', 'Category'], ['shift', 'Shift'], ['date', 'Date']].concat(clin ? [['out', 'Outcome']] : [])) + '</div>' +
       '<div><label class="lb" for="lbSort">Order</label>' + sel('lbSort', 'sort', [['time', 'Time'], ['mr', 'MR No.'], ['name', 'Name']]) + '</div>' +
@@ -8410,8 +8799,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<button class="stile mode mred" data-act="mode" data-v="m"><span class="sti" aria-hidden="true">' + svg('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>') + '</span><b>Manual slip</b><span>The staff write the paper slip by hand</span></button>' +
       tile('q-mrreg', svg('<path d="M5 4h11l3 3v13H5z"/><path d="M8 9h2M8 13h2M8 17h2M12 9h4M12 13h4M12 17h4"/>'), 'MR register', 'Today’s MR numbers as they are given, newest on top') +
       tile('q-slip', svg('<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>'), 'OPD / ER slip', 'Print, choose slips, autoprint') +
-      tile('q-ecg', svg('<path d="M2 12h3l2-6 3 12 3-9 2 3h7"/>'), 'ECG', 'Tick ECG done: last hour and advised by the doctor') +
+      tile('q-ecg', svg('<path d="M2 12h3l2-6 3 12 3-9 2 3h7"/>'), 'ECG', 'Tick ECG done: this shift and the two before') +
       tile('q-vit', svg('<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/><path d="M3.5 12h4l1.5-3 3 6 1.5-3h7"/>'), 'Vitals', 'BP, pulse, temp, RBS, SpO2 of registered patients') +   // 13-11-2026: back on Home (also Two staff › Vitals)
+      tile('q-rbs', svg('<path d="M12 3c-3.5 4.6-6 8-6 11a6 6 0 0 0 12 0c0-3-2.5-6.4-6-11z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/>'), 'RBS', 'Tick RBS done: this shift and the two before') +   // 18-11-2026 (after Vitals, which stays beside ECG)
       (isAdmin() ? tile('go-petty', svg('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h3M8 12h3M8 16h3M13 8h3M13 12h3M13 16h3"/>'), 'Petty OPD register', 'Paste names (any number): MR each morning, up to the daily limit') : '') +
       (canClin() ? tile('q-erx', svg('<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/>'), 'ER procedures & medications', 'Cannula, oxygen, CPR; medicines given (drug account)') : '') +
       '</div>';
@@ -9032,7 +9422,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'bulk-go': {
         var bl = (S.bulk && S.bulk.list) || [];
         if (!bl.length) break;
-        confirmBox('Sign off ' + bl.length + ' OPD patients?', 'Each gets the diagnosis shown, with outcome Discharged home (follow-up planned for chronic conditions; hypertensive urgency: discharged after 2 hours of observation). You can undo this later.', 'Sign off', false).then(function (ok) {
+        confirmBox('Sign off ' + bl.length + ' OPD patients?', 'Each gets the diagnosis shown, with outcome Sent home (Planned for cardiac follow-up for chronic conditions). You can undo this later.', 'Sign off', false).then(function (ok) {
           if (!ok) return;
           var ids = bl.map(function (x) { return x.id; }), done = 0, signed = 0, CH = 400;     // 12-11-2026: in parts of 400, so a long list finishes
           (function next() {
@@ -9054,10 +9444,29 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'd-testpdf': withPaper(function (p) { slipPdfOffer(testSlipE(), p); }, true); break;
       case 'slip-reprint': { var fe = findEntry(id); if (fe) slipFor(fe.e, fe.sh); break; }
       case 'f-adv': { var fa = S.form.adv, ai2 = fa.indexOf(v); if (ai2 >= 0) fa.splice(ai2, 1); else fa.push(v); setOn('fAdv', fa); break; }
-      case 'qe-slipk': S.qe.slip = S.qe.slip === v ? '' : v; setOn('qSlip', S.qe.slip); break;
+      case 'qe-slipk': S.qe.slip = S.qe.slip === v ? '' : v; setOn('qSlip', S.qe.slip); { var qf = $('qFoot'); if (qf) qf.innerHTML = qeFoot(qeEntry()); } break;
+      case 'qe-bp': saveQuick('bp'); break;          // 18-11-2026: BP only (no slip)
+      case 'qe-print': {                              // Print slip: asked first whether the patient wants the doctor
+        var qerr = [], qv = readVitals(qerr);
+        if (qerr.length || !VIT.some(function (x) { return qv[x[0]]; })) { saveQuick('slip'); break; }   // (what is wrong or missing is shown first)
+        askDoctor().then(function (yes) { if (!S.qe) return; if (yes === true) saveQuick('slip'); else if (yes === false) saveQuick('bp'); });
+        break; }
+      case 'vit-bpslip': {                            // BP check only: the patient wants the doctor after all
+        var bsh = el.getAttribute('data-src') === 'prev' ? S.prevShift : S.work, be = bsh && bsh.entries.filter(function (x) { return x.id === id; })[0];
+        if (!be || (S.bpBusy && S.bpBusy[id])) break;
+        askDoctor().then(function (yes) {
+          if (yes !== true) return;
+          var bv = {}; VIT.forEach(function (x) { bv[x[0]] = be[x[0]] || ''; });
+          S.bpBusy = S.bpBusy || {}; S.bpBusy[id] = 1; render();
+          sendVitals({ vit: bv, slip: 'OPD', bpSlip: true }, bsh, be, false).then(function (saved) {
+            delete S.bpBusy[id]; putEntry(bsh, saved); toast((saved.tok ? 'Slip ' + saved.tok + ' is ready: ' : 'Saved: ') + saved.name + '.'); render();
+          }, function (x) { delete S.bpBusy[id]; toast(errText(x)); render(); });
+        });
+        break; }
       case 'q-vit': openQueue('vit'); break;
       case 'q-erx': case 'q-erp': case 'q-erm': if (isOff()) { toast('This page needs internet.'); break; } S.erQ = ''; setView('erx'); refresh(true); break;
       case 'q-tick': tickEcg(id, el.getAttribute('data-src')); break;
+      case 'q-rtick': tickEcg(id, el.getAttribute('data-src'), 'rbs'); break;
       case 'q-pv': {                                  // 15-11-2026: the sheets Print all would print now, in the chosen paper
         var ppv = qItems(Q_KINDS.slipq.lists[0][1]).map(function (x) { return { e: x.e, sh: x.sh }; });
         if (!ppv.length) { toast('No slip is waiting to be printed.'); break; }
@@ -9077,9 +9486,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'er-save': saveEr(); break;
       case 'er-close': closeEr(); break;
       case 'q-ecg': openQueue('ecgq'); break;
+      case 'q-rbs': openQueue('rbsq'); break;
+      case 'tl-dl': todayDl(); break;
+      case 'tl-print': todayPrint(); break;
       case 'q-slip': openQueue('slipq'); break;
-      case 'q-refresh': refresh(false).then(function () { if (S.me) toast('Updated'); }); break;
-      case 'vit-tab': S.vitTab = v === 'done' ? 'done' : 'pend'; render(); break;
+      case 'q-refresh': if (S.view === 'ecgq' || S.view === 'rbsq') ecgLoad(true); refresh(false).then(function () { if (S.me) toast('Updated'); }); break;
+      case 'ecg-tile': { var tk = el.getAttribute('data-k') === 'rbs' ? 'rbs' : 'ecg'; S[tk + 'Tile'] = v; ecgPaint(tk); break; }
+      case 'vit-tab': S.vitTab = v === 'done' || v === 'bp' ? v : 'pend'; render(); break;
       case 'q-open': { var qsh0 = el.getAttribute('data-src') === 'prev' ? S.prevShift : S.work, qe0 = qsh0 && qsh0.entries.filter(function (x) { return x.id === id; })[0];
         if (qe0) openQuick(qe0, 'vitals', el.getAttribute('data-src')); break; }
       case 'q-print': { var qsh1 = el.getAttribute('data-src') === 'prev' ? S.prevShift : S.work, qe1 = qsh1 && qsh1.entries.filter(function (x) { return x.id === id; })[0];
@@ -9379,7 +9792,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'lb-set': S.lb.cfg[el.getAttribute('data-k')] = v; S.lb.preset = '';
         Array.prototype.forEach.call(el.parentNode.querySelectorAll('button'), function (b) { b.classList.toggle('on', b === el); }); lbRefresh(); break;
       case 'lb-cols': {
-        var allK = CEC.listColsFor(lbWho()).map(function (c) { return c.k; });
+        var allK = CEC.listColsFor(lbWho()).filter(function (c) { return !c.quick; }).map(function (c) { return c.k; });
         S.lb.cfg.cols = v === 'all' ? allK.filter(function (k) { return k !== 'sign' && k !== 'remarks' && k !== 'by'; }) : CEC.LIST_COLSETS[v].slice();
         S.lb.preset = ''; render(); break;
       }
@@ -9448,6 +9861,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'tmp-pick': { var tf = $('tmpFile'); if (tf) { tf.value = ''; tf.click(); } break; }
       case 'tmp-pv': tmpPreview(id); break;
       case 'tmp-print': tmpPrint(id); break;
+      case 'tpv-ck': tpvToggle(+el.getAttribute('data-i'), el.checked); break;
+      case 'tpv-pg': if (!(ev && ev.target && ev.target.closest && ev.target.closest('.tpck'))) { var tpi = +el.getAttribute('data-i'); tpvToggle(tpi, !(S.tpv && S.tpv.sel.indexOf(tpi) >= 0)); } break;
+      case 'tpv-all': { var tpa = []; for (var tpk = 0; S.tpv && tpk < S.tpv.n; tpk++) tpa.push(tpk); tpvSet(tpa, false); break; }
+      case 'tpv-none': tpvSet([], false); break;
+      case 'tpv-size': if (S.tpv) { S.tpv.small = v === 'small'; Array.prototype.forEach.call(el.parentNode.querySelectorAll('button'), function (b) { b.classList.toggle('on', b === el); }); tpvBody(); } break;
+      case 'tpv-print': if (S.tpv && S.tpv.sel.length && !S.tpv.err) { var tpid = S.tpv.id, tpn = S.tpv.n, tps = S.tpv.sel; closePreview(); tmpPrint(tpid, tps.length === tpn ? '' : pgText(tps)); } break;
       case 'tmp-del': confirmBox('Remove this document?', 'It is deleted for good from the census and this device.', 'Remove', true).then(function (ok) { if (ok) tmpDel(id); }); break;
       case 'pv-print': pvAct('print'); break;
       case 'pv-dl': pvAct('dl'); break;
@@ -9601,7 +10020,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
     else if (t.id === 'apQ') { S.ap.q = t.value; $('apRes').innerHTML = apSearchHtml(); }
     else if (t.id === 'fMedX' || t.id === 'fProcX' || t.id === 'erXP' || t.id === 'erXM') suggPaint(t.id);
     else if (t.id === 'ecgQ') { S.ecgQ = t.value; $('ecgRes').innerHTML = ecgSearchHtml(); }
+    else if (t.id === 'rbsQ') { S.rbsQ = t.value; $('rbsRes').innerHTML = ecgSearchHtml('rbs'); }
     else if (t.id === 'vitQ') { S.vitQ = t.value; $('vitRes').innerHTML = vitDoneHtml(); }
+    else if (t.id === 'tpvPg') tpvBox(t.value);
     else if (t.id === 'ecQ') { S.echo.q = t.value; var eq = (S.echo.q || '').trim().toLowerCase(), eg = [], el2 = null;
       (S.echo.list || []).filter(function (x) { return !eq || (x.name + ' ' + (x.mr || '') + ' ' + (x.ref || '')).toLowerCase().indexOf(eq) >= 0; }).forEach(function (x) { if (!el2 || el2.date !== x.date) { el2 = { date: x.date, items: [] }; eg.push(el2); } el2.items.push(x); });
       $('ecRes').innerHTML = echoListHtml(eg); }
@@ -9673,7 +10094,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (S.cert || S.af) { ev.preventDefault(); ev.target.blur(); return; }
     if (S.er) { ev.preventDefault(); var EP = erPart(ev.target.id); if (EP) { if (!suggExact(EP.x)) erAdd(EP.k); } else ev.target.blur(); return; }
     if (S.qe) { ev.preventDefault(); ev.target.blur(); return; }
-    if (ev.target.id === 'ecgQ' || ev.target.id === 'erQ' || ev.target.id === 'vitQ' || ev.target.id === 'ecQ') { ev.preventDefault(); ev.target.blur(); return; }
+    if (ev.target.id === 'ecgQ' || ev.target.id === 'rbsQ' || ev.target.id === 'erQ' || ev.target.id === 'vitQ' || ev.target.id === 'ecQ') { ev.preventDefault(); ev.target.blur(); return; }
     if (S.ef) { ev.preventDefault(); if (ev.target.id === 'efAddIn') echoAdd(); else ev.target.blur(); return; }
     if (S.form && ev.target.id === 'fEcgQ') { ev.preventDefault(); ecgFind(); return; }
     if (!S.form) return;
