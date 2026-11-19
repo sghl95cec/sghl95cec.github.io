@@ -920,6 +920,47 @@ details.card.lbmore .gh{margin-top:14px}
 button.prow.bdrow{width:100%;text-align:left;font:inherit;color:inherit;background:#fff;border:0;border-bottom:1px solid var(--line);cursor:pointer}
 .bdrow .pr-d{font-size:12px;color:var(--mute)}
 
+/* 19-11-2026: Home: Slip generation holds Electronic slip and Manual slip */
+.stiles .slipgen{grid-column:1 / -1;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 10px 12px}
+.slipgen .sgh{font-weight:700;font-size:15px;color:var(--ink);margin:0 4px 8px}
+.slipgen .sgb{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.slipgen .stile{min-height:128px}
+.rgall{margin:12px 0 4px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.rglist .check{display:flex;align-items:center;gap:8px;padding:5px 0;flex-wrap:wrap}
+
+/* 19-11-2026: Arrange tiles */
+.tarr{text-align:center;margin:-4px 0 12px}
+.tlist2{list-style:none;margin:0;padding:0}
+.tlist2 li{display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid var(--line)}
+.tlist2 .tln{flex:1;font-weight:600}
+.tlist2 .btn[disabled]{opacity:.35}
+.tadd{display:flex;flex-wrap:wrap;gap:8px}
+
+/* 19-11-2026: Down-time forms */
+.dtbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:4px 0 8px}
+.dtbar .in{width:auto;margin:0}
+.dtrow{border:1px solid var(--line);border-left:4px solid var(--line);border-radius:10px;padding:8px 10px;margin:0 0 8px;background:var(--card,#fff)}
+.dtrow.ok{border-left-color:#1f8a4c}
+.dtrow.nu{border-left-color:#888;opacity:.8}
+.dtrow.nu .dtf{display:none}
+.dtrow.in{border-left-color:#2563eb;background:rgba(37,99,235,.05)}
+.dtrow.part{border-left-color:var(--red)}
+.dth{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 6px}
+.dtno{font-weight:700;min-width:5.5em}
+.dts{font-size:12px;color:var(--muted,#666);flex:1}
+.dtrow.part .dts{color:var(--red)}
+.dtrow.ok .dts{color:#1f8a4c}
+.dtnu,.dtck{display:inline-flex;align-items:center;gap:4px;font-size:14px;white-space:nowrap}
+.dtf .in{margin:0 0 6px}
+.dtf2{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.dtf2 .in{width:auto;flex:0 1 auto}
+.dtf2 .in[data-dt=ref],.dtf2 .in[data-dt=remarks]{flex:1 1 9em}
+.dtleft{color:var(--red);font-weight:600}
+.dtdone{color:#1f8a4c;font-weight:600}
+
+/* 19-11-2026 (V2.6) */
+.tag.nomr{background:#fde8e8;color:var(--red);border:1px solid var(--red)}
+
 </style>
 </head>
 <body>
@@ -945,7 +986,7 @@ button.prow.bdrow{width:100%;text-align:left;font:inherit;color:inherit;backgrou
 <div id="toast" class="toast hidden"></div>
 <div id="printArea" aria-hidden="true"></div>
 <script>
-/* Minimal PDF writer: standard Type1 fonts, lines, rectangles, one JPEG image. Coordinates are top-left based. */
+/* Minimal PDF writer: standard Type1 fonts, lines, rectangles, JPEG images (the logo, and since V2.6 photos). Coordinates are top-left based. */
 var PDFGen = (function () {
   var WIDTHS = {"Times-Roman": [250, 333, 408, 500, 500, 833, 778, 180, 333, 333, 500, 564, 250, 333, 250, 278, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 278, 278, 564, 564, 564, 444, 921, 722, 667, 667, 722, 611, 556, 722, 722, 333, 389, 722, 611, 889, 722, 722, 556, 722, 667, 556, 611, 722, 722, 944, 722, 722, 611, 333, 278, 333, 469, 500, 333, 444, 500, 444, 500, 444, 333, 500, 500, 278, 278, 500, 278, 778, 500, 500, 500, 500, 333, 389, 278, 500, 500, 722, 500, 500, 444, 480, 200, 480, 541], "Times-Bold": [250, 333, 555, 500, 500, 1000, 833, 278, 333, 333, 500, 570, 250, 333, 250, 278, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 333, 333, 570, 570, 570, 500, 930, 722, 667, 722, 722, 667, 611, 778, 778, 389, 500, 778, 667, 944, 722, 778, 611, 778, 722, 556, 667, 722, 722, 1000, 722, 722, 667, 333, 278, 333, 581, 500, 333, 500, 556, 444, 556, 444, 333, 500, 556, 278, 333, 556, 278, 833, 556, 500, 556, 556, 444, 389, 333, 556, 500, 722, 500, 500, 444, 394, 220, 394, 520], "Times-Italic": [250, 333, 420, 500, 500, 833, 778, 214, 333, 333, 500, 675, 250, 333, 250, 278, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 333, 333, 675, 675, 675, 500, 920, 611, 611, 667, 722, 611, 611, 722, 722, 333, 444, 667, 556, 833, 667, 722, 611, 722, 611, 500, 556, 722, 611, 833, 611, 556, 556, 389, 278, 389, 422, 500, 333, 500, 500, 444, 500, 444, 278, 500, 500, 278, 278, 444, 278, 722, 500, 500, 500, 500, 389, 389, 278, 500, 444, 667, 444, 444, 389, 400, 275, 400, 541], "Helvetica": [278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 278, 278, 584, 584, 584, 556, 1015, 667, 667, 722, 722, 667, 611, 778, 722, 278, 500, 667, 556, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 278, 278, 278, 469, 556, 333, 556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833, 556, 556, 556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584], "Helvetica-Bold": [278, 333, 474, 556, 556, 889, 722, 238, 333, 333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 333, 333, 584, 584, 584, 611, 975, 722, 722, 722, 722, 667, 611, 778, 722, 278, 556, 722, 611, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 333, 278, 333, 584, 556, 333, 556, 611, 556, 611, 556, 333, 611, 611, 278, 278, 556, 278, 889, 611, 611, 611, 611, 389, 556, 333, 611, 556, 778, 556, 556, 500, 389, 280, 389, 584]};
   var FONTS = { R: 'Times-Roman', B: 'Times-Bold', I: 'Times-Italic', H: 'Helvetica', HB: 'Helvetica-Bold' };
@@ -1067,6 +1108,13 @@ var PDFGen = (function () {
     this.sv({ t: 'st', x: x, y: y, w: w, h: h, t1: t1, t2: t2, z1: z1, z2: z2 });
   };
   Doc.prototype.setImage = function (bytes, w, h) { this.img = { bytes: bytes, w: w, h: h }; };
+  /* 19-11-2026 (V2.6): more JPEG images (photos of down-time forms): addImage gives a number, imageK draws it */
+  Doc.prototype.addImage = function (bytes, w, h, gray) { this.imgs = this.imgs || []; this.imgs.push({ bytes: bytes, w: w, h: h, gray: !!gray }); return this.imgs.length - 1; };
+  Doc.prototype.imageK = function (k, x, y, w, h) {
+    if (!this.imgs || !this.imgs[k]) return;
+    this.op('q ' + n2(w) + ' 0 0 ' + n2(h) + ' ' + n2(x) + ' ' + n2(this.H - y - h) + ' cm /Im' + (k + 2) + ' Do Q');
+    this.sv({ t: 'ik', k: k, x: x, y: y, w: w, h: h });
+  };
   Doc.prototype.image = function (x, y, w, h) {
     if (!this.img) return;
     this.op('q ' + n2(w) + ' 0 0 ' + n2(h) + ' ' + n2(x) + ' ' + n2(this.H - y - h) + ' cm /Im1 Do Q');
@@ -1086,7 +1134,7 @@ var PDFGen = (function () {
     var keys = Object.keys(FONTS);
     var catalog = obj(), pagesObj = obj(), fontObjs = {};
     keys.forEach(function (k) { fontObjs[k] = obj(); });
-    var imgObj = self.img ? obj() : null;
+    var imgObj = self.img ? obj() : null, xObjs = (self.imgs || []).map(function () { return obj(); });
     var pageObjs = [], contentObjs = [];
     self.pages.forEach(function () { pageObjs.push(obj()); contentObjs.push(obj()); });
     var infoObj = obj();
@@ -1098,12 +1146,17 @@ var PDFGen = (function () {
         ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + self.img.bytes.length + ' >>\nstream\n',
         self.img.bytes, '\nendstream']);
     }
+    (self.imgs || []).forEach(function (im, k) {
+      write(xObjs[k], ['<< /Type /XObject /Subtype /Image /Width ' + im.w + ' /Height ' + im.h + ' /ColorSpace /' + (im.gray ? 'DeviceGray' : 'DeviceRGB') + ' /BitsPerComponent 8 /Filter /DCTDecode /Length ' + im.bytes.length + ' >>\nstream\n',
+        im.bytes, '\nendstream']);
+    });
+    var xRes = (imgObj ? ' /Im1 ' + imgObj + ' 0 R' : '') + xObjs.map(function (o, k) { return ' /Im' + (k + 2) + ' ' + o + ' 0 R'; }).join('');
     var fontRes = keys.map(function (k) { return '/' + k + ' ' + fontObjs[k] + ' 0 R'; }).join(' '), demo = !!PDFGen.demo;
     self.pages.forEach(function (ops, i) {
       if (demo && !ops.marked) { var keep = self.cur; self.cur = ops; self.mark(0, 0, self.W, self.H); self.cur = keep; }
       var content = ops.filter(function (o) { return typeof o === 'string'; }).join('\n');
       write(pageObjs[i], '<< /Type /Page /Parent ' + pagesObj + ' 0 R /MediaBox [0 0 ' + self.W + ' ' + self.H + '] /Resources << /Font << ' + fontRes + ' >>' +
-        (imgObj ? ' /XObject << /Im1 ' + imgObj + ' 0 R >>' : '') + (demo ? ' /ExtGState << /GW << /Type /ExtGState /ca 0.4 /CA 0.4 >> /GT << /Type /ExtGState /ca 0.16 /CA 0.16 >> /GS << /Type /ExtGState /ca 0.55 /CA 0.55 >> >>' : '') + ' >> /Contents ' + contentObjs[i] + ' 0 R >>');
+        (xRes ? ' /XObject <<' + xRes + ' >>' : '') + (demo ? ' /ExtGState << /GW << /Type /ExtGState /ca 0.4 /CA 0.4 >> /GT << /Type /ExtGState /ca 0.16 /CA 0.16 >> /GS << /Type /ExtGState /ca 0.55 /CA 0.55 >> >>' : '') + ' >> /Contents ' + contentObjs[i] + ' 0 R >>');
       write(contentObjs[i], '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream');
     });
     write(infoObj, '<< /Title (' + esc(self.title || '') + ') /Producer (CEC Daily Census - SGHL) >>');
@@ -1137,7 +1190,8 @@ var PDFGen = (function () {
   }
   function b64(bytes) { var s = '', k = 0x8000; for (var i = 0; i < bytes.length; i += k) s += String.fromCharCode.apply(null, Array.prototype.slice.call(bytes, i, i + k)); return btoa(s); }
   Doc.prototype.svg = function () {
-    var self = this, W = self.W, H = self.H, img = self.img ? 'data:image/jpeg;base64,' + b64(self.img.bytes) : '', demo = !!PDFGen.demo;
+    var self = this, W = self.W, H = self.H, img = self.img ? 'data:image/jpeg;base64,' + b64(self.img.bytes) : '', demo = !!PDFGen.demo, ik = {};
+    var ikUrl = function (k) { return ik[k] || (ik[k] = 'data:image/jpeg;base64,' + b64(self.imgs[k].bytes)); };
     return self.pages.map(function (ops) {
       var out = '<svg xmlns="http://www.w3.org/2000/svg" class="pgsvg" viewBox="0 0 ' + W + ' ' + H + '" width="' + (W > H ? '297mm' : '210mm') + '" height="' + (W > H ? '210mm' : '297mm') + '">' +
         '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="#fff"/>';
@@ -1153,6 +1207,7 @@ var PDFGen = (function () {
           (o.stroke != null ? ' stroke="' + gc(o.stroke) + '" stroke-width="' + n2(o.lw) + '"' : '') + '/>';
         else if (o.t === 'rr') out += '<rect x="' + n2(o.x) + '" y="' + n2(o.y) + '" width="' + n2(o.w) + '" height="' + n2(o.h) + '" rx="' + n2(o.r) + '" fill="none" stroke="#000" stroke-width="' + n2(o.lw) + '"/>';
         else if (o.t === 'i' && img) out += '<image href="' + img + '" x="' + n2(o.x) + '" y="' + n2(o.y) + '" width="' + n2(o.w) + '" height="' + n2(o.h) + '" preserveAspectRatio="none"/>';
+        else if (o.t === 'ik' && self.imgs && self.imgs[o.k]) out += '<image href="' + ikUrl(o.k) + '" x="' + n2(o.x) + '" y="' + n2(o.y) + '" width="' + n2(o.w) + '" height="' + n2(o.h) + '" preserveAspectRatio="none"/>';
         else if (o.t === 'm') out += markSvg(o.x, o.y, o.w, o.h, o.bands);
         else if (o.t === 'st') out += '<g fill="#990a0a" fill-opacity="0.55" font-family="' + FAM.H[0] + '" font-weight="700" text-anchor="middle">' +
           '<text x="' + n2(o.x + o.w / 2) + '" y="' + n2(o.y + o.h / 2 - o.z1 * 0.1) + '" font-size="' + n2(o.z1) + '">' + xe(o.t1) + '</text>' +
@@ -1742,6 +1797,7 @@ var CEC = (function () {
     return {
       kind: 'shift', title: 'CEC census - ' + name + ' shift - ' + dmy(shift.censusDate),
       waHead: name + ' shift, ' + dmy(shift.censusDate) + ' (' + period + ')',
+      waTitle: 'CENSUS REPORT, ' + name.toUpperCase() + ' SHIFT', waWhen: ['Date: ' + weekday(shift.censusDate) + ', ' + dmy(shift.censusDate), 'Time: ' + period],
       file: 'CEC_Census_' + dmy(shift.censusDate) + '_' + name + '_Shift.pdf',
       refNo: 'No. CEC/SGHL/' + refDate(shift.censusDate) + '-' + shift.shift,
       dated: shift.closedAt ? dmyIso(shift.closedAt) : dmy(ymd(new Date())),
@@ -1781,6 +1837,7 @@ var CEC = (function () {
     return {
       kind: 'day', title: 'CEC census - 24 hours - ' + dmy(date),
       waHead: '24 hours, ' + dmy(date) + ' ' + t0 + ' to ' + dmy(next) + ' ' + t0,
+      waTitle: 'CENSUS REPORT, 24 HOURS', waWhen: ['From: ' + dmy(date) + ', ' + t0 + ' hrs', 'To: ' + dmy(next) + ', ' + t0 + ' hrs'],
       file: 'CEC_Census_24h_' + dmy(date) + '.pdf',
       refNo: 'No. CEC/SGHL/' + refDate(date) + '-24H',
       dated: dmy(next),
@@ -1815,6 +1872,7 @@ var CEC = (function () {
     var mName = monthName(from);
     return {
       kind: 'month', title: 'CEC census - ' + mName, waHead: mName + ' (' + dmy(from) + ' to ' + dmy(to) + ')',
+      waTitle: 'CENSUS REPORT, ' + mName.toUpperCase(), waWhen: ['From: ' + dmy(from), 'To: ' + dmy(to)],
       file: 'CEC_Census_' + mName.replace(' ', '_') + '.pdf',
       refNo: 'No. CEC/SGHL/' + from.slice(0, 4) + '/M' + from.slice(5, 7),
       dated: dmy(ymd(new Date())),
@@ -1851,6 +1909,7 @@ var CEC = (function () {
     var partial = last < 12;
     return {
       kind: 'year', title: 'CEC census - year ' + year, waHead: 'Year ' + year + (partial ? ' (01-01-' + year + ' to ' + dmy(to) + ')' : ''),
+      waTitle: 'ANNUAL CENSUS REPORT, YEAR ' + year, waWhen: partial ? ['From: 01-01-' + year, 'To: ' + dmy(to)] : [],
       file: 'CEC_Census_Annual_' + year + '.pdf',
       refNo: 'No. CEC/SGHL/' + year + '/ANNUAL',
       dated: dmy(ymd(new Date())),
@@ -1868,18 +1927,32 @@ var CEC = (function () {
       annex: null, entries: entries
     };
   }
+  /* 19-11-2026: the WhatsApp text for the admin group: plain and official, easy to read: one item a line, numbered headings, no symbols */
+  function waText(m, e, extra) {
+    var c = sexCount(e), g = groupBy(e, function (x) { return x.cat; }), n = 0, L = [];
+    function head(t) { n++; L.push('', '*' + n + '. ' + t + '*'); }
+    if (DEMO.on) L.push('*' + DEMO_LINE + '*', '');
+    L.push('*CARDIAC EMERGENCY CENTRE (CEC)*', 'Sindh Government Hospital Liaquatabad, Karachi', '', '*' + (m.waTitle || 'CENSUS REPORT') + '*');
+    (m.waWhen || [m.waHead]).forEach(function (x) { L.push(x); });
+    head('Patients attended');
+    L.push('Total: ' + c.T + ' (Male ' + c.M + ', Female ' + c.F + ')');
+    REC_CATS.forEach(function (k) { L.push(k.l + ': ' + (g[k.c] || []).length); });
+    (extra || []).forEach(function (x) { head(x[0]); x[1].forEach(function (r) { L.push(r); }); });
+    return L;
+  }
+  function waEnd(L, m) {
+    var sg = (m.signs || [])[0];
+    L.push('', 'Submitted for information, please.');
+    if (sg) L.push('', sg.name, sg.lines.join(', '));
+    return L.join('\n');
+  }
   function yearSummary(m) {
-    var e = m.entries, c = sexCount(e), g = groupBy(e, function (x) { return x.cat; });
-    var lines = (DEMO.on ? ['*' + DEMO_LINE + '*'] : []).concat(['*CARDIAC EMERGENCY CENTRE, SGHL*', '*Census: ' + m.waHead + '*', '', 'Total patients: ' + c.T + ' (Male ' + c.M + ', Female ' + c.F + ')',
-      REC_CATS.map(function (k) { return k.l + ' ' + ((g[k.c] || []).length); }).join(' | '), '', '*Month-wise*']);
-    m.sections[0].t.rows.forEach(function (r) { lines.push(r[0] + ': ' + r[3]); });
-    lines.push('', '*Top diagnoses*');
-    dxTable(e).rows.slice(0, 15).forEach(function (r) { lines.push(r[1] + ': ' + r[4]); });
-    var md = medTable(e).rows;
-    if (md.length) { lines.push('', '*Medications*'); md.forEach(function (r) { lines.push(r[0] + ': ' + r[3]); }); }
-    lines.push('', '*Outcome*');
-    outTable(e).rows.forEach(function (r) { lines.push(r[0] + ': ' + r[3]); });
-    return lines.join('\n');
+    var e = m.entries, md = medTable(e).rows;
+    var L = waText(m, e, [['Month-wise patients', m.sections[0].t.rows.map(function (r) { return r[0] + ': ' + r[3]; })],
+      ['Diagnoses (most frequent 15)', dxTable(e).rows.slice(0, 15).map(function (r) { return r[1] + ': ' + r[4]; })]]
+      .concat(md.length ? [['Medications', md.map(function (r) { return r[0] + ': ' + r[3]; })]] : [],
+        [['Outcome', outTable(e).rows.map(function (r) { return r[0] + ': ' + r[3]; })]]));
+    return waEnd(L, m);
   }
 
   /* ---------- HTML preview ---------- */
@@ -2763,6 +2836,88 @@ var CEC = (function () {
     });
     return out;
   }
+  /* 19-11-2026: the registers of the MR register page, for the shift running now (up to now) or the whole census day:
+     MR register (MR Nos.), OPD register (OPD Nos.), ER register (Emergency / Resus), ETT register, Echo register, BD register (with the brought dead details). */
+  var REGISTERS = [{ k: 'mr', l: 'MR register' }, { k: 'opd', l: 'OPD register' }, { k: 'er', l: 'ER register' }, { k: 'ett', l: 'ETT register' }, { k: 'echo', l: 'Echo register' }, { k: 'bd', l: 'BD register' }];
+  function regOf(k) {
+    return k === 'mr' ? function (e) { return !e.opd; } : k === 'opd' ? function (e) { return !!e.opd; } : k === 'er' ? function (e) { return e.cat === 'EMR'; } :
+      k === 'ett' ? function (e) { return e.cat === 'ETT'; } : k === 'echo' ? function (e) { return e.cat === 'ECHO'; } : function (e) { return e.cat === 'BD' || e.out === 'BD'; };
+  }
+  function regCounts(shifts) {
+    var out = {}, all = [];
+    shifts.forEach(function (s) { (s.entries || []).forEach(function (e) { if (!/^(q-|tmp)/.test(e.id || '')) all.push(e); }); });
+    REGISTERS.forEach(function (r) { out[r.k] = all.filter(regOf(r.k)).length; });
+    return out;
+  }
+  function registerLists(shifts, keys, st, nowIso, who, day) {
+    var out = [], to = hm(nowIso), s0 = shifts[0] || {}, date = s0.censusDate || ymd(new Date());
+    REGISTERS.forEach(function (r) {
+      if (keys.indexOf(r.k) < 0) return;
+      var f = regOf(r.k), sh = shifts.map(function (s) { return { id: s.id, shift: s.shift, censusDate: s.censusDate, entries: (s.entries || []).filter(f) }; });
+      var cols = r.k === 'bd' ? ['no', 'time', 'mr', 'name', 'agesex', 'bdcnic', 'bdcell', 'bdaddr'] : r.k === 'ett' || r.k === 'echo' ? ['no', 'time', 'mr', 'name', 'agesex', 'remarks'] :
+        ['no', 'time', 'mr', 'name', 'agesex', 'bpck', 'ecgck', 'rbsck', 'outck'];
+      if (day) cols.splice(1, 0, 'shift');
+      var sp = buildList(sh, { cols: cols, group: 'none', sort: 'time', page: 'portrait', title: r.l.toUpperCase() }, who || {}, date);
+      sp.cols.forEach(function (c) { if (c.k === 'no') c.h = 'S.No.'; if (c.k === 'mr') { c.h = r.k === 'opd' ? 'OPD No.' : 'MR No.'; c.f = function (e) { return bdMr(e) || '-'; }; } });
+      var from = day ? times(st)[SHIFTS[0].c] : s0.openedAt ? hm(s0.openedAt) : times(st)[s0.shift];
+      sp.sub = (day ? 'Census day ' : shiftName(s0.shift) + ' shift, ') + weekday(date) + ' ' + dmy(date) + ' \u00b7 ' + from + ' to ' + to + ' hrs \u00b7 ' + sp.n + ' patient' + (sp.n === 1 ? '' : 's');
+      if (sp.cols.some(function (c) { return c.k === 'outck'; })) sp.note = 'Outcome: Other OPD = referred to other OPD; Cardiac F/U = planned for cardiac follow-up; Next shift = given to next shift; BD = brought dead; blank = still with the doctor.';
+      sp.portrait = true; sp.key = r.k; sp.label = r.l;
+      out.push(sp);
+    });
+    return out;
+  }
+  /* ---------- 19-11-2026 (V2.7): Download registers. Period: this shift, today, one date or dates. What: everyone in one list by time
+     (MR and OPD Nos.; the MR Nos. come in sequence), MR Nos. only (ER / Resus, OPD, Echo, ETT, BD each in its own box, one after another on the
+     same pages), or OPD Nos. only. ---------- */
+  var DL_KINDS = [{ k: 'EMR', l: 'ER / Resus' }, { k: 'OPD', l: 'OPD' }, { k: 'ECHO', l: 'Echo' }, { k: 'ETT', l: 'ETT' }, { k: 'BD', l: 'BD (brought dead)' }];
+  function dlKindOf(e) { return e.cat === 'BD' || e.out === 'BD' ? 'BD' : e.cat === 'EMR' || e.cat === 'ECHO' || e.cat === 'ETT' ? e.cat : 'OPD'; }
+  function dlLists(shifts, o, st, nowIso, who) {
+    var span = o.span || 'shift', multi = span === 'range' && o.from !== o.to, s0 = shifts[0] || {}, date = s0.censusDate || ymd(new Date());
+    var base = ['no'].concat(multi ? ['date', 'shift'] : span === 'shift' ? [] : ['shift']).concat(['time', 'mr', 'name', 'agesex']);
+    var std = base.concat(o.what === 'all' ? ['cat'] : []).concat(['bpck', 'ecgck', 'rbsck', 'outck']), bdc = base.concat(['bdcnic', 'bdcell', 'bdaddr']);
+    var live = function (e) { return !/^(q-|tmp)/.test(e.id || ''); };
+    function mk(test, cols, title) {
+      var sh = shifts.map(function (s) { return { id: s.id, shift: s.shift, censusDate: s.censusDate, entries: (s.entries || []).filter(function (e) { return live(e) && test(e); }) }; });
+      var sp = buildList(sh, { cols: cols, group: 'none', sort: 'time', page: 'portrait', title: title }, who || {}, date);
+      var list = [];
+      sp.groups.forEach(function (g) { list = list.concat(g.list); });
+      list.sort(function (a, b) { var x = (a._date || '') + (a.t || ''), y = (b._date || '') + (b.t || ''); return x < y ? -1 : x > y ? 1 : 0; });
+      sp.cols.forEach(function (c) {
+        if (c.k === 'no') c.h = 'S.No.';
+        if (c.k === 'mr') { c.h = o.what === 'opd' ? 'OPD No.' : o.what === 'all' ? 'MR / OPD No.' : 'MR No.'; c.f = function (e) { var n = bdMr(e) || '-'; return o.what === 'all' && e.opd && n !== '-' ? 'OPD ' + n : n; }; }
+      });
+      sp.list = list;
+      return sp;
+    }
+    var title, groups = [], cols, empty = [];
+    if (o.what === 'opd') {
+      var so = mk(function (e) { return !!e.opd; }, std, 'OPD REGISTER'); title = 'OPD REGISTER (OPD NOS.)'; cols = so.cols; groups.push({ h: '', plain: true, list: so.list });
+    } else if (o.what === 'all') {
+      var sa = mk(function () { return true; }, std, 'ALL PATIENTS'); title = 'ALL PATIENTS, BY TIME (MR AND OPD NOS.)'; cols = sa.cols; groups.push({ h: '', plain: true, list: sa.list });
+    } else {
+      var ks = (o.kinds && o.kinds.length ? o.kinds : DL_KINDS.map(function (x) { return x.k; }));
+      title = 'MR REGISTER (MR NOS.)' + (ks.length < DL_KINDS.length ? ': ' + DL_KINDS.filter(function (x) { return ks.indexOf(x.k) >= 0; }).map(function (x) { return x.l.toUpperCase(); }).join(', ') : '');
+      DL_KINDS.forEach(function (K) {
+        if (ks.indexOf(K.k) < 0) return;
+        var sk = mk(function (e) { return !e.opd && dlKindOf(e) === K.k; }, K.k === 'BD' ? bdc : std, K.l);
+        if (!cols && K.k !== 'BD') cols = sk.cols;
+        if (sk.list.length) groups.push({ h: K.l, list: sk.list, cols: K.k === 'BD' ? sk.cols : null, key: K.k }); else empty.push(K.l);
+      });
+      if (!cols) cols = mk(function () { return false; }, std, '').cols;
+      groups.forEach(function (g) { if (!g.cols) g.cols = cols; });
+    }
+    var n = groups.reduce(function (a, g) { return a + g.list.length; }, 0), to = hm(nowIso), sub;
+    if (span === 'shift') sub = shiftName(s0.shift) + ' shift, ' + weekday(date) + ' ' + dmy(date) + ' · ' + (s0.openedAt ? hm(s0.openedAt) : times(st)[s0.shift]) + ' to ' + to + ' hrs';
+    else if (span === 'day') sub = 'Census day ' + weekday(date) + ' ' + dmy(date) + ' · ' + times(st)[SHIFTS[0].c] + ' to ' + to + ' hrs';
+    else if (!multi) sub = 'Census day ' + weekday(o.from) + ' ' + dmy(o.from);
+    else sub = 'From ' + weekday(o.from) + ' ' + dmy(o.from) + ' to ' + weekday(o.to) + ' ' + dmy(o.to);
+    sub += ' · ' + n + ' patient' + (n === 1 ? '' : 's');
+    var sp = { title: title, sub: sub, cols: cols, groups: groups, portrait: true, n: n, empty: 'No patients.', emptyKinds: empty };
+    if (groups.some(function (g) { return (g.cols || cols).some(function (c) { return c.k === 'outck'; }); }))
+      sp.note = 'Outcome: Other OPD = referred to other OPD; Cardiac F/U = planned for cardiac follow-up; Next shift = given to next shift; BD = brought dead; blank = still with the doctor.';
+    return sp;
+  }
   function listText(spec) {
     var byDate = spec.groups.length > 0 && /^[A-Z][a-z]+day, /.test(spec.groups[0].h), hasDate = spec.cols.some(function (c) { return c.k === 'date'; });
     var cols = spec.cols.filter(function (c) { return ['no', 'remarks', 'sign', 'by'].indexOf(c.k) < 0 && !(c.k === 'day' && (hasDate || byDate)) && !(c.k === 'date' && byDate); });
@@ -2777,22 +2932,51 @@ var CEC = (function () {
     return lines.join('\n');
   }
   function listPdf(o, logo) {
-    var P = PDFGen, d = new P.Doc(!o.portrait), L = 36, R = d.W - 36, CW = R - L, TOP = 40, BOTTOM = d.H - 40, y;
-    d.title = o.title;
-    if (logo) { d.setImage(logo.bytes, logo.w, logo.h); d.image(L, 24, 40, 40 * logo.h / logo.w); }
+    var d = new PDFGen.Doc(!o.portrait); d.title = o.title;
+    if (logo) d.setImage(logo.bytes, logo.w, logo.h);
+    listDraw(d, o, logo);
+    listFoot(d, [[0, d.pages.length - 1]]);
+    return d.output();
+  }
+  /* 19-11-2026: several registers in one PDF (MR register page): each starts on a new page, with its own heading and page numbers */
+  function listPdfMany(list, logo) {
+    var d = new PDFGen.Doc(!list[0].portrait), parts = []; d.title = list.map(function (o) { return o.title; }).join(', ');
+    if (logo) d.setImage(logo.bytes, logo.w, logo.h);
+    list.forEach(function (o, k) { if (k) d.addPage(); var p0 = d.pages.length - 1; listDraw(d, o, logo); parts.push([p0, d.pages.length - 1]); });
+    listFoot(d, parts);
+    return d.output();
+  }
+  function listFoot(d, parts) {
+    parts.forEach(function (pp) {
+      for (var i = pp[0]; i <= pp[1]; i++) {
+        d.usePage(i);
+        d.text(36, d.H - 20, 'Generated by CEC Daily Census, SGHL on ' + nowStamp(), 'R', 8, 'left', 0.35);
+        d.text(d.W - 36, d.H - 20, 'Page ' + (i - pp[0] + 1) + ' of ' + (pp[1] - pp[0] + 1), 'R', 8, 'right', 0.35);
+      }
+    });
+  }
+  function listDraw(d, o, logo) {
+    var P = PDFGen, L = 36, R = d.W - 36, CW = R - L, TOP = 40, BOTTOM = d.H - 40, y;
+    if (logo) d.image(L, 24, 40, 40 * logo.h / logo.w);
     d.text(d.W / 2, 40, 'SINDH GOVERNMENT HOSPITAL LIAQUATABAD, KARACHI', 'B', 14, 'center');
     d.text(d.W / 2, 57, 'CARDIAC EMERGENCY CENTRE', 'B', 11.5, 'center');
     d.line(L, 78, R, 78, 1.2);
     d.text(d.W / 2, 96, o.title, 'B', 12, 'center');
     d.text(d.W / 2, 110, o.sub, 'R', 10, 'center');
     y = 126;
-    var cols = o.cols.filter(function (c) { return !c.csvOnly; }), size = 8.5, xs = [], x = L, W;
-    if (cols.every(function (c) { return c.m; })) {               // list maker: every column at least its minimum width
-      var ms = cols.reduce(function (a, c) { return a + c.m; }, 0), ws = cols.reduce(function (a, c) { return a + (c.wt || 1); }, 0);
-      if (ms > CW) { size = Math.max(6, 8.5 * CW / ms); W = cols.map(function (c) { return c.m * CW / ms; }); }
-      else W = cols.map(function (c) { return c.m + (CW - ms) * (c.wt || 1) / ws; });
-    } else W = cols.map(function (c) { return c.w * CW; });
-    cols.forEach(function (c, i) { c._w = W[i]; xs.push(x); x += W[i]; });
+    var cols, size, xs, W, colsOf = null;
+    function setCols(cs) {                              // 19-11-2026 (V2.7): a box (group) may have its own columns (BD: CNIC, contact, address)
+      if (cs === colsOf) return; colsOf = cs;
+      cols = cs.filter(function (c) { return !c.csvOnly; }); size = 8.5; xs = []; var x = L;
+      if (cols.every(function (c) { return c.m; })) {               // list maker: every column at least its minimum width
+        var ms = cols.reduce(function (a, c) { return a + c.m; }, 0), ws = cols.reduce(function (a, c) { return a + (c.wt || 1); }, 0);
+        if (ms > CW) { size = Math.max(6, 8.5 * CW / ms); W = cols.map(function (c) { return c.m * CW / ms; }); }
+        else W = cols.map(function (c) { return c.m + (CW - ms) * (c.wt || 1) / ws; });
+      } else W = cols.map(function (c) { return c.w * CW; });
+      cols.forEach(function (c, i) { c._w = W[i]; xs.push(x); x += W[i]; });
+      head = lay(cols.map(function (c) { return c.h; }), 'HB');
+    }
+    var head;
     function lay(vals, f, body) {
       var ticks = [];                                     // 18-11-2026: a tick column draws a tick mark (the PDF fonts have no tick)
       var lines = vals.map(function (v, i) { if (body && cols[i].tick) { ticks[i] = !!v; return []; } return P.wrap(v == null ? '' : String(v), f, size, cols[i]._w - 6).slice(0, 5); });
@@ -2812,14 +2996,35 @@ var CEC = (function () {
       });
       y += l.h;
     }
-    var head = lay(cols.map(function (c) { return c.h; }), 'HB');
+    setCols(o.cols);
+    /* 19-11-2026 (V2.6): the photos of a down-time form, each on its own page, right after the patients entered from it */
+    function dtPhotoPages(m) {
+      var imgs = (m.imgs || []).filter(Boolean);
+      if (!imgs.length) {
+        var nl = P.wrap(m.cap + ': ' + (m.ids && m.ids.length ? 'photos not available here.' : 'no photo was kept.'), 'I', 8.5, CW);
+        if (y + nl.length * 11 + 4 > BOTTOM) { d.addPage(); y = TOP; }
+        nl.forEach(function (t) { y += 11; d.text(L, y, t, 'I', 8.5, 'left', 0.3); }); y += 4;
+        return;
+      }
+      imgs.forEach(function (im, k) {
+        d.addPage();
+        d.text(d.W / 2, 32, m.cap + (imgs.length > 1 ? ' (photo ' + (k + 1) + ' of ' + imgs.length + ')' : ''), 'HB', 10, 'center');
+        var bx = L, by = 42, bw = CW, bh = d.H - 42 - 34, sc = Math.min(bw / im.w, bh / im.h), w = im.w * sc, hh = im.h * sc;
+        d.imageK(d.addImage(im.bytes, im.w, im.h, im.gray), bx + (bw - w) / 2, by, w, hh);
+        d.rect(bx + (bw - w) / 2, by, w, hh, null, 0, 0.5);
+      });
+      y = BOTTOM + 1;                                   // the next patient (or the next list) starts on a new page, with the column heads
+    }
     if (!o.groups.length) { d.text(d.W / 2, y + 20, o.empty || 'No patients found for the selected dates.', 'I', 11, 'center'); }
     o.groups.forEach(function (g) {
+      setCols(g.cols || o.cols);
       if (y + 60 > BOTTOM) { d.addPage(); y = TOP; }
-      if (!g.plain) { y += 6; d.text(L, y + 8, g.h + ' (' + g.list.length + ')', 'HB', 10.5); y += 14; } else y += 4;
+      if (!g.plain) { y += 6; d.text(L, y + 8, g.h + ' (' + g.list.filter(function (e) { return !(e && e._dt); }).length + ')', 'HB', 10.5); y += 14; } else y += 4;
       draw(head, 'HB', 0.88);
-      g.list.forEach(function (e, i) {
-        var l = lay(cols.map(function (c) { return UP(c.f(e, i)); }), 'H', true);
+      var ri = 0;
+      g.list.forEach(function (e) {
+        if (e && e._dt) return dtPhotoPages(e._dt);
+        var l = lay(cols.map(function (c) { return UP(c.f(e, ri)); }), 'H', true); ri++;
         if (y + l.h > BOTTOM) { d.addPage(); y = TOP; draw(head, 'HB', 0.88); }
         draw(l, 'H', null);
       });
@@ -2830,13 +3035,64 @@ var CEC = (function () {
       if (y + nl.length * 10.5 + 6 > BOTTOM) { d.addPage(); y = TOP; }
       nl.forEach(function (t) { y += 10.5; d.text(L, y, t, 'I', 8, 'left', 0.25); });
     }
-    var nP = d.pages.length;
-    for (var i = 0; i < nP; i++) {
-      d.usePage(i);
-      d.text(L, d.H - 20, 'Generated by CEC Daily Census, SGHL on ' + nowStamp(), 'R', 8, 'left', 0.35);
-      d.text(R, d.H - 20, 'Page ' + (i + 1) + ' of ' + nP, 'R', 8, 'right', 0.35);
+  }
+  /* ---------- 19-11-2026 (V2.6): the patients of a down-time form in number order with the registers' other patients ("last number given
+     online, the form's patients, the photos of the form, then the numbers given when the census was back"), followed by the form's photos. ---------- */
+  function numP(x) { var m = /^(.*?)(\d+)(\D*)$/.exec(String(x || '').toUpperCase().replace(/\s+/g, '')); return m ? { p: m[1], n: +m[2], s: m[3] } : null; }
+  function jpegImg(b64) {
+    var bin = atob(String(b64 || '')), a = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+    if (a[0] !== 0xFF || a[1] !== 0xD8) return null;
+    for (var p = 2; p + 9 < a.length;) {
+      if (a[p] !== 0xFF) { p++; continue; }
+      var mk = a[p + 1], len = (a[p + 2] << 8) | a[p + 3];
+      if (mk >= 0xC0 && mk <= 0xC3) return { bytes: a, h: (a[p + 5] << 8) | a[p + 6], w: (a[p + 7] << 8) | a[p + 8], gray: a[p + 9] === 1 };
+      if (mk === 0xD8 || mk === 0x01 || (mk >= 0xD0 && mk <= 0xD7)) { p += 2; continue; }
+      p += 2 + len;
     }
-    return d.output();
+    return null;
+  }
+  function dtCap(b) {
+    var mr = !/echo/i.test(b.reg), opd = /opd/i.test(b.reg);
+    return 'Down-time form: ' + b.reg + ', ' + b.shift + ' shift, ' + weekday(b.date) + ' ' + dmy(b.date) + (mr && b.from ? ', ' + (opd ? 'OPD' : 'MR') + ' Nos. ' + b.from + ' to ' + b.to : '');
+  }
+  function dtWeave(spec, info, photos) {
+    var by = {}, lastG = {}, placed = {};
+    (info || []).forEach(function (b) { by[b.batch] = b; });
+    spec.groups.forEach(function (g, gi) { g.list.forEach(function (e) { if (e && e.dtb && by[e.dtb]) lastG[e.dtb] = gi; }); });
+    var groups = spec.groups.map(function (g, gi) {
+      var rest = [], bat = {}, order = [];
+      g.list.forEach(function (e) {
+        if (e && e.dtb && by[e.dtb]) { if (!bat[e.dtb]) { bat[e.dtb] = { rows: [], at: rest.length }; order.push(e.dtb); } bat[e.dtb].rows.push(e); }
+        else rest.push(e);
+      });
+      if (!order.length) return g;
+      var ins = order.map(function (b) {
+        var B = by[b], f = numP(B.from), t = numP(B.to), opd = /opd/i.test(B.reg), pos = -1;
+        var same = function (e) { var x = numP(e && e.mr); return x && f && x.p === f.p && x.s === f.s && !!e.opd === opd ? x : null; };
+        if (f && t && !/echo/i.test(B.reg)) {
+          rest.forEach(function (e, i) { var x = same(e); if (x && x.n < f.n) pos = i + 1; });
+          if (pos < 0) for (var j = 0; j < rest.length; j++) { var y = same(rest[j]); if (y && y.n > t.n) { pos = j; break; } }
+        }
+        if (pos < 0) pos = bat[b].at;
+        var rows = bat[b].rows.slice().sort(function (a, c) { var x = numP(a.mr), z = numP(c.mr); return x && z && x.p === z.p ? x.n - z.n : (a.t || '') < (c.t || '') ? -1 : 1; });
+        return { b: b, pos: pos, rows: rows, f: f ? f.n : 0 };
+      }).sort(function (a, c) { return a.pos - c.pos || a.f - c.f; });
+      var res = [], k = 0;
+      for (var i = 0; i <= rest.length; i++) {
+        while (k < ins.length && ins[k].pos === i) {
+          var I = ins[k++]; res = res.concat(I.rows);
+          if (lastG[I.b] === gi && !placed[I.b]) {
+            placed[I.b] = 1;
+            var B = by[I.b];
+            res.push({ _dt: { cap: dtCap(B), ids: B.photos || [], imgs: (B.photos || []).map(function (id) { return photos && photos[id]; }).filter(Boolean) } });
+          }
+        }
+        if (i < rest.length) res.push(rest[i]);
+      }
+      return Object.assign({}, g, { list: res });
+    });
+    return Object.assign({}, spec, { groups: groups });
   }
   function listCsv(spec) {
     var cols = spec.cols.filter(function (c) { return c.h !== 'No.' && !c.pdfOnly; }), rows = [];
@@ -2846,7 +3102,7 @@ var CEC = (function () {
     if (DEMO.on) rows.push([DEMO_LINE]);
     rows.push(head);
     spec.groups.forEach(function (g) {
-      g.list.forEach(function (e, i) {
+      g.list.filter(function (e) { return !(e && e._dt); }).forEach(function (e, i) {
         var r = []; cols.forEach(function (c) { r.push(UP(c.f(e, i))); if (spec.day && c.h === 'Date') r.push(weekday(e._date)); });
         if (multi) r.unshift(g.h);
         rows.push(r);
@@ -2950,14 +3206,18 @@ var CEC = (function () {
   /* A register's columns hold small functions, which cannot be sent: the sending device works out every cell first (listPlain),
      the print desk rebuilds the same list from those cells (listPlainPdf). */
   function listPlain(o) {
-    var cols = o.cols.filter(function (c) { return !c.csvOnly; });
+    var plainCols = function (cs) { return cs.filter(function (c) { return !c.csvOnly; }).map(function (c) { var o = { h: c.h, a: c.a || '', m: c.m || 0, wt: c.wt || 0, w: c.w || 0 }; if (c.tick) o.tick = true; return o; }); };
     return { title: o.title, sub: o.sub, portrait: !!o.portrait, empty: o.empty || '', note: o.note || '',
-      cols: cols.map(function (c) { var o = { h: c.h, a: c.a || '', m: c.m || 0, wt: c.wt || 0, w: c.w || 0 }; if (c.tick) o.tick = true; return o; }),
-      groups: o.groups.map(function (g) { return { h: g.h || '', plain: !!g.plain, rows: g.list.map(function (e, i) { return cols.map(function (c) { var v = c.f(e, i); return v == null ? '' : String(v); }); }) }; }) };
+      cols: plainCols(o.cols),
+      groups: o.groups.map(function (g) { var ri = 0, cols = (g.cols || o.cols).filter(function (c) { return !c.csvOnly; }); return { h: g.h || '', plain: !!g.plain, cols: g.cols ? plainCols(g.cols) : undefined, rows: g.list.map(function (e) {
+        if (e && e._dt) return { dt: { cap: e._dt.cap, ids: e._dt.ids || [] } };           // 19-11-2026 (V2.6): photos of a down-time form
+        var i = ri++; return cols.map(function (c) { var v = c.f(e, i); return v == null ? '' : String(v); }); }) }; }) };
   }
   function listPlainPdf(p, logo) {
-    var cols = (p.cols || []).map(function (c, k) { var o = { h: c.h, f: function (r) { return r[k]; } }; if (c.a) o.a = c.a; if (c.m) o.m = c.m; if (c.wt) o.wt = c.wt; if (c.w) o.w = c.w; if (c.tick) o.tick = true; return o; });
-    return listPdf({ title: p.title, sub: p.sub, portrait: p.portrait, empty: p.empty, note: p.note || '', cols: cols, groups: (p.groups || []).map(function (g) { return { h: g.h, plain: g.plain, list: g.rows || [] }; }) }, logo);
+    var mk = function (cs) { return (cs || []).map(function (c, k) { var o = { h: c.h, f: function (r) { return r[k]; } }; if (c.a) o.a = c.a; if (c.m) o.m = c.m; if (c.wt) o.wt = c.wt; if (c.w) o.w = c.w; if (c.tick) o.tick = true; return o; }); };
+    var cols = mk(p.cols);
+    return listPdf({ title: p.title, sub: p.sub, portrait: p.portrait, empty: p.empty, note: p.note || '', cols: cols, groups: (p.groups || []).map(function (g) {
+      return { h: g.h, plain: g.plain, cols: g.cols ? mk(g.cols) : undefined, list: (g.rows || []).map(function (r) { return r && !Array.isArray(r) && r.dt ? { _dt: r.dt } : r; }) }; }) }, logo);
   }
   /* ---------- Echocardiography report (14-11-2026 night): the CEC's report (Miss Erum / Dr. Maheen Alvi), made by ticking lines ----------
      Each line: k key, s part (st Structural interpretation, dp Doppler colour flow, nt Note, fin Final report only), g heading in the form,
@@ -3337,7 +3597,121 @@ var CEC = (function () {
   function echoProv(r) { return r.rs === 'P' || (!r.rs && !r.id); }       // a saved report from before 15-11-2026 (no status) counts as final
   function echoPdf(r, st, logo) { return echoDoc(r, st, logo).output(); }
   function echoFileName(r) { return 'Echo_Report_' + String(r.name || 'patient').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '') + '_' + (r.date ? dmy(r.date) : '') + '.pdf'; }
-  var SVG_DOCS = { letterPdf: letterPdf, listPdf: listPdf, listPlainPdf: listPlainPdf, apptSlipPdf: apptSlipPdf, deathCertPdf: deathCertPdf, echoPdf: echoPdf };
+  /* ---------- 19-11-2026 (V2.5): Down-time forms: blank A4 forms with the census heading, big boxes for handwriting (20 lines a page),
+     for the MR, OPD and Echo registers; the AI instructions for reading photos of a filled form; and the reader of the AI's answer. ---------- */
+  var DT_FORMS = {
+    mr: { t: 'MR REGISTER', no: 'MR No.', nos: 'MR Nos.', code: 'CEC-DT-MR', cols: [['S.No.', 26], ['MR No.', 74], ['Time', 40], ['Patient name (CAPITALS)', 0], ['Age', 32], ['Sex', 40, 'M     F'], ['Category', 100, 'ER   OPD   BD   ETT'], ['ECG', 32, 'box'], ['RBS', 32, 'box']] },
+    opd: { t: 'OPD REGISTER', no: 'OPD No.', nos: 'OPD Nos.', code: 'CEC-DT-OPD', cols: [['S.No.', 26], ['OPD No.', 74], ['Time', 40], ['Patient name (CAPITALS)', 0], ['Age', 32], ['Sex', 40, 'M     F'], ['ECG', 36, 'box'], ['RBS', 36, 'box']] },
+    echo: { t: 'ECHO REGISTER', no: 'MR No.', code: 'CEC-DT-ECHO', cols: [['S.No.', 26], ['MR No.', 70], ['Time', 38], ['Patient name (CAPITALS)', 0], ['Age', 30], ['Sex', 38, 'M     F'], ['Referred by', 92], ['Remarks', 92]] }
+  };
+  var DT_ROWS = 20;
+  function dtFormPdf(o, logo) {
+    var F = DT_FORMS[o.reg] || DT_FORMS.mr, pages = Math.max(1, Math.min(50, +o.pages || 1));
+    var d = new PDFGen.Doc(false); d.title = F.t + ' DOWN-TIME FORM';
+    if (logo) d.setImage(logo.bytes, logo.w, logo.h);
+    var L = 36, R = d.W - 36, CW = R - L, fixed = F.cols.reduce(function (a, c) { return a + c[1]; }, 0);
+    var W = F.cols.map(function (c) { return c[1] || CW - fixed; });
+    var box = function (x, y) { d.rect(x, y - 9, 10, 10, null, 0, 0.9); };
+    for (var p = 0; p < pages; p++) {
+      if (p) d.addPage();
+      if (logo) d.image(L, 24, 40, 40 * logo.h / logo.w);
+      d.text(d.W / 2, 40, 'SINDH GOVERNMENT HOSPITAL LIAQUATABAD, KARACHI', 'B', 14, 'center');
+      d.text(d.W / 2, 57, 'CARDIAC EMERGENCY CENTRE', 'B', 11.5, 'center');
+      d.line(L, 78, R, 78, 1.2);
+      d.text(d.W / 2, 98, F.t + ': DOWN-TIME FORM', 'B', 13, 'center');
+      var y = 124;
+      d.text(L, y, 'Date:', 'HB', 10); d.line(L + 30, y + 2, L + 140, y + 2, 0.6);
+      d.text(L + 160, y, 'Shift:', 'HB', 10);
+      [['Morning', 192], ['Evening', 262], ['Night', 332]].forEach(function (x) { box(L + x[1], y); d.text(L + x[1] + 14, y, x[0], 'H', 10); });
+      d.text(R - 112, y, 'Page', 'HB', 10); d.line(R - 84, y + 2, R - 56, y + 2, 0.6); d.text(R - 50, y, 'of', 'HB', 10); d.line(R - 36, y + 2, R, y + 2, 0.6);
+      y = 148;
+      if (o.reg === 'echo') { d.text(L, y, 'Echo done by:', 'HB', 10); d.line(L + 74, y + 2, L + 260, y + 2, 0.6); }
+      else { d.text(L, y, F.nos + ' on this page: from', 'HB', 10); var fx = L + (o.reg === 'opd' ? 152 : 146); d.line(fx, y + 2, fx + 72, y + 2, 0.6); d.text(fx + 78, y, 'to', 'HB', 10); d.line(fx + 94, y + 2, fx + 166, y + 2, 0.6); }
+      d.text(R - 190, y, 'Filled by:', 'HB', 10); d.line(R - 140, y + 2, R, y + 2, 0.6);
+      PDFGen.wrap('Write in CAPITALS, one patient a line, ' + (o.reg === 'echo' ? 'in the order seen.' : 'numbers in order. Write the number on every line; a number given to nobody: write NOT USED on its line.') +
+        (o.reg === 'mr' ? ' Circle the sex and the category; tick ECG / RBS when done.' : o.reg === 'opd' ? ' Circle the sex; tick ECG / RBS when done.' : ' Circle the sex.'), 'I', 8.5, CW).slice(0, 2)
+        .forEach(function (t, k) { d.text(L, 166 + k * 11, t, 'I', 8.5, 'left', 0.2); });
+      var top = 184, hh = 22, rh = 29, x = L;
+      d.rect(L, top, CW, hh, 0.88, 0, 0.8);
+      F.cols.forEach(function (c, i) { d.text(x + W[i] / 2, top + 14.5, c[0], 'HB', c[0].length > 12 ? 8.2 : 9, 'center'); x += W[i]; });
+      for (var r = 0; r < DT_ROWS; r++) {
+        var ry = top + hh + r * rh; x = L;
+        d.rect(L, ry, CW, rh, null, 0, 0.6);
+        F.cols.forEach(function (c, i) {
+          if (i) d.line(x, ry, x, ry + rh, 0.6);
+          if (i === 0) d.text(x + W[i] / 2, ry + rh / 2 + 3.5, String(p * DT_ROWS + r + 1), 'H', 9, 'center', 0.35);
+          else if (c[2] === 'box') d.rect(x + W[i] / 2 - 7, ry + rh / 2 - 7, 14, 14, null, 0, 0.8);
+          else if (c[2]) d.text(x + W[i] / 2, ry + rh / 2 + 3.5, c[2], 'H', 9, 'center', 0.5);
+          x += W[i];
+        });
+      }
+      var fy = top + hh + DT_ROWS * rh + 13;
+      d.text(L, fy, 'Back online: Home > MR register > Down-time forms (or the Down-time forms tile). ' + (o.reg === 'echo' ? 'Enter the patients and add photos of this page.' : 'Enter the numbers used (from ... to ...) and add photos of this page.'), 'I', 8, 'left', 0.3);
+      d.text(L, d.H - 20, F.code + '  \u00b7  Down-time form  \u00b7  CEC Daily Census, SGHL  \u00b7  printed ' + nowStamp(), 'R', 7.5, 'left', 0.4);
+      d.text(R, d.H - 20, 'Sheet ' + (p + 1) + ' of ' + pages, 'R', 7.5, 'right', 0.4);
+    }
+    return d.output();
+  }
+  /* What to tell Claude (or any AI) with the photos of a filled form */
+  function dtPrompt(reg) {
+    var mr = reg !== 'echo', no = reg === 'opd' ? 'OPD No.' : 'MR No.';
+    return 'These photos are pages of a hand-filled "' + (DT_FORMS[reg] || DT_FORMS.mr).t + ': DOWN-TIME FORM" of the Cardiac Emergency Centre census, ' +
+      'Sindh Government Hospital Liaquatabad. Read every written line of every page and reply with ONLY the lines below (no table, no other words).\n\n' +
+      'First line: DATE dd-mm-yyyy | SHIFT Morning, Evening or Night' + (mr ? ' | FROM first ' + no + ' | TO last ' + no : '') + '\n' +
+      'Then one line per patient, in the order written:\n' +
+      (reg === 'mr' ? 'MR No. | time hh:mm | name | age | M or F | ER, OPD, BD or ETT | ECG (Y if ticked, else empty) | RBS (Y if ticked, else empty)\n' :
+        reg === 'opd' ? 'OPD No. | time hh:mm | name | age | M or F | ECG (Y if ticked, else empty) | RBS (Y if ticked, else empty)\n' :
+          'MR No. | time hh:mm | name | age | M or F | referred by | remarks\n') +
+      '\nRules:\n- Copy exactly what is written; do not guess, do not correct, do not add patients.\n' +
+      '- If a letter or number cannot be read, write ? in its place.\n- Leave a field empty when nothing is written there.\n- Write names in CAPITALS.\n' +
+      (mr ? '- A line crossed out or marked NOT USED: write its number, then | NOT USED\n- Do not skip any number.\n' : '') +
+      '- Use | between fields.';
+  }
+  /* Reads the AI's answer (or text typed in the same shape): { head: {date, shift, from, to}, rows: [...], bad: [lines not understood] } */
+  function dtParse(text, reg) {
+    var out = { head: {}, rows: [], bad: [] }, SH = { M: 'M', MORNING: 'M', E: 'E', EVENING: 'E', N: 'N', NIGHT: 'N' };
+    var want = reg === 'mr' ? 8 : 7, md = /^\s*\|?\s*:?-{3,}/m.test(String(text || ''));       // a markdown table: | a | b | (outer bars dropped)
+    var yes = function (v) { return /^(Y|YES|TRUE|1|DONE|\u2713|\u2714|\u2611|X|TICK|TICKED)$/i.test(String(v || '').trim()); };
+    String(text || '').split(/\r?\n/).forEach(function (ln) {
+      var t = ln.replace(/\*\*/g, '').trim();
+      if (!t || /^```/.test(t) || /^[|\s:\-]+$/.test(t)) return;
+      if (/^DATE\b/i.test(t)) {
+        t.split('|').forEach(function (p) {
+          var m = /^\s*(DATE|SHIFT|FROM|TO)\s*[:=]?\s*(.*?)\s*$/i.exec(p); if (!m) return;
+          var k = m[1].toUpperCase(), v = m[2];
+          if (k === 'DATE') { var dm = /(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/.exec(v); if (dm) out.head.date = (dm[3].length === 2 ? '20' + dm[3] : dm[3]) + '-' + pad(+dm[2]) + '-' + pad(+dm[1]); }
+          else if (k === 'SHIFT') { var sv = SH[String(v).toUpperCase().replace(/\s*SHIFT$/, '')]; if (sv) out.head.shift = sv; }
+          else if (k === 'FROM') out.head.from = v.replace(/\s+/g, '').toUpperCase(); else out.head.to = v.replace(/\s+/g, '').toUpperCase();
+        });
+        return;
+      }
+      var c = (t.indexOf('|') >= 0 ? t.split('|') : t.split('\t')).map(function (x) { return x.trim(); });
+      if (t.indexOf('|') >= 0) {
+        if (md || (t.charAt(0) === '|' && t.slice(-1) === '|' && c.length >= want + 2)) { if (t.charAt(0) === '|') c.shift(); if (t.slice(-1) === '|') c.pop(); }
+        else while (c.length > want && c[c.length - 1] === '') c.pop();
+      }
+      if (c.length < 2) { out.bad.push(ln); return; }
+      var no = c[0].replace(/\s+/g, '').replace(/^(MR|OPD)(NO\.?)?[:.]?/i, '').toUpperCase();
+      if (/^(S\.?NO\.?|MRNO\.?|OPDNO\.?|NO\.?)$/i.test(c[0].replace(/\s+/g, ''))) return;             // a heading line
+      if (reg !== 'echo' && !/\d/.test(no)) { out.bad.push(ln); return; }
+      var r = { no: no, time: '', name: '', age: '', sex: '', cat: '', ecg: false, rbs: false, ref: '', remarks: '', unused: false };
+      if (/NOT\s*USED|CANCEL+ED|CROSSED/i.test(c.slice(1).join(' '))) { r.unused = true; out.rows.push(r); return; }
+      var tm = /^(\d{1,2})[:.](\d{2})/.exec(c[1] || '');
+      r.time = tm ? pad(+tm[1]) + ':' + tm[2] : '';
+      r.name = UP(c[2] || '').replace(/\s+/g, ' ');
+      r.age = /^\d{1,3}/.test(c[3] || '') ? String(parseInt(c[3], 10)) : '';
+      var sx = String(c[4] || '').trim().toUpperCase(); r.sex = /^M/.test(sx) ? 'M' : /^F/.test(sx) ? 'F' : '';
+      if (reg === 'mr') {
+        var ct = String(c[5] || '').toUpperCase().replace(/[^A-Z]/g, '');
+        r.cat = /^(ER|EMR|EMERGENCY|RESUS)/.test(ct) ? 'EMR' : /^OPD/.test(ct) ? 'OPD' : /^(BD|BROUGHT)/.test(ct) ? 'BD' : /^ETT/.test(ct) ? 'ETT' : '';
+        r.ecg = yes(c[6]); r.rbs = yes(c[7]);
+      } else if (reg === 'opd') { r.cat = 'OPD'; r.ecg = yes(c[5]); r.rbs = yes(c[6]); }
+      else { r.cat = 'ECHO'; r.ref = UP(c[5] || ''); r.remarks = UP(c.slice(6).join(' ')); }
+      out.rows.push(r);
+    });
+    return out;
+  }
+  var SVG_DOCS = { letterPdf: letterPdf, listPdf: listPdf, listPdfMany: listPdfMany, dtFormPdf: dtFormPdf, listPlainPdf: listPlainPdf, apptSlipPdf: apptSlipPdf, deathCertPdf: deathCertPdf, echoPdf: echoPdf };
   function svgOf(fn, args) {
     var f = SVG_DOCS[fn];
     if (!f) throw new Error('This cannot be printed.');
@@ -3348,19 +3722,11 @@ var CEC = (function () {
 
   /* ---------- WhatsApp summary ---------- */
   function summaryText(m, shifts) {
-    var entries = recEntries(shifts), c = sexCount(entries);
-    var lines = (DEMO.on ? ['*' + DEMO_LINE + '*'] : []).concat(['*CARDIAC EMERGENCY CENTRE, SGHL*', '*Census: ' + m.waHead + '*', '', 'Total patients: ' + c.T + ' (Male ' + c.M + ', Female ' + c.F + ')']);
-    var g = groupBy(entries, function (e) { return e.cat; });
-    lines.push(REC_CATS.map(function (k) { return k.l + ' ' + ((g[k.c] || []).length); }).join(' | '));
-    lines.push('', '*Diagnoses*');
-    dxTable(entries).rows.forEach(function (r) { lines.push(r[1] + ': ' + r[4]); });
-    var pr = procTable(entries).rows;
-    if (pr.length) { lines.push('', '*Procedures*'); pr.forEach(function (r) { lines.push(r[0] + ': ' + r[3]); }); }
-    var md = medTable(entries).rows;
-    if (md.length) { lines.push('', '*Medications*'); md.forEach(function (r) { lines.push(r[0] + ': ' + r[3]); }); }
-    lines.push('', '*Outcome*');
-    outTable(entries).rows.forEach(function (r) { lines.push(r[0] + ': ' + r[3]); });
-    return lines.join('\n');
+    var entries = recEntries(shifts), dx = dxTable(entries).rows, pr = procTable(entries).rows, md = medTable(entries).rows;
+    var L = waText(m, entries, [['Diagnoses', dx.length ? dx.map(function (r) { return r[1] + ': ' + r[4]; }) : ['None recorded']]]
+      .concat(pr.length ? [['Procedures', pr.map(function (r) { return r[0] + ': ' + r[3]; })]] : [], md.length ? [['Medications', md.map(function (r) { return r[0] + ': ' + r[3]; })]] : [],
+        [['Outcome', outTable(entries).rows.map(function (r) { return r[0] + ': ' + r[3]; })]]));
+    return waEnd(L, m);
   }
 
   return {
@@ -3369,7 +3735,7 @@ var CEC = (function () {
     shiftModel: shiftModel, dayModel: dayModel, monthModel: monthModel, letterHtml: letterHtml, letterPdf: letterPdf, summaryText: summaryText, esc: h,
     EXAMS: EXAMS, deathCertPdf: deathCertPdf, deathCertSvg: deathCertSvg, svgOf: svgOf, listPlain: listPlain, listPlainPdf: listPlainPdf, opdSlipPdf: opdSlipPdf, slipOps: slipOps, slipPdf: slipPdf, slipPdfMany: slipPdfMany, slipSvg: slipSvg, slipSvgMany: slipSvgMany, slipSheets: slipSheets, isErSlip: isErSlip, slipVitals: slipVitals, SLIP_TOP: SLIP_TOP, STAFF_PROCS: STAFF_PROCS, listPdf: listPdf, listCsv: listCsv,
     LIST_CATS: LIST_CATS, listCatOf: listCatOf, certHtml: certHtml, setDemo: setDemo, DEMO_LINE: DEMO_LINE, weekday: weekday, MEDS: MEDS, DX_GROUPS: DX_GROUPS, DX_LIST: DX_LIST, DXKW: DXKW, FREQ_DX: FREQ_DX, canonDx: canonDx, canonList: canonList, dxMatch: dxMatch, dxKey: dxKey, LIST_KINDS: LIST_KINDS, listSpec: listSpec, LIST_COLS: LIST_COLS, LIST_COLSETS: LIST_COLSETS, LIST_PRESETS: LIST_PRESETS, LIST_DEF: LIST_DEF,
-    listCfg: listCfg, presetCfg: presetCfg, listColsFor: listColsFor, buildList: buildList, todayLists: todayLists, listText: listText, listTitle: listTitle, APPTS: APPTS, APPT_STATUS: APPT_STATUS, apptType: apptType,
+    listCfg: listCfg, presetCfg: presetCfg, listColsFor: listColsFor, buildList: buildList, todayLists: todayLists, REGISTERS: REGISTERS, regCounts: regCounts, registerLists: registerLists, dlLists: dlLists, DL_KINDS: DL_KINDS, dtWeave: dtWeave, jpegImg: jpegImg, DT_FORMS: DT_FORMS, DT_ROWS: DT_ROWS, dtFormPdf: dtFormPdf, dtPrompt: dtPrompt, dtParse: dtParse, listPdfMany: listPdfMany, listText: listText, listTitle: listTitle, APPTS: APPTS, APPT_STATUS: APPT_STATUS, apptType: apptType,
     ECHO_LIB: ECHO_LIB, ECHO_BY: ECHO_BY, echoClash: echoClash, echoReplaces: echoReplaces, echoGroups: echoGroups, echoProv: echoProv, ECHO_IFL_AF: ECHO_IFL_AF, ECHO_MEAS: ECHO_MEAS, ECHO_DD: ECHO_DD, echoNew: echoNew, echoPickList: echoPickList, echoFill: echoFill, echoEA: echoEA, echoPh: echoPh, echoAutoFin: echoAutoFin, echoLines: echoLines, echoStRows: echoStRows,
     echoPdf: echoPdf, echoFileName: echoFileName,
     apptSpec: apptSpec, apptSlipPdf: apptSlipPdf, apptMessage: apptMessage, parseYmd: parseYmd, yearModel: yearModel, yearSummary: yearSummary, MONTHS: MONTHS, sexCountOf: sexCount
@@ -3461,7 +3827,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   var IDLE_MS = 4 * 3600000;
   /* 14-11-2026: the version of this page (Index.html / phone app) and of the server (Code.gs). Both come from the same build, so they must be the same. */
-  var APP_VER = 'CEC V2.4 (19-11-2026 10:08)';
+  var APP_VER = 'CEC V2.7 (19-11-2026 19:24)';
   function verSame() { return S.serverVer === APP_VER; }
   function verKey(v) { var m = /(\d\d)-(\d\d)-(\d{4}) (\d\d:\d\d)/.exec(String(v || '')); return m ? m[3] + m[2] + m[1] + m[4] : ''; }   // the build time, in time order
   /* 18-11-2026 (night): shown as "CEC V2.1" (versions before V2.1 were named by their date) */
@@ -3882,12 +4248,25 @@ if (typeof module !== 'undefined') module.exports = CEC;
 
   /* ---------------- rendering ---------------- */
   function setView(v) {
-    if (isEchoId() && ['home', 'appt', 'echo', 'settings', 'about'].indexOf(v) < 0) v = 'home';   // 15-11-2026: the Echo technician: her 5 jobs only (no patient dashboard)
+    if (isEchoId() && ['home', 'appt', 'echo', 'settings', 'about', 'dt'].indexOf(v) < 0) v = 'home';   // 15-11-2026: the Echo technician: her 5 jobs only (no patient dashboard)
     if (v !== 'letter' && v !== 'detail') S.prev = v;
     S.view = v; menu(false); render(); window.scrollTo(0, 0);
+    viewKeep();
     if (v === 'petty') pettyLoad(); else if (v === 'mrreg') mrRegLoad(); else if (v === 'bdq') bdLoad();
     if (v === 'lists' && S.lb && S.lb.data && S.lb.dataKey === lbKey()) lbFetch(true).then(null, function () { });   // the list shown before: read again
     if (v === 'settings' && isAdmin()) api('apiState').then(function (st) { applyCustom(st.custom); if (S.view === 'settings' && !typing()) render(); }, function () { });   // latest options added by users
+  }
+  /* 19-11-2026 (V2.7): a refresh (reload) opens the page you were on (within 30 minutes), not Home */
+  var VIEW_BACK = ['shift', 'lists', 'census', 'certs', 'forms', 'tmpdoc', 'appt', 'rosters', 'petty', 'mrreg', 'bulk', 'about', 'settings', 'echo', 'dt', 'bdq', 'vit', 'slipq', 'ecgq', 'rbsq', 'erx'];
+  function viewKeep() { try { store_('cec_view', { v: S.view, ap: S.ap && S.ap.type || '', apStep: S.ap && S.ap.step || '', et: S.echoTab || '', uid: S.me && S.me.id, at: Date.now() }); } catch (e) { } }
+  function viewBack() {
+    var r = store_('cec_view');
+    if (!r || !r.v || r.v === 'home' || !S.me || r.uid !== S.me.id || Date.now() - (r.at || 0) > 30 * 60000 || VIEW_BACK.indexOf(r.v) < 0) return;
+    if (r.v === 'appt' && S.ap) { S.ap.type = r.ap || null; S.ap.step = r.apStep || ''; S.ap.date = null; S.ap.list = null; S.ap.key = ''; }
+    if (r.v === 'echo') { S.echoTab = r.et || 'list'; loadEcho(); }
+    if (Q_KINDS[r.v]) return openQueue(r.v);
+    setView(r.v);
+    if (r.v === 'erx' || r.v === 'shift') refresh(true);
   }
   /* ---------- main menu: a drop-down on phones, a bar with a census submenu on computers ---------- */
   var NAV_ICON = {
@@ -3908,6 +4287,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     bulk: '<path d="M3 6h11M3 12h8M3 18h6"/><path d="M14 15l3 3 5-6"/>',
     petty: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h3M8 12h3M8 16h3M13 8h3M13 12h3M13 16h3"/>',
     mrreg: '<path d="M5 4h11l3 3v13H5z"/><path d="M8 9h2M8 13h2M8 17h2M12 9h4M12 13h4M12 17h4"/>',
+    dt: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/><path d="M15 15l4 4M19 15l-4 4"/>',      // 19-11-2026: Down-time forms
     about: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5h.01" stroke-width="2.6" stroke-linecap="round"/>',
     signout: '<path d="M14 4h5v16h-5"/><path d="M10 8l-4 4 4 4"/><path d="M6 12h10"/>'
   };
@@ -3916,17 +4296,18 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function navItems() {
     if (isEchoId()) return [{ v: 'home', l: 'Home' }, { v: 'appt', l: 'Give appointment for echo', act: 'ap-give', v2: 'ECHO' }, { v: 'ereg', l: 'Register echo patient', act: 'echo-reg' },
       { v: 'ewait', l: 'Patients registered for echo', act: 'echo-tab', v2: 'wait' }, { v: 'emake', l: 'Make echo report', act: 'ec-new' }, { v: 'echo', l: 'Print echo reports', act: 'echo-tab', v2: 'list' },
-      { v: 'settings', l: 'Account' }, { v: 'signout', l: 'Sign out', act: 'sign-out', cls: 'so' }];      // 15-11-2026: the Echo technician: her 5 jobs only
+      { v: 'dt', l: 'Down-time forms' }, { v: 'settings', l: 'Account' }, { v: 'signout', l: 'Sign out', act: 'sign-out', cls: 'so' }];      // 15-11-2026: the Echo technician: her 5 jobs only
     var a = [{ v: 'home', l: 'Home' }, { v: 'shift', l: 'Patient dashboard' }];
     if (canAppt()) a.push({ v: 'appt', l: 'Procedures', sub: [['ECHO', 'Echo'], ['ETT', 'ETT']], subAct: 'ap-type' });   // 15-11-2026 (evening): Echo and ETT only
     if (canRosters()) a.push({ v: 'rosters', l: 'Shifts & rosters', sub: CEC.SHIFTS.map(function (x) { return [x.c, x.l + ' shift']; }), subAct: 'roster' });
     if (canCert()) a.push({ v: 'certs', l: 'Death certificate', badge: S.pendCerts || 0, blink: true });
     if (canClin() || isPrintId()) a.push({ v: 'forms', l: 'Download forms' });              // not for students
     if (canTmp()) a.push({ v: 'tmpdoc', l: 'Print a document' });          // 15-11-2026: doctors and the admin
-    if (canClin()) a.push({ v: 'lists', l: 'Registers' });
+    if (canClin()) a.push({ v: 'lists', l: 'List builder' });            // 19-11-2026 (V2.7): was Registers
     if (isAdmin()) a.push({ v: 'petty', l: 'Petty OPD register' });       // 12-11-2026: the admin only
-    a.push({ v: 'mrreg', l: 'MR register' });
-    if (canClin()) a.push({ v: 'census', l: 'Patient census', sub: CEN_MODES });
+    a.push({ v: 'mrreg', l: 'Download registers' });                     // 19-11-2026 (V2.7): was MR register
+    if (canEnter()) a.push({ v: 'dt', l: 'Down-time forms' });            // 19-11-2026
+    if (canClin()) a.push({ v: 'census', l: 'Census letters', sub: CEN_MODES });   // 19-11-2026 (V2.7): was Patient census
     if (isAdmin()) a.push({ v: 'bulk', l: 'Bulk sign-off' });
     a.push({ v: 'about', l: 'About' });
     a.push({ v: 'settings', l: isAdmin() ? 'Account & admin' : 'Account', badge: isAdmin() ? (S.pendingUsers || 0) + (S.pendingResets || 0) : 0 });
@@ -4016,7 +4397,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     else if (S.view === 'letter') { v.innerHTML = letterViewHtml(); fitPaper(); }
     else if (S.view === 'settings') v.innerHTML = settingsHtml();
     else if (S.view === 'forms') v.innerHTML = canClin() || isPrintId() ? formsHtml() : '<section class="card">Download forms are for doctors and nursing staff.</section>';
-    else if (S.view === 'lists') { v.innerHTML = canClin() ? listsHtml() : '<section class="card">Registers are for doctors and nursing staff.</section>'; }
+    else if (S.view === 'lists') { v.innerHTML = canClin() ? listsHtml() : '<section class="card">The List builder is for doctors and nursing staff.</section>'; }
     else if (S.view === 'rosters') v.innerHTML = canRosters() ? rostersHtml() : '<section class="card">Shifts and rosters are for doctors.</section>';
     else if (S.view === 'about') v.innerHTML = aboutPageHtml();
     else if (S.view === 'certs') v.innerHTML = certsHtml();
@@ -4029,6 +4410,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     else if (S.view === 'petty') v.innerHTML = isAdmin() ? pettyHtml() : '<section class="card">The petty OPD register is for the admin.</section>';
     else if (S.view === 'mrreg') v.innerHTML = mrRegHtml();
     else if (S.view === 'bdq') v.innerHTML = bdHtml();
+    else if (S.view === 'dt') { aiCheck(); v.innerHTML = canEnter() || isEchoId() ? dtHtml() : '<section class="card">Down-time forms are for those who register patients.</section>'; }
     else if (Q_KINDS[S.view]) v.innerHTML = canEnter() ? queueHtml(S.view) : '<section class="card">You do not have the right to add patients.</section>';
     else if (ER_KINDS[S.view]) {
       v.innerHTML = canClin() ? erHtml() : '<section class="card">This is for doctors and nursing staff only.</section>';
@@ -4192,7 +4574,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function censusHtml() {
     var C = S.cen, html;
     if (!C.mode) {
-      html = '<div class="narrow" style="max-width:none"><section class="card"><div class="ct">Patient census</div><p class="muted small" style="margin:0">Choose what you need. Letters are signed by the Head of Department only and never show who made an entry.</p></section><div class="tiles">';
+      html = '<div class="narrow" style="max-width:none"><section class="card"><div class="ct">Census letters</div><p class="muted small" style="margin:0">Choose what you need. Letters are signed by the Head of Department only and never show who made an entry.</p></section><div class="tiles">';
       CEN_MODES.forEach(function (m) {
         var i = CEN_INFO[m[0]];
         html += '<button class="tile" data-act="cen" data-v="' + m[0] + '"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">' + i[2] + '</svg><b>' + h(i[0]) + '</b><span>' + h(i[1]) + '</span></button>';
@@ -5467,6 +5849,21 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function savePatient(mode) {
     var signing = mode === 'sign', r = readForm(signing), f = S.form, box = $('fErr'), sh = targetShift();
     if (r.err.length) { box.innerHTML = '<div class="err">Please enter: ' + h(r.err.join(', ')) + '.</div>'; box.scrollIntoView({ block: 'nearest' }); return; }
+    if (echoForm() && !r.entry.id && !r.entry.mr && !f.mrAsked) {     // 19-11-2026 (V2.6): after the details, the MR No. given by the registration counter
+      modal('MR No. from the registration counter', '<p>Enter the MR No. the registration counter gave <b>' + h(r.entry.name) + '</b>.</p>' +
+        '<input class="in" id="ecMrQ" inputmode="numeric" autocomplete="off" placeholder="MR No.">' +
+        '<p class="small muted">No MR No. yet? Save without it. The census reminds you every time this patient’s echo report is printed.</p>',
+        [{ label: 'Back', value: false }, { label: 'Save without MR No.', value: 'none' }, { label: 'Save with this MR No.', value: 'form', cls: 'pri' }]).then(function (v) {
+          if (!v) return;
+          if (v !== 'none') {
+            var m = String(v.ecMrQ || '').toUpperCase().replace(/\s+/g, '');
+            if (!/\d/.test(m)) { toast('Type the MR No., or choose Save without MR No.'); return; }
+            $('fMr').value = m;
+          }
+          f.mrAsked = true; savePatient(mode);
+        });
+      return;
+    }
     var dup = r.entry.autoMr || !r.entry.mr ? null : sh.entries.filter(function (x) { return !!x.opd === !!r.entry.opd && String(x.mr).toLowerCase() === r.entry.mr.toLowerCase() && x.id !== r.entry.id; })[0];
     if (dup && !f.dupOk) {
       f.dupOk = true;
@@ -5992,8 +6389,16 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* 14-11-2026: a demonstration ID (or the admin's demonstration view) on a phone prints at the REAL print desk when its autoprint is on;
      the print desk prints those jobs with DEMONSTRATION on them. */
   function canDesk() { return !canPrintHere() && (isDemo() ? !!(S.realDesk && S.realDesk.on) : apOn()); }
-  function deskJob(job, label) {
+  function deskJob(job, label, sure) {
     if (isOff()) { toast('No internet: ' + label + ' could not be sent to the print desk. Try again when the internet is back.'); return; }
+    if (isDemo() && !sure && !window.__cecPrintOk) {  // 19-11-2026 (V2.6): a practice ID asks before every print (paper is not wasted on practice); __cecPrintOk: older tests
+      modal('Practice ID: print on paper?', '<p>You are using a <b>practice ID</b>. Do you want <b>' + h(label) + '</b> on paper, or is this only online practice?</p>' +
+        '<p class="small muted">Practice prints come out at the real print desk with DEMONSTRATION on them. If the print desk is off, a practice print is dropped after 15 minutes.</p>',
+        [{ label: 'Practice only (no paper)', value: 'no', cls: 'pri' }, { label: 'Print on paper', value: 'yes' }]).then(function (v) {
+          if (v === 'yes') deskJob(job, label, true); else toast('Practice only: nothing printed.');
+        });
+      return;
+    }
     job.jid = 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);   // sent twice (lost answer): printed once
     toast('Sending ' + label + ' to the print desk\u2026');
     apiRetry('apiPrintJob', JSON.stringify(job)).then(function (r) { deskSent(r, label, false); }, function (e) { toast('Not sent to the print desk: ' + errText(e)); });
@@ -6081,7 +6486,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (j.kind === 'testslip') return printSlips([{ e: testSlipE() }], paper, { claimed: true });
     if (j.kind === 'cert') return printPages(CEC.deathCertSvg(j.cert, S.settings, logoBytes()), 'Print desk: ' + j.what);
     if (j.kind === 'blankcert') return printPages(CEC.deathCertSvg({}, S.settings, logoBytes(), j.n), 'Print desk: ' + j.what);
-    if (j.kind === 'pages') return printPages(CEC.svgOf(j.fn, (j.args || []).concat([logoBytes()])), 'Print desk: ' + j.what);
+    if (j.kind === 'pages') {
+      if (j.photos && j.args && j.args[0] && j.args[0].groups) j.args[0].groups.forEach(function (g) { (g.rows || []).forEach(function (r) {   // 19-11-2026 (V2.6)
+        if (r && !Array.isArray(r) && r.dt) r.dt.imgs = (r.dt.ids || []).map(function (id) { var p = j.photos[id]; return p && p.data ? CEC.jpegImg(p.data) : null; }).filter(Boolean);
+      }); });
+      return printPages(CEC.svgOf(j.fn, (j.args || []).concat([logoBytes()])), 'Print desk: ' + j.what);
+    }
     if (j.kind === 'doc' && /^image\//.test(j.mime || '')) return printImage('data:' + j.mime + ';base64,' + j.data, 'Print desk: ' + j.what);
     toast('Print desk: ' + (j.what || 'this') + ' cannot be printed here.');
   }
@@ -6727,7 +7137,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var P = S.petty, Q = S.pq, html = '<div class="narrow">' + pettyStatusHtml(Q), txt = P.text || '';
     html += '<section class="card"><div class="ct">Add names</div><p class="muted small" style="margin:0">One patient on each line, in the order of the register. Paste the names, or choose a text or CSV file ' +
       '(the old register: in Excel, <i>File &gt; Save As &gt; CSV</i>). Any number of names: each morning shift takes the next ones, up to the daily limit, as closed OPD patients of that day. ' +
-      'The record keeper sees each MR on the <b>MR register</b> page.</p>' +
+      'The record keeper finds each MR in <b>Download registers</b>.</p>' +
       '<p class="muted small" style="margin:6px 0 0">One name on each line. <b>Type M or F at the end of the line</b> (for example <i>Hamza Ahmed M</i>, <i>Rukhsana Bibi F</i>, <i>Aslam Khan 45 M</i>, <i>45/F</i>, <i>(M)</i>). ' +
         'The gender is never guessed from the name: lines without M or F are shown to tap M or F before adding. A number like <b>1.</b> or <b>i)</b> at the start is taken off.</p>' +
       '<label class="lb">Category</label><div class="seg pkind" id="ptKind">' + PETTY_K.map(function (k) { return '<button type="button" data-act="pt-kind" data-v="' + k[0] + '" class="' + ((P.kind || 'REG') === k[0] ? 'on' : '') + '">' + h(k[1]) + '</button>'; }).join('') + '</div>';
@@ -6889,38 +7299,31 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* ---------- MR register (12-11-2026): for everyone. The MR numbers of the census day as they are given, newest first, as one plain list
      (the petty OPD names given in the morning shift are simply OPD patients here), so the record keeper writes them in the paper register. ---------- */
   function mrRegHtml() {
+    /* 19-11-2026 (V2.7): Download registers: no list of today's numbers on the page; Download / Preview / Print ask the period and what (dlGo) */
     var R = S.mrreg;
-    var html = '<div class="narrow"><div class="listhead"><h3>MR register' + (R ? ' &middot; census day ' + h(CEC.dmy(R.date)) : '') + '</h3><button class="btn sm" data-act="mr-reload" aria-label="Refresh">&#8635; ' +
-      (R && R.at ? CEC.hm(new Date(R.at).toISOString()) : 'Refresh') + '</button></div>' +
-      '<p class="muted small" style="margin:0 0 8px">Every MR number given today, newest on top. On an OPD day the OPD numbers are kept apart: tap OPD register to see them. The list updates by itself.</p>' +
+    var html = '<div class="narrow"><div class="listhead"><h3>Download registers</h3></div>' +
+      '<p class="muted small" style="margin:0 0 8px">Download, preview or print the registers of this shift, today, one date or dates: everyone in one list by time, MR Nos. only (ER / Resus, OPD, Echo, ETT and BD in their own boxes) or OPD Nos. only.</p>' +
       (canEnter() ? '<div class="modetabs mrgo">' +             // 14-11-2026: register the next patient from here (same as the home tiles)
         '<button class="mtab mblue" data-act="mode" data-v="e"><span class="mti" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg></span><b>Electronic slip</b><span>The system prints the OPD / ER slip</span></button>' +
         '<button class="mtab mred" data-act="mode" data-v="m"><span class="mti" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg></span><b>Manual slip</b><span>The staff write the paper slip by hand</span></button></div>' : '');
-    html += todayCardHtml(true);                          // 18-11-2026
-    if (!R) return html + '<section class="card center muted"><span class="spin"></span>Loading&hellip;</section></div>';
-    html += '<div class="mrsum">' + (R.mr ? '<span>Last MR given: <b>' + h(R.mr) + '</b></span>' : '') + (R.opd ? '<span>Last OPD No. given: <b>' + h(R.opd) + '</b></span>' : '') +
+    html += todayCardHtml(true);
+    if (R) html += '<div class="mrsum">' + (R.mr ? '<span>Last MR given: <b>' + h(R.mr) + '</b></span>' : '') + (R.opd ? '<span>Last OPD No. given: <b>' + h(R.opd) + '</b></span>' : '') +
       (canEnter() ? '<span><button class="lnk" data-act="nums-set">Set numbers</button></span>' : '') + '<span>Today: <b>' + R.rows.length + '</b></span></div>';
-    if (!R.rows.length) return html + '<div class="plist"><div class="empty">No patient yet today.</div></div></div>';
-    /* 17-11-2026: the two registers are never mixed: MR Nos. and OPD Nos. are shown apart (one at a time) on a day with both */
-    var nO = R.rows.filter(function (x) { return x.opd; }).length, nM = R.rows.length - nO, tab = nO && nM ? (S.mrregTab === 'opd' ? 'opd' : 'mr') : '';
-    var rows = tab ? R.rows.filter(function (x) { return tab === 'opd' ? x.opd : !x.opd; }) : R.rows;
-    if (tab) html += '<div class="seg mrtabs" style="margin:0 0 10px">' + [['mr', 'MR register', nM], ['opd', 'OPD register', nO]].map(function (o) {
-      return '<button type="button" data-act="mr-tab" data-v="' + o[0] + '" class="' + (tab === o[0] ? 'on' : '') + '" aria-pressed="' + (tab === o[0]) + '">' + o[1] + ' <small>' + o[2] + (o[0] === 'opd' ? ' OPD' : ' MR') + (o[2] === 1 ? ' No.' : ' Nos.') + '</small></button>';
-    }).join('') + '</div>';
-    return html + '<ol class="mrlist">' + rows.slice(0, 600).map(function (x) {
-      return '<li' + (x.opd ? ' class="opd"' : '') + '><span class="mrn">' + (x.opd ? '<i class="opdb">OPD</i>' : '') + h(x.mr || '-') + '.</span><span class="mrb"><b>' + h(x.name || '(no name)') + '</b>' +
-        '<span class="muted small">' + (x.sex === 'M' ? 'M' : x.sex === 'F' ? 'F' : '-') + (x.age !== '' && x.age != null ? ', ' + h(x.age) : '') + ' &middot; ' + CEC.hm(x.t) + ' &middot; ' +
-        h(x.ecgOf ? 'for ECG (OPD No. ' + x.ecgOf + ')' : x.only ? (x.only === 'BP' ? 'BP check only' : 'ECG only') : (CEC.label(CEC.CATS, x.cat) || x.cat)) + '</span></span></li>';
-    }).join('') + '</ol></div>';
+    return html + '</div>';
   }
   /* ---------- 19-11-2026: Brought dead: staff, students, doctors and the admin type the CNIC No. of the deceased, a contact number, the address,
      the age and MR No. A patient stays (blinking) until these are typed; once complete, 24 hours more. Kept apart from the patient record:
      the letters and the brought dead lists show them, a death certificate never takes them. ---------- */
   function canBd() { return canEnter() && !isPrintId() && !isEchoId(); }
   function bdLoad() {
+    if (S.bdSaving) return;                                           // 19-11-2026 (V2.7): a save on its way: the list on the phone is newer
     if (S.bdBusy || isOff()) { if (isOff()) { S.bdErr = 'The Brought dead page needs internet.'; if (S.view === 'bdq') render(); } return; }
     S.bdBusy = true;
-    api('apiBdList').then(function (r) { S.bdBusy = false; S.bdErr = ''; S.bd = r; S.bdOpen = (r.open || []).length; if (S.view === 'bdq' && !typing() && !anyOverlay()) render(); },
+    var mark = S.bdMark || 0;
+    api('apiBdList').then(function (r) {
+      S.bdBusy = false;
+      if (S.bdSaving || (S.bdMark || 0) !== mark) { if (!S.bdSaving) bdLoad(); return; }   // 19-11-2026 (V2.7): read before a save: the phone's list is newer
+      S.bdErr = ''; S.bd = r; S.bdOpen = (r.open || []).length; if (S.view === 'bdq' && !typing() && !anyOverlay()) render(); },
       function (e) { S.bdBusy = false; S.bdErr = errText(e); if (S.view === 'bdq' && !anyOverlay()) render(); });
   }
   function bdAgeOf(x) { var b = x.bd || {}; return b.age || (x.age !== '' && x.age != null ? String(x.age) : ''); }
@@ -6964,47 +7367,102 @@ if (typeof module !== 'undefined') module.exports = CEC;
       if (dg && dg.length !== 13) why = 'The CNIC No. has 13 digits (' + dg.length + ' typed).';
       else if (cd && (cd.length < 10 || cd.length > 13)) why = 'Check the contact number (10 to 13 digits).';
       if (why) { toast(why); return bdEdit(id, v); }
-      toast('Saving\u2026');
-      api('apiBdSave', JSON.stringify({ id: x.id, mr: v.bdMr, age: v.bdAge, cnic: v.bdCnic, cell: v.bdCell, addr: v.bdAddr })).then(function (r) {
-        x.bd = r.bd;
-        toast(r.open ? 'Saved. Still missing: ' + bdMissing(x).join(', ') + '.' : 'Saved: complete. It leaves this page in 24 hours.');
-        bdLoad(); refresh(false);
-      }, function (e) { toast(errText(e)); bdEdit(id, v); });
+      /* 19-11-2026 (V2.7): shown as saved at once (the patient moves from Details missing straight away); the census is told in the background */
+      R = S.bd || R; var x2 = (R.open || []).concat(R.done || []).filter(function (y) { return y.id === id; })[0]; if (x2) x = x2;   // the list may have been read again meanwhile
+      R.open = R.open || []; R.done = R.done || [];
+      var was = x.bd, U = function (t) { return String(t || '').trim().toUpperCase(); }, mr0 = U(v.bdMr), age0 = U(v.bdAge);
+      var nb = { mr: mr0 && mr0 !== U(x.mr) ? mr0 : '', age: age0 && age0 !== U(x.age) ? age0 : '', cnic: dg ? dg.slice(0, 5) + '-' + dg.slice(5, 12) + '-' + dg.slice(12) : '',
+        cell: !cd ? '' : /^0\d{10}$/.test(cd) ? cd.slice(0, 4) + '-' + cd.slice(4) : String(v.bdCell || '').trim(), addr: U(v.bdAddr) };
+      x.bd = Object.assign({}, was || {}, nb);
+      var full = !bdMissing(x).length;
+      x.bd.at = full ? (was && was.at) || new Date().toISOString() : '';
+      if (full && R.open.indexOf(x) >= 0) { R.open.splice(R.open.indexOf(x), 1); R.done = [x].concat(R.done || []); }
+      if (!full && (R.done || []).indexOf(x) >= 0) { R.done.splice(R.done.indexOf(x), 1); R.open = [x].concat(R.open || []); }
+      S.bdOpen = (R.open || []).length; render();
+      toast(full ? 'Saved: complete. It leaves this page in 24 hours.' : 'Saved. Still missing: ' + bdMissing(x).join(', ') + '.');
+      S.bdSaving = (S.bdSaving || 0) + 1; S.bdMark = (S.bdMark || 0) + 1;
+      apiRetry('apiBdSave', JSON.stringify({ id: x.id, mr: v.bdMr, age: v.bdAge, cnic: v.bdCnic, cell: v.bdCell, addr: v.bdAddr })).then(function (r) {
+        S.bdSaving--; x.bd = r.bd; if (!S.bdSaving) bdLoad();
+      }, function (e) {
+        S.bdSaving--; x.bd = was; toast('Not saved: ' + errText(e) + ' Type it again.'); bdLoad(); bdEdit(id, v);
+      });
     });
   }
   /* ---------- 18-11-2026: Today's list: the shift running now up to this minute (MR register list; on an OPD day also the OPD register list) ---------- */
+  /* 19-11-2026: Registers (MR register page and Registers page): Preview, Download or Print, then choose the registers:
+     MR, OPD, ER, ETT, Echo, BD (all or some), for this shift up to now or the whole census day. Each register starts on its own page. */
   function todayCardHtml(compact) {
-    if (compact) return '<div class="tlbar"><span><b>Today\u2019s list</b><small class="muted">this shift up to now, for the paper register</small></span><button class="btn sm pri" data-act="tl-dl">' + ICON.dl + ' Download</button><button class="btn sm" data-act="tl-print">' + ICON.print + ' Print</button></div>';
-    return '<section class="card tlist"><div class="ct">Today\u2019s list</div><p class="muted small" style="margin:0 0 8px">The shift running now, up to this minute: S.No., MR No., name, age/sex, ticks for BP, ECG and RBS, and the outcome (sent home, referred, expired, BD\u2026), to put with the paper MR register. ' +
-      'On an OPD day the OPD register list (OPD Nos.) comes as a separate list with the same tap.</p><div class="sbtns"><button class="btn pri" data-act="tl-dl">' + ICON.dl + ' Download</button><button class="btn" data-act="tl-print">' + ICON.print + ' Print</button></div></section>';
+    var btns = '<button class="btn' + (compact ? ' sm' : '') + '" data-act="rg-go" data-v="pv">' + ICON.eye + ' Preview</button><button class="btn' + (compact ? ' sm' : '') + ' pri" data-act="rg-go" data-v="dl">' + ICON.dl + ' Download</button>' +
+      '<button class="btn' + (compact ? ' sm' : '') + '" data-act="rg-go" data-v="print">' + ICON.print + ' Print</button>';
+    if (compact) return '<section class="card tlist"><div class="ct">Registers</div><p class="muted small" style="margin:0 0 8px">Choose the period (this shift, today, a date or dates) and what to put in, then the file is made.</p><div class="sbtns">' + btns + '</div></section>' +
+      (canEnter() || isEchoId() ? '<div class="tlbar"><span><b>Down-time forms</b><small class="muted">Blank forms for when the census is down; enter them back here</small></span><button class="btn sm" data-act="go" data-v="dt">Open</button></div>' : '');
+    return '<section class="card tlist"><div class="ct">Download registers</div><p class="muted small" style="margin:0 0 8px">The registers of this shift, today, a date or dates: everyone in one list by time, MR Nos. only (ER / Resus, OPD, Echo, ETT, BD in boxes) or OPD Nos. only. ' +
+      'S.No., MR No., name, age/sex, ticks for BP, ECG and RBS, and the outcome.</p><div class="sbtns">' + btns + '</div></section>';
   }
-  function todaySpec(sp) { return { title: sp.title, sub: sp.sub, cols: sp.cols, groups: sp.groups, portrait: true, empty: 'No patients.', note: sp.note || '' }; }
-  function todayGet() {
-    if (isOff()) { toast('Today\u2019s list needs internet.'); return Promise.reject(null); }
-    if (S.tlBusy) return Promise.reject(null);
-    S.tlBusy = true; toast('Preparing today\u2019s list\u2026');
-    return api('apiTodayList').then(function (r) {
-      S.tlBusy = false;
-      var ls = r && r.shift ? CEC.todayLists(r.shift, S.settings, r.now, lbWho()) : [];   // the outcome column: doctors, nursing staff and the admin (as in Registers)
-      if (!ls.length || !ls.some(function (x) { return x.n; })) { toast('No patient in this shift yet.'); throw null; }
-      return ls;
-    }, function (e) { S.tlBusy = false; toast(errText(e)); throw null; });
-  }
-  function todayDl() {
-    todayGet().then(function (ls) {
-      offerFiles(ls.map(function (sp) { return { name: sp.file + '.pdf', label: sp.label + ' (' + sp.n + ' patient' + (sp.n === 1 ? '' : 's') + ')', bytes: CEC.listPdf(todaySpec(sp), logoBytes()) }; }));
-    }, function () { });
-  }
-  function todayPrint() {
-    todayGet().then(function (ls) {
-      withDesk(function () {
-        if (canDesk()) return ls.forEach(function (sp) { deskJob({ kind: 'pages', fn: 'listPlainPdf', args: [CEC.listPlain(todaySpec(sp))], label: sp.label }, sp.label); });
-        phoneNoDesk(function () {
-          var pages = []; ls.forEach(function (sp) { pages = pages.concat(CEC.svgOf('listPdf', [todaySpec(sp), logoBytes()])); });
-          printPages(pages, 'Today\u2019s list');
+  function regSpec(sp) { return { title: sp.title, sub: sp.sub, cols: sp.cols, groups: sp.groups, portrait: true, empty: 'No patients.', note: sp.note || '' }; }
+  function regGo(mode) {                              // 19-11-2026 (V2.7): the period and what to put in, then the file
+    var L = store_('cec_dl') || {}, today = currentCensus(), span = L.span || 'shift', what = L.what || 'mr', ks = Array.isArray(L.kinds) ? L.kinds : CEC.DL_KINDS.map(function (x) { return x.k; });
+    var lab = mode === 'dl' ? 'Download' : mode === 'print' ? 'Print' : 'Preview', opt = function (v, t, cur) { return '<option value="' + v + '"' + (v === cur ? ' selected' : '') + '>' + t + '</option>'; };
+    var body = '<label class="lbl">Period</label><select class="in" id="dlSpan">' + opt('shift', 'This shift (up to now)', span) + opt('day', 'Today (the whole census day)', span) + opt('date', 'One date', span) + opt('range', 'From one date to another', span) + '</select>' +
+      '<div id="dlDates" class="dtbar' + (span === 'date' || span === 'range' ? '' : ' hidden') + '"><input class="in" type="date" id="dlFrom" max="' + today + '" value="' + h(L.from || today) + '">' +
+      '<span id="dlToW" class="' + (span === 'range' ? '' : 'hidden') + '">to <input class="in" type="date" id="dlTo" max="' + today + '" value="' + h(L.to || today) + '"></span></div>' +
+      '<label class="lbl">What</label><select class="in" id="dlWhat">' + opt('all', 'Everyone in one list, by time (MR and OPD Nos.)', what) + opt('mr', 'MR Nos. only (each kind in its own box)', what) + opt('opd', 'OPD Nos. only', what) + '</select>' +
+      '<div id="dlKinds" class="' + (what === 'mr' ? '' : 'hidden') + '"><label class="rgall"><input type="checkbox" id="dlAll" data-act="dl-all"' + (ks.length === CEC.DL_KINDS.length ? ' checked' : '') + '> <b>All</b></label><div class="rglist">' +
+      CEC.DL_KINDS.map(function (x) { return '<label><input type="checkbox" class="dlk" id="dlk_' + x.k + '" data-act="dl-one"' + (ks.indexOf(x.k) >= 0 ? ' checked' : '') + '> ' + h(x.l) + '</label>'; }).join('') + '</div>' +
+      '<p class="muted small" style="margin:6px 0 0">The boxes follow one another on the same pages (less paper).</p></div>';
+    modal('Registers: ' + lab.toLowerCase(), body, [{ label: 'Cancel', value: null }, { label: lab, cls: 'pri', value: 'form' }]).then(function (v) {
+      if (!v) return;
+      var sp0 = v.dlSpan, wh = v.dlWhat, kinds = CEC.DL_KINDS.filter(function (x) { return v['dlk_' + x.k]; }).map(function (x) { return x.k; }), from = v.dlFrom, to = sp0 === 'range' ? v.dlTo : v.dlFrom;
+      store_('cec_dl', { span: sp0, what: wh, kinds: kinds, from: from, to: v.dlTo });
+      if (wh === 'mr' && !kinds.length) return toast('Tick at least one: ER / Resus, OPD, Echo, ETT or BD.');
+      if (sp0 === 'date' || sp0 === 'range') {
+        if (!from || !to) return toast('Choose the date' + (sp0 === 'range' ? 's' : '') + '.');
+        if (from > to) return toast('The first date is after the second. Change them.');
+        if (to > today) return toast('That date has not come yet.');
+        if ((CEC.parseYmd(to) - CEC.parseYmd(from)) / 86400000 > 92) return toast('At most 93 days at a time.');
+      }
+      if (isOff()) return toast('The registers need internet.');
+      if (S.tlBusy) return;
+      S.tlBusy = true; toast('Preparing the register…');
+      var q = sp0 === 'shift' ? { scope: 'shift' } : sp0 === 'day' ? { scope: 'day' } : { scope: 'range', from: from, to: to };
+      api('apiTodayList', JSON.stringify(q)).then(function (r) {
+        S.tlBusy = false;
+        var shifts = sp0 === 'shift' ? [r.shift] : r.shifts, s0 = shifts[0] || r.shift || {};
+        var sp = CEC.dlLists(shifts, { span: sp0, from: from, to: to, what: wh, kinds: kinds }, S.settings, r.now, lbWho());
+        if (!sp.n) return toast('No patients for this choice.');
+        if (sp.emptyKinds && sp.emptyKinds.length) toast('No patients: ' + sp.emptyKinds.join(', ') + '.');
+        var day = s0.censusDate || today, name = 'CEC_' + { all: 'All_patients', mr: 'MR_register', opd: 'OPD_register' }[wh] + '_' +
+          (sp0 === 'shift' ? CEC.shiftName(s0.shift) + '_' + CEC.dmy(day) + '_' + CEC.hm(r.now).replace(':', '') : sp0 === 'day' ? CEC.dmy(day) : from === to ? CEC.dmy(from) : CEC.dmy(from) + '_to_' + CEC.dmy(to)) + '.pdf';
+        var what = { all: 'all patients', mr: 'MR register', opd: 'OPD register' }[wh];
+        dtPhotosInto([sp]).then(function (a) {
+          var spec = a[0], pr = function () { printDoc('listPdf', [spec], what); }, dl = function () { offerFile(name, CEC.listPdf(spec, logoBytes()), 'application/pdf', false); };
+          if (mode === 'dl') return dl();
+          if (mode === 'print') return pr();
+          previewDoc('listPdf', [spec], spec.title, pr, dl);
         });
-      });
-    }, function () { });
+      }, function (e) { S.tlBusy = false; toast(errText(e)); });
+    });
+  }
+  /* 19-11-2026 (V2.6): registers with patients entered from down-time forms: those patients in number order, then the photos of the form
+     (staff, doctors and the admin; the photos are read once per session). */
+  function dtPhotosInto(specs) {
+    var want = {};
+    specs.forEach(function (sp) { (sp.groups || []).forEach(function (g) { (g.list || []).forEach(function (e) { if (e && e.dtb) want[e.dtb] = 1; }); }); });
+    var bl = Object.keys(want);
+    if (!bl.length || !canClin() || isOff()) return Promise.resolve(specs);
+    S.dtPh = S.dtPh || {};
+    return api('apiDtBatches', JSON.stringify(bl)).then(function (info) {
+      var need = [], map = {};
+      (info || []).forEach(function (b) { (b.photos || []).forEach(function (p) { if (need.indexOf(p) < 0) need.push(p); }); });
+      if (need.some(function (p) { return !S.dtPh[p]; })) toast('Adding the photos of the down-time forms…');
+      var next = function () {
+        var id = need.shift();
+        if (!id) return Promise.resolve();
+        if (S.dtPh[id]) { map[id] = S.dtPh[id]; return next(); }
+        return api('apiDtPhotoGet', id).then(function (r) { var im = r && r.data ? CEC.jpegImg(r.data) : null; if (im) map[id] = S.dtPh[id] = im; return next(); }, function () { return next(); });
+      };
+      return next().then(function () { return specs.map(function (sp) { return CEC.dtWeave(sp, info, map); }); });
+    }, function () { return specs; });
   }
   function mrRegLoad() {
     if (isOff() || S.mrregBusy) return;
@@ -7012,6 +7470,271 @@ if (typeof module !== 'undefined') module.exports = CEC;
     api('apiMrRegister').then(function (r) { S.mrregBusy = false; r.at = Date.now(); S.mrreg = r; if (S.view === 'mrreg' && !typing() && !anyOverlay()) render(); }, function () { S.mrregBusy = false; });
   }
   setInterval(function () { if (!S.me || document.hidden) return; if (S.view === 'mrreg') mrRegLoad(); else if (S.view === 'petty') pettyLoad(); else if (S.view === 'bdq' && !typing() && !anyOverlay()) bdLoad(); }, 15000);
+
+  /* ---------- 19-11-2026 (V2.5): Down-time forms. Blank forms (they work without internet: made on the phone). Back online: the numbers used
+     (from ... to ...) make one line per number; each is a patient (typed, or pasted from Claude / any AI that read photos of the form),
+     Not used, or Already in the census. Photos of the form are kept in Drive. Nothing is added until every number is accounted for. ---------- */
+  var DT_LBL = { mr: 'MR register', opd: 'OPD register', echo: 'Echo register' };
+  function dtRegs() { return isEchoId() ? ['echo'] : ['mr', 'opd', 'echo']; }
+  function dtCanEnter() { return canClin() || isEchoId(); }            // 19-11-2026 (V2.7): entering a filled form: staff, doctors, admin (and the Echo technician: Echo register)
+  function dtSlotPrev(sl) {
+    var p = sl.date.split('-').map(Number);
+    if (sl.code === 'M') return { date: new Date(Date.UTC(p[0], p[1] - 1, p[2] - 1)).toISOString().slice(0, 10), code: 'N' };
+    return { date: sl.date, code: sl.code === 'E' ? 'M' : 'E' };
+  }
+  function dtSlots() {
+    var c = S.open ? { date: S.open.censusDate, code: S.open.shift } : { date: currentCensus(), code: 'M' }, a = [c];
+    a.push(dtSlotPrev(a[0])); a.push(dtSlotPrev(a[1]));
+    return a.map(function (x, i) { x.id = x.date + '_' + x.code; x.l = CEC.shiftName(x.code) + ' shift, ' + CEC.dmy(x.date) + (i ? '' : ' (now)'); return x; });
+  }
+  function dtInit() {
+    if (S.dt && S.dt.uid === (S.me && S.me.id)) return S.dt;
+    var k = store_('cec_dt');
+    S.dt = k && S.me && k.uid === S.me.id ? k : { uid: S.me && S.me.id, reg: dtRegs()[0], pages: 2, slot: '', from: '', to: '', list: null, seen: {}, photos: [], paste: '', batch: '' };
+    if (dtRegs().indexOf(S.dt.reg) < 0) S.dt.reg = dtRegs()[0];
+    S.dt.res = null; S.dt.warn = '';
+    return S.dt;
+  }
+  function dtKeep() { clearTimeout(S.dtT); S.dtT = setTimeout(function () { if (S.dt) { var k = {}; for (var x in S.dt) if (x !== 'res' && x !== 'warn' && x !== 'busy') k[x] = S.dt[x]; store_('cec_dt', k); } }, 400); }
+  function dtSlotNow() {
+    var D = S.dt, sl = dtSlots(), v = D.slot || sl[0].id;
+    if (v === 'other') return D.oDate && D.oShift ? { date: D.oDate, code: D.oShift, id: D.oDate + '_' + D.oShift } : null;
+    return sl.filter(function (x) { return x.id === v; })[0] || sl[0];
+  }
+  function dtState(r) {
+    var D = S.dt;
+    if (D.reg !== 'echo' && D.seen[r.no]) return 'in';
+    if (r.unused) return 'nu';
+    var miss = [];
+    if (!String(r.name || '').trim()) miss.push('name'); else if (/\?/.test(r.name)) miss.push('name has ?');
+    if (!r.sex) miss.push('sex');
+    if (D.reg === 'mr' && !r.cat) miss.push('category');
+    if (D.reg === 'echo' && /\?/.test(r.no || '')) miss.push('MR No. has ?');
+    if (!miss.length) return 'ok';
+    return !String(r.name || '').trim() && !r.sex && !r.age && !r.time ? 'left' : 'part:' + miss.join(', ');
+  }
+  function dtCounts() {
+    var c = { ok: 0, nu: 0, in: 0, left: 0, part: 0 };
+    (S.dt.list || []).forEach(function (r) { var st = dtState(r).split(':')[0]; c[st]++; });
+    return c;
+  }
+  function dtSumHtml() {
+    var c = dtCounts(), D = S.dt, n = (D.list || []).length, todo = c.left + c.part;
+    var parts = [c.ok + ' patient' + (c.ok === 1 ? '' : 's')];
+    if (D.reg !== 'echo') { parts.push(c.nu + ' not used'); parts.push(c.in + ' already in the census'); }
+    return '<b>' + (D.reg === 'echo' ? n + ' line' + (n === 1 ? '' : 's') : n + ' number' + (n === 1 ? '' : 's')) + ':</b> ' + parts.join(', ') +
+      (todo ? ' &middot; <span class="dtleft">' + todo + ' still to fill</span>' : ' &middot; <span class="dtdone">every ' + (D.reg === 'echo' ? 'line' : 'number') + ' accounted for</span>');
+  }
+  function dtRowHtml(r, i) {
+    var D = S.dt, st = dtState(r), cls = st.split(':')[0], seen = D.reg !== 'echo' && D.seen[r.no];
+    var stTxt = { ok: 'Ready', nu: 'Not used', in: 'Already in the census', left: 'To fill' }[cls] || ('Missing: ' + st.split(':')[1]);
+    var inp = function (k, ph, extra) { return '<input class="in" data-dt="' + k + '" data-i="' + i + '" value="' + h(r[k] || '') + '" placeholder="' + ph + '"' + (extra || '') + '>'; };
+    var html = '<div class="dtrow ' + cls + '" id="dtr_' + i + '"><div class="dth">' +
+      (D.reg === 'echo' ? '<span class="dtno">' + (i + 1) + '.</span>' + inp('no', 'MR No. (if any)', ' style="width:9em"') : '<span class="dtno">' + (D.reg === 'opd' ? 'OPD ' : 'MR ') + h(r.no) + '</span>') +
+      '<span class="dts" id="dts_' + i + '">' + h(stTxt) + '</span>' +
+      (seen ? '' : D.reg === 'echo' ? '<button class="lnk" data-act="dt-del" data-v="' + i + '">Remove</button>' :
+        '<label class="dtnu"><input type="checkbox" data-dt="unused" data-i="' + i + '"' + (r.unused ? ' checked' : '') + '> Not used</label>') + '</div>';
+    if (seen) return html + '<div class="muted small">' + h(seen.name || '') + ' (' + h(String(seen.shiftId || '').replace(/^(\d{4}-\d\d-\d\d)_([MEN])$/, function (m, dd, c) { return CEC.dmy(dd) + ', ' + CEC.shiftName(c) + ' shift'; })) + ')</div></div>';
+    html += '<div class="dtf">' + inp('name', 'Name (CAPITALS)', ' autocomplete="off" style="text-transform:uppercase"') +
+      '<div class="dtf2">' + inp('time', 'hh:mm', ' data-tm="1" inputmode="numeric" style="width:5.2em"') + inp('age', 'Age', ' inputmode="numeric" style="width:4.2em"') +
+      '<select class="in" data-dt="sex" data-i="' + i + '"><option value="">Sex</option><option value="M"' + (r.sex === 'M' ? ' selected' : '') + '>M</option><option value="F"' + (r.sex === 'F' ? ' selected' : '') + '>F</option></select>' +
+      (D.reg === 'mr' ? '<select class="in" data-dt="cat" data-i="' + i + '"><option value="">Category</option>' + [['EMR', 'ER'], ['OPD', 'OPD'], ['BD', 'BD'], ['ETT', 'ETT']].map(function (c) {
+        return '<option value="' + c[0] + '"' + (r.cat === c[0] ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('') + '</select>' : '') +
+      (D.reg !== 'echo' ? '<label class="dtck"><input type="checkbox" data-dt="ecg" data-i="' + i + '"' + (r.ecg ? ' checked' : '') + '> ECG</label><label class="dtck"><input type="checkbox" data-dt="rbs" data-i="' + i + '"' + (r.rbs ? ' checked' : '') + '> RBS</label>' : '') +
+      '</div>' + (D.reg === 'echo' ? '<div class="dtf2">' + inp('ref', 'Referred by') + inp('remarks', 'Remarks') + '</div>' : '') + '</div></div>';
+    return html;
+  }
+  function dtPaint() {
+    var D = S.dt; if (!D || !D.list) return;
+    D.list.forEach(function (r, i) {
+      var el = $('dtr_' + i); if (!el) return;
+      var st = dtState(r), cls = st.split(':')[0];
+      el.className = 'dtrow ' + cls;
+      $('dts_' + i).textContent = { ok: 'Ready', nu: 'Not used', in: 'Already in the census', left: 'To fill' }[cls] || ('Missing: ' + st.split(':')[1]);
+    });
+    var sm = $('dtSum'); if (sm) sm.innerHTML = dtSumHtml();
+    var c = dtCounts(), b = $('dtSave'); if (b) b.disabled = !!(c.left + c.part) || !D.list.length || !!D.busy;
+  }
+  function dtInput(t) {
+    var D = S.dt, k = t.getAttribute('data-dt'), i = +t.getAttribute('data-i');
+    if (!D || !D.list || !D.list[i]) return;
+    var v = t.type === 'checkbox' ? t.checked : t.value;
+    if (k === 'age') { v = String(v).replace(/\D/g, '').slice(0, 3); if (v !== t.value) t.value = v; }
+    if (k === 'no') v = String(v).toUpperCase().replace(/\s+/g, '');
+    D.list[i][k] = v; dtPaint(); dtKeep();
+  }
+  function dtHtml() {
+    var D = dtInit(), regs = dtRegs(), sl = dtSlots(), cur = D.slot || sl[0].id, nm = D.reg === 'opd' ? 'OPD Nos.' : 'MR Nos.';
+    var html = '<div class="narrow"><div class="listhead"><h3>Down-time forms</h3></div>' +
+      '<p class="muted small" style="margin:0 0 8px">When the census or the internet is down, the staff write the register on these forms. Back online, enter each form here: every number used is accounted for (a patient, Not used, or already in the census).</p>' +
+      (regs.length > 1 ? '<div class="seg dtregs" style="margin:0 0 10px">' + regs.map(function (k) { return '<button type="button" data-act="dt-reg" data-v="' + k + '" class="' + (D.reg === k ? 'on' : '') + '" aria-pressed="' + (D.reg === k) + '">' + DT_LBL[k] + '</button>'; }).join('') + '</div>' : '');
+    html += '<section class="card"><div class="ct">1. Blank forms: ' + DT_LBL[D.reg] + '</div>' +
+      '<p class="muted small" style="margin:0 0 8px">Big boxes, 20 patients a sheet, the census heading. Print some now and keep them at the desk (these work without internet).</p>' +
+      '<div class="dtbar"><label>Sheets <select class="in" id="dtPages">' + [1, 2, 3, 5, 10, 20].map(function (n) { return '<option' + (+D.pages === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></label>' +
+      '<button class="btn sm" data-act="dt-form" data-v="pv">Preview</button><button class="btn sm" data-act="dt-form" data-v="dl">Download</button><button class="btn sm pri" data-act="dt-form" data-v="print">Print</button></div></section>';
+    if (D.res) {
+      var R = D.res;
+      return html + '<section class="card dtres"><div class="ct">Added to the census</div><p style="margin:0 0 6px"><b>' + R.added + '</b> patient' + (R.added === 1 ? '' : 's') + ' added to the ' + h(R.where) + (R.duplicate ? ' (already sent before: nothing added twice)' : '') + '.</p>' +
+        (R.unused && R.unused.length ? '<p class="small" style="margin:0 0 4px">Not used: ' + h(R.unused.join(', ')) + '</p>' : '') +
+        (R.already && R.already.length ? '<p class="small" style="margin:0 0 4px">Already in the census (left as they were): ' + h(R.already.join(', ')) + '</p>' : '') +
+        (R.counter ? '<p class="small" style="margin:0 0 4px">The automatic ' + (R.reg === 'opd' ? 'OPD' : 'MR') + ' counter moved to ' + h(R.counter) + ' (the next patient gets the number after it).</p>' : '') +
+        '<div class="sbtns" style="margin-top:10px"><button class="btn pri" data-act="dt-again">Enter another form</button></div></section></div>';
+    }
+    if (!dtCanEnter()) return html + '<section class="card"><div class="ct">2. Enter a filled form</div><p class="muted small" style="margin:0">Filled forms are entered by the staff, doctors and the admin.</p></section></div>';
+    html += '<section class="card"><div class="ct">2. Enter a filled form</div>' +
+      '<label class="lbl">Shift written on the form</label><select class="in" id="dtSlot">' + sl.map(function (x) { return '<option value="' + x.id + '"' + (cur === x.id ? ' selected' : '') + '>' + h(x.l) + '</option>'; }).join('') +
+      '<option value="other"' + (cur === 'other' ? ' selected' : '') + '>Another day or shift</option></select>' +
+      (cur === 'other' ? '<div class="dtbar"><input class="in" type="date" id="dtDate" max="' + currentCensus() + '" value="' + h(D.oDate || '') + '"><select class="in" id="dtShift"><option value="">Shift</option>' + ['M', 'E', 'N'].map(function (c) { return '<option value="' + c + '"' + (D.oShift === c ? ' selected' : '') + '>' + CEC.shiftName(c) + '</option>'; }).join('') + '</select></div>' : '') +
+      (D.reg !== 'echo' ? '<label class="lbl">' + nm + ' used on the form</label><div class="dtbar"><span>from</span><input class="in" id="dtFrom" value="' + h(D.from || '') + '" inputmode="numeric" autocomplete="off" style="width:8.5em"><span>to</span><input class="in" id="dtTo" value="' + h(D.to || '') + '" inputmode="numeric" autocomplete="off" style="width:8.5em">' +
+        '<button class="btn sm pri" data-act="dt-make">' + (D.list ? 'Make the list again' : 'Make the list') + '</button></div>' : '') +
+      '<label class="lbl">Photos of the form (kept with the census)</label><div class="dtbar"><button class="btn sm" data-act="dt-photo">Add photos</button><input type="file" id="dtFile" accept="image/*" multiple class="hidden">' +
+      '<span class="small muted" id="dtPh">' + (D.photos.length ? D.photos.length + ' photo' + (D.photos.length === 1 ? '' : 's') + ' kept' : 'No photo yet') + '</span></div>' +
+      '<label class="lbl">Read by Claude or any AI (optional)</label><p class="muted small" style="margin:0 0 6px">Copy the instructions, send them with the photos to Claude (or any AI), then paste its answer here and tap Fill the list. Check every line against the paper.</p>' +
+      (S.aiOk ? '<div class="dtbar"><button class="btn sm pri" data-act="dt-airead"' + (S.dtAiBusy ? ' disabled' : '') + '>Read the photos on this computer (free)</button></div>' +
+        '<p class="muted small" style="margin:0 0 6px" id="dtAiSt">' + (S.dtAiBusy ? h(S.dtAiBusy) : 'Uses the AI built into Chrome on this computer: free, nothing leaves the computer. The photos added above are read' + ((S.dtImgs || []).length ? ' (' + S.dtImgs.length + ')' : '') + '. Check every line.') + '</p>' : '') +
+      '<div class="dtbar"><button class="btn sm" data-act="dt-ai">Copy the instructions</button><a class="btn sm" href="https://claude.ai/new" target="_blank" rel="noopener" style="text-decoration:none">Open Claude</a></div>' +
+      '<textarea class="in" id="dtPaste" rows="4" placeholder="Paste the AI’s answer here">' + h(D.paste || '') + '</textarea>' +
+      '<div class="dtbar"><button class="btn sm pri" data-act="dt-fill">Fill the list</button></div>' +
+      (D.warn ? '<p class="small" style="color:var(--red);margin:6px 0 0">' + h(D.warn) + '</p>' : '') + '</section>';
+    if (D.list) {
+      html += '<section class="card"><div class="ct">' + (D.reg === 'echo' ? 'Echo patients on the form' : nm + ' ' + h(D.list[0] ? D.list[0].no : '') + ' to ' + h(D.list.length ? D.list[D.list.length - 1].no : '')) + '</div>' +
+        '<p class="small" id="dtSum" style="margin:0 0 8px">' + dtSumHtml() + '</p>' +
+        (D.lastNo ? '<p class="muted small" style="margin:0 0 8px">' + h(D.lastNoTxt) + '</p>' : '') +
+        D.list.map(dtRowHtml).join('') +
+        (D.reg === 'echo' ? '<button class="btn sm" data-act="dt-addrow">+ Add a patient</button>' : '') +
+        '<div class="sbtns" style="margin-top:12px"><button class="btn" data-act="dt-clear">Clear</button><button class="btn pri" id="dtSave" data-act="dt-save"' + (dtCounts().left + dtCounts().part || !D.list.length ? ' disabled' : '') + '>Add to the census</button></div></section>';
+    }
+    return html + '</div>';
+  }
+  function dtBlank() { return { no: '', time: '', name: '', age: '', sex: '', cat: '', ecg: false, rbs: false, ref: '', remarks: '', unused: false }; }
+  function dtRange(from, to) {
+    from = String(from || '').toUpperCase().replace(/\s+/g, ''); to = String(to || '').toUpperCase().replace(/\s+/g, '');
+    if (!/\d/.test(from) || !/\d/.test(to)) return 'Write the first and the last number used (from … to …).';
+    var a = [from], x = from;
+    while (x !== to) { if (a.length >= 300) return 'From ' + from + ' to ' + to + ' is not a range of at most 300 numbers. Check the two numbers.'; x = nextMr(x); a.push(x); }
+    return a;
+  }
+  /* one line per number: what was typed or pasted for a number stays */
+  function dtMake(pasted) {
+    var D = S.dt, a = dtRange(D.from, D.to);
+    if (typeof a === 'string') { toast(a); return Promise.resolve(false); }
+    if (isOff()) { toast('Making the list needs internet (it checks the census for numbers already entered).'); return Promise.resolve(false); }
+    D.busy = true;
+    return api('apiDtCheck', JSON.stringify({ reg: D.reg, from: D.from, to: D.to })).then(function (r) {
+      D.busy = false;
+      var old = {}; (D.list || []).forEach(function (x) { old[x.no] = x; }); (pasted || []).forEach(function (x) { if (x.no) old[x.no] = x; });
+      D.list = r.nums.map(function (no) { var x = old[no] || dtBlank(); x.no = no; return x; });
+      D.seen = r.seen || {};
+      var lastV = String(r.last || ''), tail = r.nums[r.nums.length - 1];
+      D.lastNo = lastV; D.lastNoTxt = lastV ? 'The automatic ' + (D.reg === 'opd' ? 'OPD' : 'MR') + ' counter is at ' + lastV + '. If ' + tail + ' is after it, the counter moves to ' + tail + ' when you add this form (no number is given twice).' : '';
+      if (!D.batch) D.batch = 'dt' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+      dtKeep(); render(); return true;
+    }, function (e) { D.busy = false; toast(errText(e)); return false; });
+  }
+  function dtFill() {
+    var D = S.dt, P = CEC.dtParse(D.paste || '', D.reg), sl = dtSlots(), warn = [];
+    if (!P.rows.length) { D.warn = 'Nothing in the pasted text could be read. Paste the AI’s answer (one line per patient, fields between |).'; render(); return; }
+    if (P.head.date && P.head.shift) {
+      var id = P.head.date + '_' + P.head.shift, ok = sl.some(function (x) { return x.id === id; });
+      if (ok) D.slot = id; else { D.slot = 'other'; D.oDate = P.head.date; D.oShift = P.head.shift; }
+    }
+    if (P.bad.length) warn.push(P.bad.length + ' line' + (P.bad.length === 1 ? '' : 's') + ' not understood: ' + P.bad.slice(0, 3).join(' / '));
+    if (D.reg === 'echo') {
+      D.list = (D.list || []).filter(function (x) { return dtState(x) !== 'left'; }).concat(P.rows);
+      if (!D.batch) D.batch = 'dt' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+      D.warn = warn.join(' '); dtKeep(); render(); return;
+    }
+    if (!D.from && P.head.from) D.from = P.head.from;
+    if (!D.to && P.head.to) D.to = P.head.to;
+    if (!D.from || !D.to) { var ns = P.rows.map(function (r) { return r.no; }).filter(Boolean); if (!D.from) D.from = ns[0] || ''; if (!D.to) D.to = ns[ns.length - 1] || ''; }
+    dtMake(P.rows).then(function (ok) {
+      if (!ok) return;
+      var inR = {}; D.list.forEach(function (x) { inR[x.no] = 1; });
+      var out = P.rows.filter(function (r) { return !inR[r.no]; }).map(function (r) { return r.no; });
+      if (out.length) warn.push('Not between ' + D.from + ' and ' + D.to + ' (left out): ' + out.join(', ') + '.');
+      D.warn = warn.join(' '); render();
+    });
+  }
+  function dtSave() {
+    var D = S.dt, c = dtCounts(), sl = dtSlotNow();
+    if (!sl) return toast('Choose the day and the shift of the form.');
+    if (c.left + c.part) return toast('Fill every line or mark it Not used first.');
+    var where = CEC.shiftName(sl.code) + ' shift, ' + CEC.dmy(sl.date);
+    var body = '<p><b>' + c.ok + '</b> patient' + (c.ok === 1 ? '' : 's') + ' will be added to the <b>' + h(where) + '</b> (' + DT_LBL[D.reg] + ').</p>' +
+      (c.nu ? '<p class="small">' + c.nu + ' number' + (c.nu === 1 ? '' : 's') + ' marked Not used.</p>' : '') + (c.in ? '<p class="small">' + c.in + ' already in the census (left as they are).</p>' : '') +
+      '<p class="small muted">Check the shift: it is the shift written on the form.</p>';
+    modal('Add this form to the census?', body, [{ label: 'Back', value: false }, { label: 'Add to the census', value: true, cls: 'pri' }]).then(function (v) {
+      if (!v) return;
+      D.busy = true; dtPaint(); toast('Adding…');
+      var rows = D.list.filter(function (r) { return D.reg === 'echo' || !D.seen[r.no]; }).map(function (r) {
+        return { no: r.no, time: r.time, name: r.name, age: r.age, sex: r.sex, cat: r.cat, ecg: !!r.ecg, rbs: !!r.rbs, ref: r.ref, remarks: r.remarks, unused: !!r.unused };
+      });
+      api('apiDtSave', JSON.stringify({ batch: D.batch, reg: D.reg, date: sl.date, shift: sl.code, from: D.from, to: D.to, rows: rows, photos: D.photos.map(function (p) { return p.id; }) })).then(function (r) {
+        D.busy = false;
+        r.where = where; r.reg = D.reg;
+        S.dt = { uid: D.uid, reg: D.reg, pages: D.pages, slot: '', from: '', to: '', list: null, seen: {}, photos: [], paste: '', batch: '', res: r };
+        S.dtImgs = []; store_('cec_dt', null); render(); window.scrollTo(0, 0);
+        toast(r.added + ' added to the census.'); refresh(true);
+      }, function (e) { D.busy = false; dtPaint(); toast(errText(e)); });
+    });
+  }
+  /* 19-11-2026 (V2.6): the free on-device reader: the AI built into Chrome (Gemini Nano, Prompt API with pictures). Offered only where Chrome
+     has it (Windows / Mac / Linux computers with a strong graphics card or 16 GB RAM, Chromebook Plus; not phones yet). It reads the photos
+     added on this device with the same instructions as Claude; its answer goes into the paste box and fills the list. */
+  var AI_OPTS = { expectedInputs: [{ type: 'text', languages: ['en'] }, { type: 'image' }], expectedOutputs: [{ type: 'text', languages: ['en'] }] };
+  function aiCheck() {
+    if (S.aiChecked) return; S.aiChecked = true;
+    try {
+      if (typeof LanguageModel === 'undefined' || !LanguageModel.availability) return;
+      LanguageModel.availability(AI_OPTS).then(function (a) { S.aiOk = a && a !== 'unavailable' ? a : ''; if (S.aiOk && S.view === 'dt') render(); }, function () { S.aiOk = ''; });
+    } catch (e) { S.aiOk = ''; }
+  }
+  function dtAiSet(t) { S.dtAiBusy = t; var el = $('dtAiSt'); if (el) el.textContent = t; }
+  function dtAiRead() {
+    var D = S.dt, imgs = (S.dtImgs || []).slice();
+    if (!imgs.length) return toast('First add the photos of the form here (Add photos), then tap Read.');
+    var sess = null, outs = [];
+    dtAiSet('Starting the AI on this computer…'); render();
+    var opts = Object.assign({}, AI_OPTS, { monitor: function (m) { m.addEventListener('downloadprogress', function (e) { dtAiSet('Getting the AI model ready (once): ' + Math.round((e.loaded || 0) * 100) + '%'); }); } });
+    var one = function (i) {
+      if (i >= imgs.length) return Promise.resolve();
+      dtAiSet('Reading photo ' + (i + 1) + ' of ' + imgs.length + '…');
+      return fetch(imgs[i]).then(function (r) { return r.blob(); }).then(function (b) {
+        return sess.prompt([{ role: 'user', content: [{ type: 'text', value: CEC.dtPrompt(D.reg) }, { type: 'image', value: b }] }]);
+      }).then(function (t) { outs.push(String(t || '')); return one(i + 1); });
+    };
+    LanguageModel.create(opts).then(function (s0) { sess = s0; return one(0); }).then(function () {
+      try { sess.destroy(); } catch (e) { }
+      /* one heading line: date and shift of the first photo, From of the first, To of the last */
+      var head = null, lastTo = '', body = [];
+      outs.join('\n').split(/\r?\n/).forEach(function (ln) {
+        var t = ln.replace(/\*\*/g, '').trim();
+        if (/^DATE\b/i.test(t)) { var m = /\bTO\s*[:=]?\s*([^|]+)/i.exec(t); if (m) lastTo = m[1].trim(); if (!head) head = t; return; }
+        body.push(ln);
+      });
+      if (head && lastTo) head = head.replace(/(\bTO\s*[:=]?\s*)([^|]+)/i, '$1' + lastTo);
+      D.paste = (head ? head + '\n' : '') + body.join('\n');
+      S.dtAiBusy = ''; dtKeep(); toast('Read. Check every line against the paper.'); dtFill();
+    }, function (e) {
+      try { if (sess) sess.destroy(); } catch (x) { }
+      S.dtAiBusy = ''; render(); toast('The AI on this computer could not read the photos (' + (e && e.message ? e.message : 'not available') + '). Use Copy the instructions instead.');
+    });
+  }
+  function dtPhotos(files) {
+    var D = S.dt, sl = dtSlotNow() || {}, list = Array.prototype.slice.call(files || []);
+    if (!list.length) return;
+    if (isOff()) return toast('Keeping photos needs internet.');
+    var ph = $('dtPh'), n = 0;
+    var next = function () {
+      var f = list.shift(); if (!f) { if (ph) ph.textContent = D.photos.length + ' photo' + (D.photos.length === 1 ? '' : 's') + ' kept'; dtKeep(); return; }
+      if (ph) ph.textContent = 'Sending photo ' + (++n) + '…';
+      shrinkPhoto(f).then(function (url) {
+        S.dtImgs = (S.dtImgs || []).concat([url]).slice(-12);       // 19-11-2026 (V2.6): kept on this device for the on-device reader
+        return api('apiDtPhoto', JSON.stringify({ reg: D.reg, date: sl.date, shift: sl.code, mime: 'image/jpeg', data: url.split(',')[1] }));
+      }).then(function (r) { D.photos.push({ id: r.id, name: r.name }); next(); }, function (e) { toast(errText(e)); next(); });
+    };
+    next();
+  }
 
   /* ---------- this device: slip paper, counter PC ---------- */
   function deviceHtml() {
@@ -7086,8 +7809,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
           (/^image\//.test(d.mime || '') ? '<button class="btn sm" data-act="doc-print" data-id="' + h(d.id) + '">' + ICON.print + ' Print</button>' : '') +
           (isAdmin() ? '<button class="btn sm" data-act="doc-edit" data-id="' + h(d.id) + '">Title / who can see</button><button class="btn sm dan" data-act="doc-del" data-id="' + h(d.id) + '">Delete</button>' : '') });
     });
-    if (canEnter() && !isPrintId()) a.push({ key: 'list', title: 'Registers (OPD, ETT, Echo, BD, Resus and any register you make)', sub: 'Choose the dates, which patients and which columns; tick or untick patients; download as PDF or Excel, or copy for WhatsApp.',
-      btns: '<button class="btn sm pri" data-act="go" data-v="lists">' + ICON.dl + ' Open the registers</button>' });
+    if (canEnter() && !isPrintId()) a.push({ key: 'list', title: 'List builder (OPD, ETT, Echo, BD, Resus and any list you make)', sub: 'Choose the dates, which patients and which columns; tick or untick patients; download as PDF or Excel, or copy for WhatsApp.',
+      btns: '<button class="btn sm pri" data-act="go" data-v="lists">' + ICON.dl + ' Open the List builder</button>' });
+    /* 19-11-2026 (V2.7): the blank down-time forms here too (they are made on this device: no internet needed) */
+    a.push({ key: 'dt', title: 'Down-time forms (MR, OPD and Echo registers)', sub: 'Big boxes, 20 patients a sheet, the census heading: for when the census or the internet is down. 2 sheets each; more sheets and printing on the Down-time forms page.',
+      btns: [['mr', 'MR form'], ['opd', 'OPD form'], ['echo', 'Echo form']].map(function (x) { return '<button class="btn sm' + (x[0] === 'mr' ? ' pri' : '') + '" data-act="dtf-get" data-v="' + x[0] + '">' + dl + ' ' + x[1] + '</button>'; }).join('') +
+        ((canEnter() || isEchoId()) && !isPrintId() || isPrintId() ? '<button class="btn sm" data-act="go" data-v="dt">More sheets / print</button>' : '') });
     var ord = S.formOrder || [];
     a.forEach(function (it, i) { var k = ord.indexOf(it.key); it.rank = k >= 0 ? k : ord.length + i; });
     return a.sort(function (x, y) { return x.rank - y.rank; });
@@ -7592,8 +8319,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (S.echoBusy && !force) return Promise.resolve();
     S.echoBusy = true;
     var t = pkToday();
-    return Promise.all([api('apiEchoList'), api('apiEchoPhrases').then(null, function () { return []; }), api('apiAppts', 'ECHO', CEC.addDays(t, -1), t).then(null, function () { return []; })]).then(function (r) {
-      S.echoBusy = false; S.echo = Object.assign(S.echo || {}, { list: r[0] || [], at: Date.now(), apToday: r[2] || [] }); S.echoPhr = r[1] || [];
+    return Promise.all([api('apiEchoList'), api('apiEchoPhrases').then(null, function () { return []; }), api('apiAppts', 'ECHO', CEC.addDays(t, -1), t).then(null, function () { return []; }),
+      api('apiProcWait', 'ECHO').then(null, function () { return null; })]).then(function (r) {
+      S.echoBusy = false; S.echo = Object.assign(S.echo || {}, { list: r[0] || [], at: Date.now(), apToday: r[2] || [], wait: r[3] }); S.echoPhr = r[1] || [];
       if (S.view === 'echo') render();
     }, function (e) { S.echoBusy = false; S.echo = Object.assign(S.echo || {}, { err: errText(e), errAt: Date.now() }); if (S.view === 'echo') render(); });   // 16-11-2026: no instant retry loop
   }
@@ -7607,12 +8335,21 @@ if (typeof module !== 'undefined') module.exports = CEC;
       have['n' + echoNameKey(a.name)] = 1;
       out.push({ kind: 'appt', id: a.id, name: a.name, age: a.age, sex: a.sex, mr: a.mr, sub: 'Echo booking No. ' + a.no + (a.time ? ', ' + a.time + ' hrs' : '') });
     });
+    if (Array.isArray(E.wait)) {                        // 19-11-2026 (V2.6): every Echo patient registered (any desk), until the report is made or the next echo day has passed
+      E.wait.forEach(function (e) {
+        if (have['e' + e.id] || (e.day === t && have['n' + echoNameKey(e.name)])) return;
+        have['n' + echoNameKey(e.name)] = 1;
+        out.push({ kind: 'entry', id: e.id, name: e.name, age: e.age, sex: e.sex, mr: e.mr, noMr: !e.mr,
+          sub: 'Registered ' + (e.day === t ? 'today ' : CEC.weekday(e.day).slice(0, 3) + ' ' + CEC.dmy(e.day) + ' ') + CEC.hm(e.t) + ' · on the list until ' + CEC.weekday(e.until) + ' ' + CEC.dmy(e.until) });
+      });
+      return out;
+    }
     [S.open, S.prevShift].forEach(function (sh) {
       if (!sh || sh.censusDate !== t) return;
       (sh.entries || []).forEach(function (e) {
         if (e.cat !== 'ECHO' || /^(q-|tmp)/.test(e.id) || have['e' + e.id] || have['n' + echoNameKey(e.name)]) return;
         have['n' + echoNameKey(e.name)] = 1;
-        out.push({ kind: 'entry', id: e.id, name: e.name, age: e.age, sex: e.sex, mr: e.mr, sub: 'Registered ' + CEC.hm(e.t) + (e.tok ? ' · ' + e.tok : '') });
+        out.push({ kind: 'entry', id: e.id, name: e.name, age: e.age, sex: e.sex, mr: e.mr, noMr: !e.mr, sub: 'Registered ' + CEC.hm(e.t) + (e.tok ? ' · ' + e.tok : '') });
       });
     });
     return out;
@@ -7627,9 +8364,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var html = '<div class="narrow"><div class="listhead"><h3>' + (tab === 'wait' ? 'Patients registered for echo' : 'Print echo reports') + '</h3>' + (isEchoId() ? '' : '<button class="btn sm" data-act="ap-type" data-v="ECHO">&lsaquo; Echo</button>') + '</div>';
     if (tab === 'list') html += echoProvHtml();
     if (tab === 'wait') html += '<section class="card' + (pend.length ? ' pendc' : '') + '"><div class="ct">Waiting for a report (' + pend.length + ')</div>' +
-      '<p class="muted small" style="margin:0">Today’s echo bookings and the Echo patients registered today, until their report is made.</p>' +
+      '<p class="muted small" style="margin:0">Today’s echo bookings, and every Echo patient registered (at any desk) until the report is made in their name, or until the next echo day has passed.</p>' +
       (pend.length ? '<div class="plist" style="margin-top:8px">' + pend.map(function (p) {
-        return '<div class="drow"><div class="sc-top"><div style="min-width:0"><div class="pr-name">' + h(p.name) + (p.mr ? ' <span class="muted">&middot; MR ' + h(p.mr) + '</span>' : '') + '</div>' +
+        return '<div class="drow"><div class="sc-top"><div style="min-width:0"><div class="pr-name">' + h(p.name) + (p.mr ? ' <span class="muted">&middot; MR ' + h(p.mr) + '</span>' : p.noMr ? ' <span class="tag nomr">No MR No.</span>' : '') + '</div>' +
           '<div class="pr-sub">' + [p.sex === 'M' ? 'Male' : p.sex === 'F' ? 'Female' : '', p.age !== '' && p.age != null ? h(p.age) + ' y' : '', h(p.sub)].filter(Boolean).join(' &middot; ') + '</div></div>' +
           (mk ? '<button class="btn sm pri" data-act="ec-from" data-v="' + p.kind + '" data-id="' + h(p.id) + '">' + ICON.pen + ' Make report</button>' : '') + '</div></div>';
       }).join('') + '</div>' : '<p class="muted small" style="margin:8px 0 0"><b>None waiting.</b></p>') + '</section>';
@@ -7665,8 +8402,32 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function echoGet(id) { toast('Opening…'); return api('apiEchoGet', id).then(function (r) { if (!r) toast('This report no longer exists.'); return r; }, function (e) { toast(errText(e)); return null; }); }
   /* 15-11-2026: a provisional report prints with the date of that print */
   function echoDated(r) { return Object.assign({}, r, { prDate: pkToday() }); }
-  function echoPrint(r) { printDoc('echoPdf', [echoDated(r), S.settings], (CEC.echoProv(r) ? 'provisional ' : '') + 'echo report' + (r.name ? ' ' + r.name : '')); }
-  function echoDownload(r) { offerFile(CEC.echoFileName(r), CEC.echoPdf(echoDated(r), S.settings, logoBytes()), 'application/pdf', false); }
+  function echoPrint(r, asked) {
+    if (!asked && !String(r.mr || '').trim()) return echoMrAsk(r, 'print').then(function (r2) { if (r2) echoPrint(r2, true); });
+    printDoc('echoPdf', [echoDated(r), S.settings], (CEC.echoProv(r) ? 'provisional ' : '') + 'echo report' + (r.name ? ' ' + r.name : ''));
+  }
+  function echoDownload(r, asked) {
+    if (!asked && !String(r.mr || '').trim()) return echoMrAsk(r, 'download').then(function (r2) { if (r2) echoDownload(r2, true); });
+    offerFile(CEC.echoFileName(r), CEC.echoPdf(echoDated(r), S.settings, logoBytes()), 'application/pdf', false);
+  }
+  /* 19-11-2026 (V2.6): a report without an MR No. (patient registered without one): asked every time it is printed or downloaded */
+  function echoMrAsk(r, how) {
+    return modal('No MR No. on this echo report', '<p><b>' + h(r.name || 'This patient') + '</b> has no MR No. Enter the MR No. the registration counter gave:</p>' +
+      '<input class="in" id="ecMrA" inputmode="numeric" autocomplete="off" placeholder="MR No.">' +
+      '<p class="small muted">This reminder comes every time a report without an MR No. is printed or downloaded.</p>',
+      [{ label: 'Back', value: false }, { label: (how === 'print' ? 'Print' : 'Download') + ' without MR No.', value: 'none' }, { label: 'Save MR No. and ' + how, value: 'form', cls: 'pri' }]).then(function (v) {
+        if (!v) return null;
+        if (v === 'none') return r;
+        var m = String(v.ecMrA || '').toUpperCase().replace(/\s+/g, '');
+        if (!/\d/.test(m)) { toast('Type the MR No., or choose ' + (how === 'print' ? 'Print' : 'Download') + ' without MR No.'); return null; }
+        var r2 = Object.assign({}, r, { mr: m });
+        if (!r.id) { toast('MR No. put on this ' + how + '. Save the report to keep it.'); return r2; }
+        return api('apiEchoSetMr', JSON.stringify({ id: r.id, mr: m })).then(function () {
+          ((S.echo && S.echo.list) || []).forEach(function (x) { if (x.id === r.id) x.mr = m; });
+          toast('MR No. ' + m + ' saved on the report.'); return r2;
+        }, function (e) { toast(errText(e)); return null; });
+      });
+  }
   function echoPreview(r, fromForm) {
     previewDoc('echoPdf', [echoDated(r), S.settings], 'Echo report' + (r.name ? ': ' + r.name : ''),
       function () { if (fromForm && S.ef) { var rp = echoRead(); echoOk(rp).then(function (ok) { if (ok) echoPrint(rp); }); } else echoPrint(r); }, function () { echoDownload(r); });
@@ -7808,9 +8569,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
     { k: 'mv', t: 'Mitral valve', g: ['Mitral valve'], none: 'Nothing to add (normal mitral valve)' },
     { k: 'av', t: 'Aortic valve', g: ['Aortic valve'], none: 'Nothing to add (normal aortic valve)' },
     { k: 'pv', t: 'Prosthetic valves and vegetation', g: ['Prosthetic valves', 'Vegetation'], none: 'None' },
-    { k: 'se', t: 'Septa', g: ['Septa'] },
-    { k: 'ivc', t: 'IVC', g: ['IVC'] },
-    { k: 'pe', t: 'Pericardium and masses', g: ['Pericardium and masses'] },
+    { k: 'se', t: 'Septa', g: ['Septa'], none: 'Nothing to add (normal septa)' },                    // 19-11-2026 (V2.7)
+    { k: 'ivc', t: 'IVC', g: ['IVC'], none: 'Nothing to add (normal IVC)' },
+    { k: 'pe', t: 'Pericardium and masses', g: ['Pericardium and masses'], none: 'Nothing to add (no effusion, no mass)' },
     { k: 'ao', t: 'Aorta', g: ['Aorta'], none: 'Nothing to add (normal aortic root)' },
     { k: 'dp', t: 'Doppler (colour flow mapping)' },
     { k: 'ifl', t: 'Mitral inflow and diastolic function' },
@@ -7965,11 +8726,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
     }
     /* a heading (or two): its lines, the usual one marked; "Nothing to add" where a heading is often normal */
     var keys = ewKeys(x), s = x.s || 'st';
-    return ewHint('Tap one or more. Tap again to remove.') + ewClashNote(keys) +
+    return (x.none ? ewNoneBtn(x.k, x.none) : '') +                   // 19-11-2026 (V2.7): "Nothing to add" first, above every option
+      ewHint('Tap one or more. Tap again to remove.') + ewClashNote(keys) +
       x.g.map(function (g) {
         var ks = CEC.echoPickList(s, g).map(function (l) { return l.k; }).filter(function (k) { return keys.indexOf(k) >= 0; });
         return (x.g.length > 1 ? '<div class="eg">' + h(g) + '</div>' : '') + ks.map(ewOpt).join('') + ewOwn(s, g, x.g.length > 1 ? g : '');
-      }).join('') + (x.none ? ewNoneBtn(x.k, x.none) : '');
+      }).join('');
   }
   function ewCheckHtml() {
     var r = S.ef.r, iss = [], L = CEC.echoLines(r);
@@ -8344,7 +9106,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var cols = CEC.listColsFor(who), sel = function (id, k, opts) {
       return '<select class="in" id="' + id + '">' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (f[k] === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>'; };
     var html = '<div class="narrow lbw">' + todayCardHtml() +
-      '<section class="card lbmain"><div class="ct">Registers</div>' +
+      '<section class="card lbmain"><div class="ct">List builder</div>' +
       '<label class="lb" style="margin-top:6px">Dates</label><div class="sbtns lbdays">' + quick + '</div>' +
       '<div class="seg lbrange">' + [['0', 'One day'], ['1', 'Several days']].map(function (o) { var on = (L.range ? '1' : '0') === o[0];
         return '<button type="button" data-act="lb-range" data-v="' + o[0] + '" class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + o[1] + '</button>'; }).join('') + '</div>' +
@@ -8872,37 +9634,105 @@ if (typeof module !== 'undefined') module.exports = CEC;
      and students), then pending death certificates. */
   /* 15-11-2026 (evening): Echo: the Echo technician's home, and Procedures > Echo for everyone. Make echo report only for those who make reports
      (doctors, the admin, the Echo technician); nursing staff and students: the other four. */
-  function echoTilesHtml() {
+
+  /* ---------- 19-11-2026: Home tiles. The standard tiles are his order (below); each person can move them, take them off, or add any page of
+     the census as a tile (only those they may use). Saved with their account (the same on every phone and computer). ---------- */
+  var TSV = {
+    slip: '<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>',
+    vit: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/><path d="M3.5 12h4l1.5-3 3 6 1.5-3h7"/>',
+    ecg: '<path d="M2 12h3l2-6 3 12 3-9 2 3h7"/>', rbs: '<path d="M12 3c-3.5 4.6-6 8-6 11a6 6 0 0 0 12 0c0-3-2.5-6.4-6-11z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/>',
+    bd: '<path d="M12 3v18M7 8h10"/><path d="M5 21h14"/>', erx: '<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/>',
+    dt: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/><path d="M15 15l4 4M19 15l-4 4"/>',
+    apg: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>', ereg: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/><path d="M19 3v6M16 6h6"/>',
+    ewait: '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c1-3.5 3.5-5 6-5s5 1.5 6 5"/><path d="M16 7h5M16 11h5M16 15h3"/>', enew: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M12 11v6M9 14h6"/>'
+  };
+  function tileCat() {
+    var ent = canEnter() && !isEchoId(), nw = S.echo && S.echo.list ? echoPending().length : null;
+    return [
+      { k: 'slipgen', l: 'Slip generation', s: 'Electronic slip and Manual slip', ok: ent },
+      { k: 'mrreg', act: 'q-mrreg', i: NAV_ICON.mrreg, l: 'Download registers', s: 'MR / OPD registers of any day or dates; down-time forms', ok: !isEchoId() && !!S.me },
+      { k: 'vit', act: 'q-vit', i: TSV.vit, l: 'Vitals', s: 'BP, pulse, temp, RBS, SpO2 of registered patients', ok: ent },
+      { k: 'ecg', act: 'q-ecg', i: TSV.ecg, l: 'ECG', s: 'Tick ECG done: this shift and the two before', ok: ent },
+      { k: 'bd', act: 'q-bd', i: TSV.bd, l: 'Brought dead', s: S.bdOpen ? S.bdOpen + ' without CNIC, contact or address' : 'CNIC, contact No., address', ok: canBd(), count: S.bdOpen, blink: !!S.bdOpen },
+      { k: 'erx', act: 'q-erx', i: TSV.erx, l: 'ER procedures & medications', s: 'Cannula, oxygen, CPR; medicines given (drug account)', ok: canClin() },
+      { k: 'petty', act: 'go-petty', i: NAV_ICON.petty, l: 'Petty OPD register', s: 'Paste names (any number): MR each morning, up to the daily limit', ok: isAdmin() },
+      { k: 'slip', act: 'q-slip', i: TSV.slip, l: 'OPD / ER slip', s: 'Print, choose slips, autoprint', ok: ent },
+      { k: 'rbs', act: 'q-rbs', i: TSV.rbs, l: 'RBS', s: 'Tick RBS done: this shift and the two before', ok: ent },
+      { k: 'dt', act: 'go', v: 'dt', i: TSV.dt, l: 'Down-time forms', s: 'Blank forms when the census is down; enter them back', ok: canEnter() || isEchoId() },
+      { k: 'dash', act: 'go', v: 'shift', i: NAV_ICON.shift, l: 'Patient dashboard', s: 'The patients of the shift', ok: !isEchoId() && !!S.me },
+      { k: 'lists', act: 'go', v: 'lists', i: NAV_ICON.lists, l: 'List builder', s: 'Your own lists: columns, presets, Excel', ok: canClin() },
+      { k: 'census', act: 'go', v: 'census', i: NAV_ICON.census, l: 'Census letters', s: 'Shift, 24-hour, monthly and annual letters', ok: canClin() },
+      { k: 'certs', act: 'go', v: 'certs', i: NAV_ICON.certs, l: 'Death certificate', s: S.pendCerts ? S.pendCerts + ' waiting' : 'Make, find and print', ok: canCert(), count: S.pendCerts },
+      { k: 'forms', act: 'go', v: 'forms', i: NAV_ICON.forms, l: 'Download forms', s: 'Paper forms to print', ok: canClin() || isPrintId() },
+      { k: 'tmpdoc', act: 'go', v: 'tmpdoc', i: NAV_ICON.tmpdoc, l: 'Print a document', s: 'A PDF or photo, kept 1 hour', ok: canTmp() },
+      { k: 'appt', act: 'go', v: 'appt', i: NAV_ICON.appt, l: 'Procedures', s: 'Echo and ETT appointments', ok: canAppt() && !isEchoId() },
+      { k: 'rosters', act: 'go', v: 'rosters', i: NAV_ICON.rosters, l: 'Shifts & rosters', s: 'Who is on duty', ok: canRosters() },
+      { k: 'bulk', act: 'go', v: 'bulk', i: NAV_ICON.bulk, l: 'Bulk sign-off', s: 'Sign off waiting patients together', ok: isAdmin() },
+      { k: 'ap-echo', act: 'ap-give', v: 'ECHO', i: TSV.apg, l: 'Give appointment for echo', s: 'A date for the echo', ok: canAppt() || isEchoId() },
+      { k: 'echo-reg', act: 'echo-reg', i: TSV.ereg, l: 'Register echo patient', s: 'With the MR No. the student gave', ok: canEnter() || isEchoId() },
+      { k: 'echo-wait', act: 'echo-tab', v: 'wait', i: TSV.ewait, l: 'Patients registered for echo', s: nw == null ? 'Waiting for their report' : nw + ' waiting for a report', ok: canEchoSee() },
+      { k: 'echo-new', act: 'ec-new', i: TSV.enew, l: 'Make echo report', s: 'A new report', ok: canEchoMake() },
+      { k: 'echo-list', act: 'echo-tab', v: 'list', i: NAV_ICON.echo, l: 'Print echo reports', s: 'Find, preview and print', ok: canEchoSee() },
+      { k: 'ett-wait', act: 'ap-type', v: 'ETT', i: TSV.ecg, l: 'Patients registered for ETT', s: 'Until ETT done; ETT bookings', ok: canEttList() && canAppt() },
+      { k: 'about', act: 'go', v: 'about', i: NAV_ICON.about, l: 'About', s: 'The census and its help', ok: !!S.me },
+      { k: 'settings', act: 'go', v: 'settings', i: NAV_ICON.settings, l: isAdmin() ? 'Account & admin' : 'Account', s: 'Password, email' + (isAdmin() ? ', users' : ''), ok: !!S.me }
+    ];
+  }
+  var TILE_STD = ['slipgen', 'mrreg', 'vit', 'ecg', 'bd', 'erx', 'petty', 'slip', 'rbs'];
+  var TILE_STD_ECHO = ['ap-echo', 'echo-reg', 'echo-wait', 'echo-new', 'echo-list'];
+  function myTiles() {          // a change made here wins for a minute over a state that was already on its way from the server
+    if (S.tLoc && Date.now() - S.tLoc.at < 60000) return S.tLoc.k;
+    return S.me && Array.isArray(S.me.tiles) ? S.me.tiles : null;
+  }
+  function myTileKeys() {
+    var cat = tileCat(), okK = {}, mine = myTiles();
+    cat.forEach(function (t) { if (t.ok) okK[t.k] = 1; });
+    // the standard tiles: his order; the Echo technician her 5; IDs without entry right (Print desk) none, as before (they can add some)
+    return (mine || (isEchoId() ? TILE_STD_ECHO : canEnter() ? TILE_STD : [])).filter(function (k) { return okK[k]; });
+  }
+  function tileHtml(t) {
     var svg = function (d) { return '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2">' + d + '</svg>'; };
-    var tile = function (act, v, icon, t, sub) { return '<button class="stile" data-act="' + act + '"' + (v ? ' data-v="' + v + '"' : '') + '><span class="sti" aria-hidden="true">' + svg(icon) + '</span><b>' + t + '</b><span>' + sub + '</span></button>'; };
-    var nw = S.echo && S.echo.list ? echoPending().length : null;
+    if (t.k === 'slipgen') return '<div class="slipgen" role="group" aria-label="Slip generation"><div class="sgh">Slip generation</div><div class="sgb">' +
+      '<button class="stile mode mblue" data-act="mode" data-v="e"><span class="sti" aria-hidden="true">' + svg(TSV.slip) + '</span><b>Electronic slip</b><span>The system prints the slip</span></button>' +
+      '<button class="stile mode mred" data-act="mode" data-v="m"><span class="sti" aria-hidden="true">' + svg('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>') + '</span><b>Manual slip</b><span>The staff write the paper slip by hand</span></button></div></div>';
+    return '<button class="stile' + (t.blink ? ' blink' : '') + '" data-act="' + t.act + '"' + (t.v ? ' data-v="' + t.v + '"' : '') + ' data-tile="' + t.k + '"><span class="sti" aria-hidden="true">' + svg(t.i) + '</span><b>' + h(t.l) +
+      (t.count ? ' <span class="tcount">' + t.count + '</span>' : '') + '</b><span>' + h(t.s) + '</span></button>';
+  }
+  /* Procedures > Echo: the 5 echo tiles (unchanged page) */
+  function echoTilesHtml() {
+    var by = {}; tileCat().forEach(function (t) { by[t.k] = t; });
     if (!S.echo && !S.echoBusy && canEchoSee()) setTimeout(loadEcho, 0);
-    return '<div class="stiles">' +
-      tile('ap-give', 'ECHO', '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>', 'Give appointment for echo', 'A date for the echo') +
-      tile('echo-reg', '', '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/><path d="M19 3v6M16 6h6"/>', 'Register echo patient', 'With the MR No. the student gave') +
-      (canEchoSee() ? tile('echo-tab', 'wait', '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c1-3.5 3.5-5 6-5s5 1.5 6 5"/><path d="M16 7h5M16 11h5M16 15h3"/>', 'Patients registered for echo', nw == null ? 'Waiting for their report' : nw + ' waiting for a report') : '') +
-      (canEchoMake() ? tile('ec-new', '', '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M12 11v6M9 14h6"/>', 'Make echo report', 'A new report') : '') +
-      (canEchoSee() ? tile('echo-tab', 'list', '<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>', 'Print echo reports', 'Find, preview and print') : '') +
-      '</div>';
+    return '<div class="stiles">' + TILE_STD_ECHO.filter(function (k) { return by[k].ok || k === 'ap-echo' || k === 'echo-reg'; }).map(function (k) { return tileHtml(by[k]); }).join('') + '</div>';
   }
   function tilesHtml() {
-    var tile = function (act, icon, t, sub) { return '<button class="stile" data-act="' + act + '"><span class="sti" aria-hidden="true">' + icon + '</span><b>' + t + '</b><span>' + sub + '</span></button>'; };
-    var svg = function (d) { return '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2">' + d + '</svg>'; };
-    if (isEchoId()) return echoTilesHtml();            // 15-11-2026: the Echo technician: 5 tiles, no patient dashboard
-    if (!canEnter()) return '';
-    return '<div class="stiles">' +                       // 12-11-2026: registration and vitals start from these two tiles (same size as the others, side by side)
-      '<button class="stile mode mblue" data-act="mode" data-v="e"><span class="sti" aria-hidden="true">' + svg('<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>') + '</span><b>Electronic slip</b><span>The system prints the slip</span></button>' +
-      '<button class="stile mode mred" data-act="mode" data-v="m"><span class="sti" aria-hidden="true">' + svg('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>') + '</span><b>Manual slip</b><span>The staff write the paper slip by hand</span></button>' +
-      tile('q-mrreg', svg('<path d="M5 4h11l3 3v13H5z"/><path d="M8 9h2M8 13h2M8 17h2M12 9h4M12 13h4M12 17h4"/>'), 'MR register', 'Today’s MR numbers as they are given, newest on top') +
-      tile('q-slip', svg('<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>'), 'OPD / ER slip', 'Print, choose slips, autoprint') +
-      tile('q-ecg', svg('<path d="M2 12h3l2-6 3 12 3-9 2 3h7"/>'), 'ECG', 'Tick ECG done: this shift and the two before') +
-      tile('q-vit', svg('<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/><path d="M3.5 12h4l1.5-3 3 6 1.5-3h7"/>'), 'Vitals', 'BP, pulse, temp, RBS, SpO2 of registered patients') +   // 13-11-2026: back on Home (also Two staff › Vitals)
-      tile('q-rbs', svg('<path d="M12 3c-3.5 4.6-6 8-6 11a6 6 0 0 0 12 0c0-3-2.5-6.4-6-11z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/>'), 'RBS', 'Tick RBS done: this shift and the two before') +   // 18-11-2026 (after Vitals, which stays beside ECG)
-      (canBd() ? tile('q-bd', svg('<path d="M12 3v18M7 8h10"/><path d="M5 21h14"/>'), 'Brought dead' + (S.bdOpen ? ' <span class="tcount">' + S.bdOpen + '</span>' : ''),
-        S.bdOpen ? S.bdOpen + ' without CNIC, contact or address' : 'CNIC, contact No., address').replace('class="stile"', 'class="stile' + (S.bdOpen ? ' blink' : '') + '"') : '') +   // 19-11-2026
-      (isAdmin() ? tile('go-petty', svg('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h3M8 12h3M8 16h3M13 8h3M13 12h3M13 16h3"/>'), 'Petty OPD register', 'Paste names (any number): MR each morning, up to the daily limit') : '') +
-      (canClin() ? tile('q-erx', svg('<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/>'), 'ER procedures & medications', 'Cannula, oxygen, CPR; medicines given (drug account)') : '') +
-      '</div>';
+    if (!S.me) return '';
+    if (S.tEdit) return tileEditHtml();
+    var cat = tileCat(), by = {}; cat.forEach(function (t) { by[t.k] = t; });
+    var keys = myTileKeys();
+    if (keys.indexOf('echo-wait') >= 0 && !S.echo && !S.echoBusy && canEchoSee()) setTimeout(loadEcho, 0);
+    return '<div class="stiles">' + keys.map(function (k) { return tileHtml(by[k]); }).join('') + '</div>' +
+      (keys.length || !myTiles() ? '' : '<p class="muted small center">No tiles on Home. Tap Arrange tiles to add some.</p>') +
+      '<div class="tarr"><button class="lnk" data-act="t-edit">Arrange tiles</button></div>';
+  }
+  function tileEditHtml() {
+    var cat = tileCat().filter(function (t) { return t.ok; }), by = {}; cat.forEach(function (t) { by[t.k] = t; });
+    var keys = myTileKeys(), rest = cat.filter(function (t) { return keys.indexOf(t.k) < 0; });
+    return '<section class="card tedit"><div class="ct">Arrange tiles</div><p class="muted small" style="margin:0 0 8px">Move a tile with the arrows, take it off with Remove, or add any page below. Saved with your account, on every phone and computer.</p>' +
+      '<ol class="tlist2">' + keys.map(function (k, i) {
+        var t = by[k];
+        return '<li><span class="tln">' + h(t.l) + '</span><button class="btn sm" data-act="t-mv" data-v="' + k + '" data-d="-1"' + (i ? '' : ' disabled') + ' aria-label="Move ' + h(t.l) + ' up">&uarr;</button>' +
+          '<button class="btn sm" data-act="t-mv" data-v="' + k + '" data-d="1"' + (i < keys.length - 1 ? '' : ' disabled') + ' aria-label="Move ' + h(t.l) + ' down">&darr;</button>' +
+          '<button class="btn sm" data-act="t-del" data-v="' + k + '">Remove</button></li>';
+      }).join('') + '</ol>' +
+      (rest.length ? '<div class="ct" style="margin-top:14px">Add a tile</div><div class="tadd">' + rest.map(function (t) { return '<button class="btn sm" data-act="t-add" data-v="' + t.k + '">+ ' + h(t.l) + '</button>'; }).join('') + '</div>' : '') +
+      '<div class="sbtns" style="margin-top:14px"><button class="btn" data-act="t-reset">Standard tiles</button><button class="btn pri" data-act="t-done">Done</button></div></section>';
+  }
+  function tilesSet(keys) {
+    S.me.tiles = keys; S.tLoc = { k: keys, at: Date.now() }; render();
+    clearTimeout(S.tSaveT);
+    S.tSaveT = setTimeout(function () {
+      api('apiSaveTiles', JSON.stringify(keys)).then(function () { }, function (e) { toast('Tiles not saved: ' + errText(e)); });
+    }, 700);
   }
   /* Home: only the buttons, the live dashboard and pending certificates (About has its own page), so it opens at once and asks the server for nothing extra. */
   function homeHtml() {
@@ -9259,6 +10089,30 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '</div></div>';
   }
   /* Appointments: first ETT or Echo; then Give date (book) or Registration list (booked patients, by date). */
+  /* 19-11-2026 (V2.6): Patients registered for ETT (any desk), until ETT done is ticked or the next ETT day (Tuesday) has passed */
+  function canEttList() { return canEnter() && !isEchoId() && !isPrintId(); }
+  function ettLoad(force) {
+    if (!canEttList() || isOff() || (S.ettBusy && !force)) return;
+    S.ettBusy = true;
+    api('apiProcWait', 'ETT').then(function (r) { S.ettBusy = false; S.ettWait = { list: r || [], at: Date.now() }; if (S.view === 'appt' && S.ap.type === 'ETT') render(); },
+      function (e) { S.ettBusy = false; S.ettWait = { list: (S.ettWait && S.ettWait.list) || [], at: Date.now(), err: errText(e) }; if (S.view === 'appt') render(); });
+  }
+  function ettWaitHtml() {
+    if (!canEttList()) return '';
+    var W = S.ettWait, t = pkToday();
+    if (!W || Date.now() - W.at > 60000) setTimeout(function () { ettLoad(); }, 0);
+    if (!W) return '<section class="card center muted"><span class="spin"></span>Loading patients registered for ETT&hellip;</section>';
+    var l = W.list || [];
+    return '<section class="card' + (l.length ? ' pendc' : '') + '"><div class="ct">Patients registered for ETT (' + l.length + ')</div>' +
+      '<p class="muted small" style="margin:0">Every ETT patient registered (at any desk), until ETT done is ticked, or until the next ETT day has passed.</p>' +
+      (W.err ? '<p class="small" style="color:var(--red)">' + h(W.err) + '</p>' : '') +
+      (l.length ? '<div class="plist" style="margin-top:8px">' + l.map(function (e) {
+        return '<div class="drow"><div class="sc-top"><div style="min-width:0"><div class="pr-name">' + h(e.name) + (e.mr ? ' <span class="muted">&middot; ' + (e.opd ? 'OPD ' : 'MR ') + h(e.mr) + '</span>' : '') + '</div>' +
+          '<div class="pr-sub">' + [e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '', e.age !== '' && e.age != null ? h(e.age) + ' y' : '',
+            'Registered ' + (e.day === t ? 'today ' : h(CEC.weekday(e.day).slice(0, 3) + ' ' + CEC.dmy(e.day)) + ' ') + CEC.hm(e.t), 'on the list until ' + h(CEC.weekday(e.until) + ' ' + CEC.dmy(e.until))].filter(Boolean).join(' &middot; ') + '</div></div>' +
+          '<button class="btn sm pri" data-act="ett-done" data-v="' + h(e.shiftId) + '" data-id="' + h(e.id) + '">ETT done</button></div></div>';
+      }).join('') + '</div>' : '<p class="muted small" style="margin:8px 0 0"><b>None waiting.</b></p>') + '</section>';
+  }
   function apptHtml() {
     var A = S.ap;
     if (isEchoId() && A.type !== 'ECHO') { A.type = 'ECHO'; A.date = null; A.list = null; A.key = ''; }      // the Echo technician: echo only
@@ -9274,14 +10128,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (!A.date) A.date = firstUsual(A.type);
     if (!A.list || A.key.indexOf(A.type) !== 0) { if (!A.loading) setTimeout(function () { loadAppts(); }, 0); }
     var head = '<div class="listhead"><h3>' + (t.c === 'ECHO' ? 'Give appointment for echo' : h(nm) + ' procedures') + '</h3>' + (isEchoId() ? '' : t.c === 'ECHO' ? '<button class="btn sm" data-act="ap-type" data-v="ECHO">&lsaquo; Echo</button>' : '<button class="btn sm" data-act="ap-type" data-v="">Change test</button>') + '</div>';
-    if (A.step !== 'list') return '<div class="narrow">' + head + '<div class="stiles">' +
+    if (A.step !== 'list') return '<div class="narrow">' + head + (t.c === 'ETT' ? ettWaitHtml() : '') + '<div class="stiles">' +
       '<button class="stile" data-act="ap-new"><span class="sti" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></span>' +
         '<b>Give date</b><span>Choose the date and enter the patient’s details</span></button>' +
       '<button class="stile" data-act="ap-step" data-v="list"><span class="sti" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="3" stroke-linecap="round"/></svg></span>' +
         '<b>Registration list</b><span>Patients booked, by date &middot; PDF</span></button>' +
       '</div>' +
       '<p class="muted small" style="margin:10px 0 0">' + h(t.full) + ' is usually given on ' + dayLabel(A.type) + '.</p></div>';
-    var html = '<div class="narrow">' + head + '<section class="card"><button class="btn pri block" data-act="ap-new">+ Give date (new ' + h(t.c === 'ECHO' ? 'echo' : t.l) + ' booking)</button></section>';
+    var html = '<div class="narrow">' + head + (t.c === 'ETT' ? ettWaitHtml() : '') + '<section class="card"><button class="btn pri block" data-act="ap-new">+ Give date (new ' + h(t.c === 'ECHO' ? 'echo' : t.l) + ' booking)</button></section>';
     if (!A.list) return html + '<section class="card center muted"><span class="spin"></span>Loading bookings&hellip;</section></div>';
     var day = apList(A.type, A.date), n = booked(A.type, A.date), usual = isUsual(A.type, A.date);
     html += '<section class="card"><div class="ct">Registration list</div><div class="datenav"><button class="btn" data-act="ap-day" data-v="-1" aria-label="Previous ' + h(t.l) + ' day">&lsaquo;</button>' +
@@ -9465,6 +10319,44 @@ if (typeof module !== 'undefined') module.exports = CEC;
         withPaper(function (p) { psel.forEach(function (x) { delete S.slipSel[x.e.id]; }); manualPrint(psel, p); if (S.view === 'slipq') setTimeout(render, 0); });
         break; }
       case 'go-petty': setView('petty'); break;
+      case 't-edit': S.tEdit = true; render(); window.scrollTo(0, 0); break;
+      case 'dt-reg':
+        if (S.dt.list && S.dt.list.some(function (r) { return r.name || r.unused; }) && v !== S.dt.reg) {
+          modal('Change the register?', '<p>The list below (' + DT_LBL[S.dt.reg] + ') will be cleared.</p>', [{ label: 'Back', value: false }, { label: 'Change', value: true, cls: 'pri' }]).then(function (ok) {
+            if (ok) { S.dt.reg = v; S.dt.list = null; S.dt.seen = {}; S.dt.from = S.dt.to = ''; S.dt.batch = ''; S.dt.warn = ''; dtKeep(); render(); } });
+          break;
+        }
+        S.dt.reg = v; S.dt.list = null; S.dt.seen = {}; S.dt.warn = ''; S.dt.batch = ''; dtKeep(); render(); break;
+      case 'dt-form': {
+        var dto = { reg: S.dt.reg, pages: +S.dt.pages || 1 }, dtn = 'CEC_DownTime_' + DT_LBL[S.dt.reg].replace(/ /g, '_') + '_' + dto.pages + '_sheets.pdf';
+        var dtp = function () { printDoc('dtFormPdf', [dto], 'down-time forms (' + DT_LBL[dto.reg] + ')'); }, dtd = function () { offerFile(dtn, CEC.dtFormPdf(dto, logoBytes()), 'application/pdf'); };
+        if (v === 'dl') dtd(); else if (v === 'print') dtp(); else previewDoc('dtFormPdf', [dto], 'Down-time form: ' + DT_LBL[dto.reg], dtp, dtd);
+        break;
+      }
+      case 'dt-make': dtMake(); break;
+      case 'dtf-get': { var dfo = { reg: v, pages: 2 }; offerFile('CEC_DownTime_' + DT_LBL[v].replace(/ /g, '_') + '_2_sheets.pdf', CEC.dtFormPdf(dfo, logoBytes()), 'application/pdf'); break; }
+      case 'dt-fill': dtFill(); break;
+      case 'dt-save': dtSave(); break;
+      case 'dt-photo': $('dtFile').click(); break;
+      case 'dt-airead': dtAiRead(); break;
+      case 'dt-ai': {
+        var aiT = CEC.dtPrompt(S.dt.reg), aiDone = function () { toast('Instructions copied. Paste them to Claude with the photos of the form.'); },
+          aiShow = function () { modal('Instructions for the AI', '<textarea class="in" rows="12" readonly style="font-size:12px">' + h(aiT) + '</textarea><p class="small muted">Press and hold to select all, then copy.</p>', [{ label: 'Close', value: false }]); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(aiT).then(aiDone, aiShow); else aiShow();
+        break;
+      }
+      case 'dt-addrow': S.dt.list = (S.dt.list || []).concat([dtBlank()]); if (!S.dt.batch) S.dt.batch = 'dt' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); dtKeep(); render(); break;
+      case 'dt-del': S.dt.list.splice(+v, 1); dtKeep(); render(); break;
+      case 'dt-clear':
+        modal('Clear the list?', '<p>What was typed for this form is removed (nothing was added to the census).</p>', [{ label: 'Back', value: false }, { label: 'Clear', value: true, cls: 'pri' }]).then(function (ok) {
+          if (ok) { S.dt.list = null; S.dt.seen = {}; S.dt.from = S.dt.to = ''; S.dt.paste = ''; S.dt.batch = ''; S.dt.warn = ''; S.dt.photos = []; S.dtImgs = []; dtKeep(); render(); } });
+        break;
+      case 'dt-again': S.dt.res = null; render(); window.scrollTo(0, 0); break;
+      case 't-done': S.tEdit = false; render(); break;
+      case 't-mv': { var tk = myTileKeys(), ti = tk.indexOf(v), tj = ti + (+el.getAttribute('data-d')); if (ti >= 0 && tj >= 0 && tj < tk.length) { tk.splice(tj, 0, tk.splice(ti, 1)[0]); tilesSet(tk); } break; }
+      case 't-del': tilesSet(myTileKeys().filter(function (k) { return k !== v; })); break;
+      case 't-add': tilesSet(myTileKeys().concat([v])); break;
+      case 't-reset': clearTimeout(S.tSaveT); S.me.tiles = null; S.tLoc = { k: null, at: Date.now() }; render(); api('apiSaveTiles', 'null').then(function () { toast('Standard tiles back.'); }, function (e) { toast('Not saved: ' + errText(e)); }); break;
       case 'start-retry': if (S.retryStart) S.retryStart(); break;
       case 'pw-show': {
         var pwOn = !!el.checked; store_('cec_showpw', pwOn);
@@ -9589,8 +10481,11 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'bd-refresh': bdLoad(); break;
       case 'bd-open': bdEdit(id); break;
       case 'bd-list': setView('lists'); if (!S.lb) lbInit(); lbUseCfg(CEC.presetCfg('bd'), 'bd'); break;
-      case 'tl-dl': todayDl(); break;
-      case 'tl-print': todayPrint(); break;
+      case 'rg-go': regGo(v); break;
+      case 'rg-all': Array.prototype.forEach.call(document.querySelectorAll('#modal .rgk'), function (c) { c.checked = el.checked; }); break;
+      case 'dl-all': Array.prototype.forEach.call(document.querySelectorAll('#modal .dlk'), function (c) { c.checked = el.checked; }); break;
+      case 'dl-one': { var dlA = $('dlAll'), dlK = document.querySelectorAll('#modal .dlk'); if (dlA) dlA.checked = Array.prototype.every.call(dlK, function (c) { return c.checked; }); break; }
+      case 'rg-one': { var rgA = $('rgAll'), rgK = document.querySelectorAll('#modal .rgk'); if (rgA) rgA.checked = Array.prototype.every.call(rgK, function (c) { return c.checked; }); break; }
       case 'q-slip': openQueue('slipq'); break;
       case 'q-refresh': if (S.view === 'ecgq' || S.view === 'rbsq') ecgLoad(true); refresh(false).then(function () { if (S.me) toast('Updated'); }); break;
       case 'ecg-tile': { var tk = el.getAttribute('data-k') === 'rbs' ? 'rbs' : 'ecg'; S[tk + 'Tile'] = v; ecgPaint(tk); break; }
@@ -9642,6 +10537,15 @@ if (typeof module !== 'undefined') module.exports = CEC;
         if (isEchoId()) v = 'ECHO';
         if ((S.ap.type || '') !== v) { S.ap.type = v || null; S.ap.date = null; S.ap.list = null; S.ap.key = ''; } S.ap.step = ''; setView('appt'); break;
       case 'ap-step': S.ap.step = v; setView('appt'); break;
+      case 'ett-done': {
+        var etE = ((S.ettWait && S.ettWait.list) || []).filter(function (x) { return x.id === id; })[0];
+        if (!etE) break;
+        el.disabled = true;
+        api('apiEttDone', v, id, true).then(function () {
+          S.ettWait.list = S.ettWait.list.filter(function (x) { return x.id !== id; }); toast('ETT done: ' + etE.name + '.'); render();
+        }, function (e) { el.disabled = false; toast(errText(e)); });
+        break;
+      }
       case 'ap-new': openAppt({ type: S.ap.type }); break;
       case 'ap-edit': { var ae = apById(id); if (ae) openAppt(ae); break; }
       case 'ap-st': apStatus(id, v); break;
@@ -9902,10 +10806,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'lb-del': lbDelete(); break;
       case 'lb-all': S.lb.excl = {}; lbRefresh(); break;
       case 'lb-none': lbSpec(false).list.forEach(function (e) { S.lb.excl[e.id] = true; }); lbRefresh(); break;
-      case 'lb-pdf': lbReady(function (sp) { offerFile(sp.file + '.pdf', CEC.listPdf({ title: sp.title, sub: sp.sub, cols: sp.cols, groups: sp.groups, portrait: sp.portrait, empty: 'No patients.' }, logoBytes()), 'application/pdf', false); }); break;
-      case 'lb-pv': lbReady(function (sp) { var ls = { title: sp.title, sub: sp.sub, cols: sp.cols, groups: sp.groups, portrait: sp.portrait, empty: 'No patients.' };
-        previewDoc('listPdf', [ls], sp.title, function () { printDoc('listPdf', [ls], 'list: ' + sp.title); }, function () { offerFile(sp.file + '.pdf', CEC.listPdf(ls, logoBytes()), 'application/pdf', false); }); }); break;
-      case 'lb-print': lbReady(function (sp) { printDoc('listPdf', [{ title: sp.title, sub: sp.sub, cols: sp.cols, groups: sp.groups, portrait: sp.portrait, empty: 'No patients.' }], 'list: ' + sp.title); }); break;
+      case 'lb-pdf': lbReady(function (sp) { dtPhotosInto([{ title: sp.title, sub: sp.sub, cols: sp.cols, groups: sp.groups, portrait: sp.portrait, empty: 'No patients.' }]).then(function (a) { offerFile(sp.file + '.pdf', CEC.listPdf(a[0], logoBytes()), 'application/pdf', false); }); }); break;
+      case 'lb-pv': lbReady(function (sp) { dtPhotosInto([{ title: sp.title, sub: sp.sub, cols: sp.cols, groups: sp.groups, portrait: sp.portrait, empty: 'No patients.' }]).then(function (a) { var ls = a[0];
+        previewDoc('listPdf', [ls], sp.title, function () { printDoc('listPdf', [ls], 'list: ' + sp.title); }, function () { offerFile(sp.file + '.pdf', CEC.listPdf(ls, logoBytes()), 'application/pdf', false); }); }); }); break;
+      case 'lb-print': lbReady(function (sp) { dtPhotosInto([{ title: sp.title, sub: sp.sub, cols: sp.cols, groups: sp.groups, portrait: sp.portrait, empty: 'No patients.' }]).then(function (a) { printDoc('listPdf', [a[0]], 'list: ' + sp.title); }); }); break;
       case 'lb-csv': lbReady(function (sp) { offerFile(sp.file + '.csv', new TextEncoder().encode(CEC.listCsv(sp)), 'text/csv', false); }); break;
       case 'lb-text': lbReady(function (sp) {
         var txt = CEC.listText(sp), done = function () { toast('List copied. Paste it in WhatsApp.'); };
@@ -9917,7 +10821,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'ec-new': if (canEchoMake()) openEcho(null); break;
       case 'ec-from': { var ef0 = null;
         if (v === 'appt') { var ea0 = ((S.echo && S.echo.apToday) || []).concat((S.ap && S.ap.list) || []).filter(function (x) { return x.id === id; })[0]; if (ea0) ef0 = echoFromAppt(ea0); }
-        else { var fe0 = findEntry(id); if (fe0) ef0 = echoFromEntry(fe0.e); }
+        else { var fe0 = findEntry(id), ew0 = ((S.echo && S.echo.wait) || []).filter(function (x) { return x.id === id; })[0]; if (fe0) ef0 = echoFromEntry(fe0.e); else if (ew0) ef0 = echoFromEntry(ew0); }
         openEcho(null, ef0); break; }
       case 'ec-appt': { var ea1 = apById(id); if (!ea1) break;
         var had = ((S.echo && S.echo.list) || []).filter(function (x) { return x.apptId === id; })[0];
@@ -10096,6 +11000,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
   document.addEventListener('input', function (ev) {
     var t = ev.target;
     if (t.id === 'ptText') { S.petty.text = t.value; return; }
+    if (t.getAttribute && t.getAttribute('data-dt')) {                   // 19-11-2026: a line of a down-time form
+      if (t.getAttribute('data-tm')) { var dgt = t.value.replace(/\D/g, '').slice(0, 4); t.value = dgt.length > 2 ? dgt.slice(0, 2) + ':' + dgt.slice(2) : dgt; }
+      dtInput(t); return;
+    }
+    if (S.dt && (t.id === 'dtFrom' || t.id === 'dtTo')) { S.dt[t.id === 'dtFrom' ? 'from' : 'to'] = t.value.toUpperCase().replace(/\s+/g, ''); dtKeep(); return; }
+    if (S.dt && t.id === 'dtPaste') { S.dt.paste = t.value; dtKeep(); return; }
     var fm = t.getAttribute && t.getAttribute('data-fmt');
     if (fm) { var nv = fm === 'cnic' ? fmtCnic(t.value) : fm === 'bp' ? fmtBp(t.value) : fmtMob(t.value); if (nv !== t.value) t.value = nv; return; }
     if (t.getAttribute && t.getAttribute('data-tm')) {
@@ -10138,6 +11048,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
   });
   document.addEventListener('change', function (ev) {
     var t = ev.target;
+    if (t.getAttribute && t.getAttribute('data-dt')) { dtInput(t); return; }
+    if (t.id === 'dlSpan') { var dsp = t.value; $('dlDates').classList.toggle('hidden', dsp !== 'date' && dsp !== 'range'); $('dlToW').classList.toggle('hidden', dsp !== 'range'); return; }   // 19-11-2026 (V2.7)
+    if (t.id === 'dlWhat') { $('dlKinds').classList.toggle('hidden', t.value !== 'mr'); return; }
+    if (S.dt && t.id === 'dtFile') { dtPhotos(t.files); t.value = ''; return; }
+    if (S.dt && t.id === 'dtPages') { S.dt.pages = +t.value || 1; dtKeep(); return; }
+    if (S.dt && (t.id === 'dtSlot' || t.id === 'dtDate' || t.id === 'dtShift')) { if (t.id === 'dtSlot') S.dt.slot = t.value; else if (t.id === 'dtDate') S.dt.oDate = t.value; else S.dt.oShift = t.value; dtKeep(); if (t.id === 'dtSlot') render(); return; }
     if (S.ef && t.classList && t.classList.contains('esel')) { echoPick(t); return; }          // 15-11-2026: echo report dropdowns
     if (S.ef && t.type === 'checkbox' && t.getAttribute && t.getAttribute('data-ek') && echoChange(t)) return;      // echo report ticks
     if (t.getAttribute && t.getAttribute('data-pp') && t.files && t.files[0]) { paperPhoto(t.files[0], t.getAttribute('data-pp')); t.value = ''; return; }
@@ -10427,7 +11343,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     S.token = tok;
     var cache = store_('cec_cache'), uid = tokenUid(tok), quick = cache && cache.st && cache.st.me && cache.uid === uid && (cache.view || '') === tokenView(tok) && Date.now() - (cache.at || 0) < (APP_BUILD ? 7 * 86400000 : 12 * 3600000);
     if (quick) {                                          // open at once with the last saved copy, then bring it up to date
-      applyState(cache.st); S.stale = true; S.loaded = true; S.day = currentCensus(); S.view = 'home'; render();
+      applyState(cache.st); S.stale = true; S.loaded = true; S.day = currentCensus(); S.view = 'home'; render(); viewBack();
       loadState().then(function () { S.day = currentCensus(); if (!anyOverlay() && !typing() && !$('modal').innerHTML) render(); else renderUserbar(); }, function (e) {
         S.stale = false;
         if (e && e.offline) { S.offline = APP_BUILD; renderBanner(); renderUserbar(); return; }
@@ -10436,7 +11352,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       });
       return;
     }
-    loadState().then(function () { S.loaded = true; S.day = currentCensus(); S.view = 'home'; render(); }, startFailed);
+    loadState().then(function () { S.loaded = true; S.day = currentCensus(); S.view = 'home'; render(); viewBack(); }, startFailed);
     /* 12-11-2026: only an ended sign-in shows the sign-in page. No internet, a busy or slow census: the last saved copy (if any) or a
        "connecting" card, and the census is asked again by itself; the person stays signed in (the phone app is never signed out by this). */
     function startFailed(e) {
