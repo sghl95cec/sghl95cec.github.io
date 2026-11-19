@@ -2867,53 +2867,72 @@ var CEC = (function () {
     });
     return out;
   }
-  /* ---------- 19-11-2026 (V2.7): Download registers. Period: this shift, today, one date or dates. What: everyone in one list by time
-     (MR and OPD Nos.; the MR Nos. come in sequence), MR Nos. only (ER / Resus, OPD, Echo, ETT, BD each in its own box, one after another on the
-     same pages), or OPD Nos. only. ---------- */
+  /* ---------- 19-11-2026 (V2.7 / V2.8): Download registers. Period: this shift, today, one date or dates. What: MR Nos. only in serial order
+     (one list), OPD Nos. only in serial order, MR Nos. by kind (ER / Resus, OPD, Echo, ETT, BD each in its own box), or everyone by time.
+     No date on the rows: each day and shift has a large heading; S.No. goes on across the headings (by kind: each box counts from 1). ---------- */
   var DL_KINDS = [{ k: 'EMR', l: 'ER / Resus' }, { k: 'OPD', l: 'OPD' }, { k: 'ECHO', l: 'Echo' }, { k: 'ETT', l: 'ETT' }, { k: 'BD', l: 'BD (brought dead)' }];
   function dlKindOf(e) { return e.cat === 'BD' || e.out === 'BD' ? 'BD' : e.cat === 'EMR' || e.cat === 'ECHO' || e.cat === 'ETT' ? e.cat : 'OPD'; }
+  function dlByNum(a, b) {
+    var x = numP(a.mr), y = numP(b.mr);
+    if (x && y && x.p === y.p && x.s === y.s && x.n !== y.n) return x.n - y.n;
+    if (x && y && (x.p !== y.p || x.s !== y.s)) return (x.p + x.s) < (y.p + y.s) ? -1 : 1;
+    if (x && !y) return -1;
+    if (y && !x) return 1;
+    return (a.t || '') < (b.t || '') ? -1 : (a.t || '') > (b.t || '') ? 1 : 0;
+  }
   function dlLists(shifts, o, st, nowIso, who) {
-    var span = o.span || 'shift', multi = span === 'range' && o.from !== o.to, s0 = shifts[0] || {}, date = s0.censusDate || ymd(new Date());
-    var base = ['no'].concat(multi ? ['date', 'shift'] : span === 'shift' ? [] : ['shift']).concat(['time', 'mr', 'name', 'agesex']);
-    var std = base.concat(o.what === 'all' ? ['cat'] : []).concat(['bpck', 'ecgck', 'rbsck', 'outck']), bdc = base.concat(['bdcnic', 'bdcell', 'bdaddr']);
+    var span = o.span || 'shift', what = o.what || 'mr', SO = { M: 0, E: 1, N: 2 };
+    if (what === 'mrkind') what = 'kind';
+    var shs = (shifts || []).filter(Boolean).slice().sort(function (a, b) { return a.censusDate < b.censusDate ? -1 : a.censusDate > b.censusDate ? 1 : (SO[a.shift] || 0) - (SO[b.shift] || 0); });
+    var s0 = shs[0] || {}, date = s0.censusDate || ymd(new Date());
+    var base = ['no', 'time', 'mr', 'name', 'agesex'], std = base.concat(what === 'all' || what === 'mr' ? ['cat'] : []).concat(['bpck', 'ecgck', 'rbsck', 'outck']), bdc = base.concat(['bdcnic', 'bdcell', 'bdaddr']);
     var live = function (e) { return !/^(q-|tmp)/.test(e.id || ''); };
-    function mk(test, cols, title) {
-      var sh = shifts.map(function (s) { return { id: s.id, shift: s.shift, censusDate: s.censusDate, entries: (s.entries || []).filter(function (e) { return live(e) && test(e); }) }; });
-      var sp = buildList(sh, { cols: cols, group: 'none', sort: 'time', page: 'portrait', title: title }, who || {}, date);
+    var test = what === 'opd' ? function (e) { return !!e.opd; } : what === 'all' ? function () { return true; } : function (e) { return !e.opd; };
+    function mk(sh, t, cols) {
+      var one = { id: sh.id, shift: sh.shift, censusDate: sh.censusDate, entries: (sh.entries || []).filter(function (e) { return live(e) && t(e); }) };
+      var sp = buildList([one], { cols: cols, group: 'none', sort: 'time', page: 'portrait', title: '' }, who || {}, sh.censusDate || date);
       var list = [];
       sp.groups.forEach(function (g) { list = list.concat(g.list); });
-      list.sort(function (a, b) { var x = (a._date || '') + (a.t || ''), y = (b._date || '') + (b.t || ''); return x < y ? -1 : x > y ? 1 : 0; });
+      list.sort(what === 'all' ? function (a, b) { return (a.t || '') < (b.t || '') ? -1 : (a.t || '') > (b.t || '') ? 1 : 0; } : dlByNum);
       sp.cols.forEach(function (c) {
         if (c.k === 'no') c.h = 'S.No.';
-        if (c.k === 'mr') { c.h = o.what === 'opd' ? 'OPD No.' : o.what === 'all' ? 'MR / OPD No.' : 'MR No.'; c.f = function (e) { var n = bdMr(e) || '-'; return o.what === 'all' && e.opd && n !== '-' ? 'OPD ' + n : n; }; }
+        if (c.k === 'mr') { c.h = what === 'opd' ? 'OPD No.' : what === 'all' ? 'MR / OPD No.' : 'MR No.'; c.f = function (e) { var n = bdMr(e) || '-'; return what === 'all' && e.opd && n !== '-' ? 'OPD ' + n : n; }; }
       });
-      sp.list = list;
-      return sp;
+      return { cols: sp.cols, list: list };
     }
-    var title, groups = [], cols, empty = [];
-    if (o.what === 'opd') {
-      var so = mk(function (e) { return !!e.opd; }, std, 'OPD REGISTER'); title = 'OPD REGISTER (OPD NOS.)'; cols = so.cols; groups.push({ h: '', plain: true, list: so.list });
-    } else if (o.what === 'all') {
-      var sa = mk(function () { return true; }, std, 'ALL PATIENTS'); title = 'ALL PATIENTS, BY TIME (MR AND OPD NOS.)'; cols = sa.cols; groups.push({ h: '', plain: true, list: sa.list });
-    } else {
-      var ks = (o.kinds && o.kinds.length ? o.kinds : DL_KINDS.map(function (x) { return x.k; }));
-      title = 'MR REGISTER (MR NOS.)' + (ks.length < DL_KINDS.length ? ': ' + DL_KINDS.filter(function (x) { return ks.indexOf(x.k) >= 0; }).map(function (x) { return x.l.toUpperCase(); }).join(', ') : '');
-      DL_KINDS.forEach(function (K) {
-        if (ks.indexOf(K.k) < 0) return;
-        var sk = mk(function (e) { return !e.opd && dlKindOf(e) === K.k; }, K.k === 'BD' ? bdc : std, K.l);
-        if (!cols && K.k !== 'BD') cols = sk.cols;
-        if (sk.list.length) groups.push({ h: K.l, list: sk.list, cols: K.k === 'BD' ? sk.cols : null, key: K.k }); else empty.push(K.l);
-      });
-      if (!cols) cols = mk(function () { return false; }, std, '').cols;
-      groups.forEach(function (g) { if (!g.cols) g.cols = cols; });
-    }
-    var n = groups.reduce(function (a, g) { return a + g.list.length; }, 0), to = hm(nowIso), sub;
-    if (span === 'shift') sub = shiftName(s0.shift) + ' shift, ' + weekday(date) + ' ' + dmy(date) + ' · ' + (s0.openedAt ? hm(s0.openedAt) : times(st)[s0.shift]) + ' to ' + to + ' hrs';
-    else if (span === 'day') sub = 'Census day ' + weekday(date) + ' ' + dmy(date) + ' · ' + times(st)[SHIFTS[0].c] + ' to ' + to + ' hrs';
-    else if (!multi) sub = 'Census day ' + weekday(o.from) + ' ' + dmy(o.from);
-    else sub = 'From ' + weekday(o.from) + ' ' + dmy(o.from) + ' to ' + weekday(o.to) + ' ' + dmy(o.to);
-    sub += ' · ' + n + ' patient' + (n === 1 ? '' : 's');
-    var sp = { title: title, sub: sub, cols: cols, groups: groups, portrait: true, n: n, empty: 'No patients.', emptyKinds: empty };
+    var ks = what === 'kind' ? (o.kinds && o.kinds.length ? o.kinds : DL_KINDS.map(function (x) { return x.k; })) : [];
+    var groups = [], cols = null, perKind = {}, n = 0;
+    shs.forEach(function (sh) {
+      var title = weekday(sh.censusDate).toUpperCase() + ' ' + dmy(sh.censusDate) + ', ' + shiftName(sh.shift).toUpperCase() + ' SHIFT';
+      if (what === 'kind') {
+        var first = true, sub = 0;
+        DL_KINDS.forEach(function (K) {
+          if (ks.indexOf(K.k) < 0) return;
+          var r = mk(sh, function (e) { return test(e) && dlKindOf(e) === K.k; }, K.k === 'BD' ? bdc : std);
+          if (!cols && K.k !== 'BD') cols = r.cols;
+          if (!r.list.length) return;
+          perKind[K.k] = (perKind[K.k] || 0) + r.list.length; sub += r.list.length;
+          groups.push({ h: K.l, list: r.list, cols: K.k === 'BD' ? r.cols : null, title: first ? title : '', key: K.k }); first = false;
+        });
+        if (sub) { n += sub; for (var gi = groups.length - 1; gi >= 0; gi--) if (groups[gi].title) { groups[gi].title += ' (' + sub + ' patient' + (sub === 1 ? '' : 's') + ')'; break; } }
+      } else {
+        var r2 = mk(sh, test, std);
+        if (!cols) cols = r2.cols;
+        if (r2.list.length) { n += r2.list.length; groups.push({ h: '', plain: true, list: r2.list, title: title + ' (' + r2.list.length + ' patient' + (r2.list.length === 1 ? '' : 's') + ')' }); }
+      }
+    });
+    if (!cols) cols = mk({ entries: [] }, function () { return false; }, std).cols;
+    groups.forEach(function (g) { if (!g.cols) g.cols = cols; });
+    var title = what === 'opd' ? 'OPD REGISTER (OPD NOS.)' : what === 'all' ? 'ALL PATIENTS, BY TIME (MR AND OPD NOS.)' :
+      what === 'mr' ? 'MR REGISTER (MR NOS.)' : 'MR REGISTER BY KIND' + (ks.length < DL_KINDS.length ? ': ' + DL_KINDS.filter(function (x) { return ks.indexOf(x.k) >= 0; }).map(function (x) { return x.l.toUpperCase(); }).join(', ') : '');
+    var to = hm(nowIso), multi = span === 'range' && o.from !== o.to, subl;
+    if (span === 'shift') subl = shiftName(s0.shift) + ' shift, ' + weekday(date) + ' ' + dmy(date) + ' · ' + (s0.openedAt ? hm(s0.openedAt) : times(st)[s0.shift]) + ' to ' + to + ' hrs';
+    else if (span === 'day') subl = 'Census day ' + weekday(date) + ' ' + dmy(date) + ' · ' + times(st)[SHIFTS[0].c] + ' to ' + to + ' hrs';
+    else if (!multi) subl = 'Census day ' + weekday(o.from) + ' ' + dmy(o.from);
+    else subl = 'From ' + weekday(o.from) + ' ' + dmy(o.from) + ' to ' + weekday(o.to) + ' ' + dmy(o.to);
+    subl += ' · ' + n + ' patient' + (n === 1 ? '' : 's');
+    var sp = { title: title, sub: subl, cols: cols, groups: groups, portrait: true, n: n, empty: 'No patients.', serialAll: what !== 'kind',
+      emptyKinds: what === 'kind' ? DL_KINDS.filter(function (x) { return ks.indexOf(x.k) >= 0 && !perKind[x.k]; }).map(function (x) { return x.l; }) : [] };
     if (groups.some(function (g) { return (g.cols || cols).some(function (c) { return c.k === 'outck'; }); }))
       sp.note = 'Outcome: Other OPD = referred to other OPD; Cardiac F/U = planned for cardiac follow-up; Next shift = given to next shift; BD = brought dead; blank = still with the doctor.';
     return sp;
@@ -3016,15 +3035,20 @@ var CEC = (function () {
       y = BOTTOM + 1;                                   // the next patient (or the next list) starts on a new page, with the column heads
     }
     if (!o.groups.length) { d.text(d.W / 2, y + 20, o.empty || 'No patients found for the selected dates.', 'I', 11, 'center'); }
+    var cnt = { n: 0 };
     o.groups.forEach(function (g) {
       setCols(g.cols || o.cols);
+      if (!o.serialAll) cnt.n = 0;
       if (y + 60 > BOTTOM) { d.addPage(); y = TOP; }
+      if (g.title) {                                    // 19-11-2026 (V2.8): a large heading for the day and shift (no date on the rows)
+        if (y + 80 > BOTTOM) { d.addPage(); y = TOP; }
+        y += 8; d.text(L, y + 11, g.title, 'HB', 12); d.line(L, y + 16, R, y + 16, 1); y += 22;
+      }
       if (!g.plain) { y += 6; d.text(L, y + 8, g.h + ' (' + g.list.filter(function (e) { return !(e && e._dt); }).length + ')', 'HB', 10.5); y += 14; } else y += 4;
       draw(head, 'HB', 0.88);
-      var ri = 0;
       g.list.forEach(function (e) {
         if (e && e._dt) return dtPhotoPages(e._dt);
-        var l = lay(cols.map(function (c) { return UP(c.f(e, ri)); }), 'H', true); ri++;
+        var l = lay(cols.map(function (c) { return UP(c.f(e, cnt.n)); }), 'H', true); cnt.n++;
         if (y + l.h > BOTTOM) { d.addPage(); y = TOP; draw(head, 'HB', 0.88); }
         draw(l, 'H', null);
       });
@@ -3206,18 +3230,19 @@ var CEC = (function () {
   /* A register's columns hold small functions, which cannot be sent: the sending device works out every cell first (listPlain),
      the print desk rebuilds the same list from those cells (listPlainPdf). */
   function listPlain(o) {
-    var plainCols = function (cs) { return cs.filter(function (c) { return !c.csvOnly; }).map(function (c) { var o = { h: c.h, a: c.a || '', m: c.m || 0, wt: c.wt || 0, w: c.w || 0 }; if (c.tick) o.tick = true; return o; }); };
+    var ri = 0, plainCols = function (cs) { return cs.filter(function (c) { return !c.csvOnly; }).map(function (c) { var o = { h: c.h, a: c.a || '', m: c.m || 0, wt: c.wt || 0, w: c.w || 0 }; if (c.tick) o.tick = true; return o; }); };
     return { title: o.title, sub: o.sub, portrait: !!o.portrait, empty: o.empty || '', note: o.note || '',
       cols: plainCols(o.cols),
-      groups: o.groups.map(function (g) { var ri = 0, cols = (g.cols || o.cols).filter(function (c) { return !c.csvOnly; }); return { h: g.h || '', plain: !!g.plain, cols: g.cols ? plainCols(g.cols) : undefined, rows: g.list.map(function (e) {
+      serialAll: !!o.serialAll,
+      groups: o.groups.map(function (g) { if (!o.serialAll) ri = 0; var cols = (g.cols || o.cols).filter(function (c) { return !c.csvOnly; }); return { h: g.h || '', plain: !!g.plain, title: g.title || '', cols: g.cols ? plainCols(g.cols) : undefined, rows: g.list.map(function (e) {
         if (e && e._dt) return { dt: { cap: e._dt.cap, ids: e._dt.ids || [] } };           // 19-11-2026 (V2.6): photos of a down-time form
         var i = ri++; return cols.map(function (c) { var v = c.f(e, i); return v == null ? '' : String(v); }); }) }; }) };
   }
   function listPlainPdf(p, logo) {
     var mk = function (cs) { return (cs || []).map(function (c, k) { var o = { h: c.h, f: function (r) { return r[k]; } }; if (c.a) o.a = c.a; if (c.m) o.m = c.m; if (c.wt) o.wt = c.wt; if (c.w) o.w = c.w; if (c.tick) o.tick = true; return o; }); };
     var cols = mk(p.cols);
-    return listPdf({ title: p.title, sub: p.sub, portrait: p.portrait, empty: p.empty, note: p.note || '', cols: cols, groups: (p.groups || []).map(function (g) {
-      return { h: g.h, plain: g.plain, cols: g.cols ? mk(g.cols) : undefined, list: (g.rows || []).map(function (r) { return r && !Array.isArray(r) && r.dt ? { _dt: r.dt } : r; }) }; }) }, logo);
+    return listPdf({ title: p.title, sub: p.sub, portrait: p.portrait, empty: p.empty, note: p.note || '', cols: cols, serialAll: !!p.serialAll, groups: (p.groups || []).map(function (g) {
+      return { h: g.h, plain: g.plain, title: g.title || '', cols: g.cols ? mk(g.cols) : undefined, list: (g.rows || []).map(function (r) { return r && !Array.isArray(r) && r.dt ? { _dt: r.dt } : r; }) }; }) }, logo);
   }
   /* ---------- Echocardiography report (14-11-2026 night): the CEC's report (Miss Erum / Dr. Maheen Alvi), made by ticking lines ----------
      Each line: k key, s part (st Structural interpretation, dp Doppler colour flow, nt Note, fin Final report only), g heading in the form,
@@ -3827,7 +3852,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   var IDLE_MS = 4 * 3600000;
   /* 14-11-2026: the version of this page (Index.html / phone app) and of the server (Code.gs). Both come from the same build, so they must be the same. */
-  var APP_VER = 'CEC V2.7 (19-11-2026 19:24)';
+  var APP_VER = 'CEC V2.8 (19-11-2026 20:39)';
   function verSame() { return S.serverVer === APP_VER; }
   function verKey(v) { var m = /(\d\d)-(\d\d)-(\d{4}) (\d\d:\d\d)/.exec(String(v || '')); return m ? m[3] + m[2] + m[1] + m[4] : ''; }   // the build time, in time order
   /* 18-11-2026 (night): shown as "CEC V2.1" (versions before V2.1 were named by their date) */
@@ -7302,7 +7327,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     /* 19-11-2026 (V2.7): Download registers: no list of today's numbers on the page; Download / Preview / Print ask the period and what (dlGo) */
     var R = S.mrreg;
     var html = '<div class="narrow"><div class="listhead"><h3>Download registers</h3></div>' +
-      '<p class="muted small" style="margin:0 0 8px">Download, preview or print the registers of this shift, today, one date or dates: everyone in one list by time, MR Nos. only (ER / Resus, OPD, Echo, ETT and BD in their own boxes) or OPD Nos. only.</p>' +
+      '<p class="muted small" style="margin:0 0 8px">Download, preview or print the registers of this shift, today, one date or dates: MR Nos. or OPD Nos. in serial order, MR Nos. by kind (in boxes), or everyone by time. A heading for each day and shift.</p>' +
       (canEnter() ? '<div class="modetabs mrgo">' +             // 14-11-2026: register the next patient from here (same as the home tiles)
         '<button class="mtab mblue" data-act="mode" data-v="e"><span class="mti" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg></span><b>Electronic slip</b><span>The system prints the OPD / ER slip</span></button>' +
         '<button class="mtab mred" data-act="mode" data-v="m"><span class="mti" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg></span><b>Manual slip</b><span>The staff write the paper slip by hand</span></button></div>' : '');
@@ -7396,7 +7421,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<button class="btn' + (compact ? ' sm' : '') + '" data-act="rg-go" data-v="print">' + ICON.print + ' Print</button>';
     if (compact) return '<section class="card tlist"><div class="ct">Registers</div><p class="muted small" style="margin:0 0 8px">Choose the period (this shift, today, a date or dates) and what to put in, then the file is made.</p><div class="sbtns">' + btns + '</div></section>' +
       (canEnter() || isEchoId() ? '<div class="tlbar"><span><b>Down-time forms</b><small class="muted">Blank forms for when the census is down; enter them back here</small></span><button class="btn sm" data-act="go" data-v="dt">Open</button></div>' : '');
-    return '<section class="card tlist"><div class="ct">Download registers</div><p class="muted small" style="margin:0 0 8px">The registers of this shift, today, a date or dates: everyone in one list by time, MR Nos. only (ER / Resus, OPD, Echo, ETT, BD in boxes) or OPD Nos. only. ' +
+    return '<section class="card tlist"><div class="ct">Download registers</div><p class="muted small" style="margin:0 0 8px">The registers of this shift, today, a date or dates: MR Nos. or OPD Nos. in serial order, MR Nos. by kind (in boxes), or everyone by time. ' +
       'S.No., MR No., name, age/sex, ticks for BP, ECG and RBS, and the outcome.</p><div class="sbtns">' + btns + '</div></section>';
   }
   function regSpec(sp) { return { title: sp.title, sub: sp.sub, cols: sp.cols, groups: sp.groups, portrait: true, empty: 'No patients.', note: sp.note || '' }; }
@@ -7406,15 +7431,17 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var body = '<label class="lbl">Period</label><select class="in" id="dlSpan">' + opt('shift', 'This shift (up to now)', span) + opt('day', 'Today (the whole census day)', span) + opt('date', 'One date', span) + opt('range', 'From one date to another', span) + '</select>' +
       '<div id="dlDates" class="dtbar' + (span === 'date' || span === 'range' ? '' : ' hidden') + '"><input class="in" type="date" id="dlFrom" max="' + today + '" value="' + h(L.from || today) + '">' +
       '<span id="dlToW" class="' + (span === 'range' ? '' : 'hidden') + '">to <input class="in" type="date" id="dlTo" max="' + today + '" value="' + h(L.to || today) + '"></span></div>' +
-      '<label class="lbl">What</label><select class="in" id="dlWhat">' + opt('all', 'Everyone in one list, by time (MR and OPD Nos.)', what) + opt('mr', 'MR Nos. only (each kind in its own box)', what) + opt('opd', 'OPD Nos. only', what) + '</select>' +
-      '<div id="dlKinds" class="' + (what === 'mr' ? '' : 'hidden') + '"><label class="rgall"><input type="checkbox" id="dlAll" data-act="dl-all"' + (ks.length === CEC.DL_KINDS.length ? ' checked' : '') + '> <b>All</b></label><div class="rglist">' +
+      '<label class="lbl">What</label><select class="in" id="dlWhat">' + opt('mr', 'MR Nos. only, in serial order', what) + opt('opd', 'OPD Nos. only, in serial order', what) +
+        opt('kind', 'MR Nos. by kind (ER / Resus, OPD, Echo, ETT, BD in boxes)', what) + opt('all', 'Everyone, by time (MR and OPD Nos.)', what) + '</select>' +
+      '<p class="muted small" style="margin:4px 0 0">Each day and shift gets its own heading; no date on every patient.</p>' +
+      '<div id="dlKinds" class="' + (what === 'kind' ? '' : 'hidden') + '"><label class="rgall"><input type="checkbox" id="dlAll" data-act="dl-all"' + (ks.length === CEC.DL_KINDS.length ? ' checked' : '') + '> <b>All</b></label><div class="rglist">' +
       CEC.DL_KINDS.map(function (x) { return '<label><input type="checkbox" class="dlk" id="dlk_' + x.k + '" data-act="dl-one"' + (ks.indexOf(x.k) >= 0 ? ' checked' : '') + '> ' + h(x.l) + '</label>'; }).join('') + '</div>' +
       '<p class="muted small" style="margin:6px 0 0">The boxes follow one another on the same pages (less paper).</p></div>';
     modal('Registers: ' + lab.toLowerCase(), body, [{ label: 'Cancel', value: null }, { label: lab, cls: 'pri', value: 'form' }]).then(function (v) {
       if (!v) return;
       var sp0 = v.dlSpan, wh = v.dlWhat, kinds = CEC.DL_KINDS.filter(function (x) { return v['dlk_' + x.k]; }).map(function (x) { return x.k; }), from = v.dlFrom, to = sp0 === 'range' ? v.dlTo : v.dlFrom;
       store_('cec_dl', { span: sp0, what: wh, kinds: kinds, from: from, to: v.dlTo });
-      if (wh === 'mr' && !kinds.length) return toast('Tick at least one: ER / Resus, OPD, Echo, ETT or BD.');
+      if (wh === 'kind' && !kinds.length) return toast('Tick at least one: ER / Resus, OPD, Echo, ETT or BD.');
       if (sp0 === 'date' || sp0 === 'range') {
         if (!from || !to) return toast('Choose the date' + (sp0 === 'range' ? 's' : '') + '.');
         if (from > to) return toast('The first date is after the second. Change them.');
@@ -7431,9 +7458,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
         var sp = CEC.dlLists(shifts, { span: sp0, from: from, to: to, what: wh, kinds: kinds }, S.settings, r.now, lbWho());
         if (!sp.n) return toast('No patients for this choice.');
         if (sp.emptyKinds && sp.emptyKinds.length) toast('No patients: ' + sp.emptyKinds.join(', ') + '.');
-        var day = s0.censusDate || today, name = 'CEC_' + { all: 'All_patients', mr: 'MR_register', opd: 'OPD_register' }[wh] + '_' +
+        var day = s0.censusDate || today, name = 'CEC_' + { all: 'All_patients', mr: 'MR_register', opd: 'OPD_register', kind: 'MR_register_by_kind' }[wh] + '_' +
           (sp0 === 'shift' ? CEC.shiftName(s0.shift) + '_' + CEC.dmy(day) + '_' + CEC.hm(r.now).replace(':', '') : sp0 === 'day' ? CEC.dmy(day) : from === to ? CEC.dmy(from) : CEC.dmy(from) + '_to_' + CEC.dmy(to)) + '.pdf';
-        var what = { all: 'all patients', mr: 'MR register', opd: 'OPD register' }[wh];
+        var what = { all: 'all patients', mr: 'MR register', opd: 'OPD register', kind: 'MR register by kind' }[wh];
         dtPhotosInto([sp]).then(function (a) {
           var spec = a[0], pr = function () { printDoc('listPdf', [spec], what); }, dl = function () { offerFile(name, CEC.listPdf(spec, logoBytes()), 'application/pdf', false); };
           if (mode === 'dl') return dl();
@@ -11050,7 +11077,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var t = ev.target;
     if (t.getAttribute && t.getAttribute('data-dt')) { dtInput(t); return; }
     if (t.id === 'dlSpan') { var dsp = t.value; $('dlDates').classList.toggle('hidden', dsp !== 'date' && dsp !== 'range'); $('dlToW').classList.toggle('hidden', dsp !== 'range'); return; }   // 19-11-2026 (V2.7)
-    if (t.id === 'dlWhat') { $('dlKinds').classList.toggle('hidden', t.value !== 'mr'); return; }
+    if (t.id === 'dlWhat') { $('dlKinds').classList.toggle('hidden', t.value !== 'kind'); return; }
     if (S.dt && t.id === 'dtFile') { dtPhotos(t.files); t.value = ''; return; }
     if (S.dt && t.id === 'dtPages') { S.dt.pages = +t.value || 1; dtKeep(); return; }
     if (S.dt && (t.id === 'dtSlot' || t.id === 'dtDate' || t.id === 'dtShift')) { if (t.id === 'dtSlot') S.dt.slot = t.value; else if (t.id === 'dtDate') S.dt.oDate = t.value; else S.dt.oShift = t.value; dtKeep(); if (t.id === 'dtSlot') render(); return; }
