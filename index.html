@@ -960,6 +960,20 @@ button.prow.bdrow{width:100%;text-align:left;font:inherit;color:inherit;backgrou
 
 /* 19-11-2026 (V2.6) */
 .tag.nomr{background:#fde8e8;color:var(--red);border:1px solid var(--red)}
+/* 20-11-2026 (V2.9): colours of the census (admin) */
+.thtray{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 2px}
+.thsw{width:34px;height:34px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}
+.thsw.on{box-shadow:0 0 0 3px var(--ink)}
+.thcus{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--mute);cursor:pointer}
+.thcus input{width:38px;height:30px;border:1px solid var(--line);border-radius:6px;padding:0;background:#fff}
+/* 20-11-2026 (V2.9): how the patient died; a death not counted in the census yet; the Accounting check */
+.tag.ward{background:#e8ece9;color:#38423c}.tag.nocen{background:#fdeaea;color:#9e1c1c;font-weight:600}
+.acc-sec{margin-top:4px}
+.acc-row{border-top:1px solid var(--line);padding:9px 0}
+.acc-row:first-child{border-top:0}
+.acc-row .sbtns{margin-top:6px}
+.acc-ok{color:var(--g7);font-weight:600}
+.acc-n{display:inline-block;min-width:22px;padding:1px 7px;border-radius:10px;background:var(--red0);color:var(--red);font-weight:700;font-size:12px;text-align:center;margin-left:6px}
 
 </style>
 </head>
@@ -1236,7 +1250,7 @@ var CEC = (function () {
     { c: 'DIS', l: 'Sent home', s: 'Sent home' },
     { c: 'RIN', l: 'Referred to other OPD', s: 'Other OPD' },
     { c: 'REF', l: 'Referred out', s: 'Referred out' },
-    { c: 'FU', l: 'Planned for cardiac follow-up', s: 'Cardiac F/U' },
+    { c: 'FU', l: 'Planned for cardiac follow-up', s: 'Cardiac F/U', old: true },     // 20-11-2026 (V2.9): no longer offered; kept on earlier records
     { c: 'HO', l: 'Given to next shift', s: 'Next shift' },
     { c: 'EXP', l: 'Expired in CEC', s: 'Expired' },
     { c: 'BD', l: 'Brought dead', s: 'BD' },
@@ -1663,17 +1677,21 @@ var CEC = (function () {
   }
   function outItems() { return OUTS.concat([{ c: '', l: NOT_RECORDED }]); }
   /* 19-11-2026: the brought dead patients one by one, with the details typed on the Brought dead page (the letters; can be left out) */
-  function bdTable(list, withDate) {
-    var bd = list.filter(function (e) { return e.cat === 'BD' || e.out === 'BD'; }).sort(function (a, b) { return (a.t || '') < (b.t || '') ? -1 : 1; });
+  /* 20-11-2026 (V2.9): every death one by one: brought dead and expired in the CEC (from the census), and expired in the wards (from their
+     certificates; listed only, not counted in the CEC census). CNIC, contact and address: the Brought dead page, else the death certificate. */
+  function bdTable(list, withDate, ward) {
+    var bd = list.filter(function (e) { return e.cat === 'BD' || e.out === 'BD' || e.out === 'EXP'; }).concat((ward || []).map(function (w) {
+      return { _ward: true, _date: w.date, _time: w.time || '', mr: w.mr, name: w.name, age: String(w.age || '').replace(/\s*years?$/i, ''), sex: w.sex, how: 'WARD', bd: { cnic: w.cnic, cell: w.rCell, addr: w.addr } };
+    })).map(function (e) { return Object.assign({ _k: (e._date || '') + ' ' + (e._ward ? e._time || '99:99' : hm(e.t)) }, e); }).sort(function (a, b) { return a._k < b._k ? -1 : a._k > b._k ? 1 : 0; });
     if (!bd.length) return null;
-    var cols = [{ h: 'No.', w: 0.05, a: 'c' }, { h: withDate ? 'Date, time' : 'Time', w: withDate ? 0.11 : 0.07, a: 'c' }, { h: 'MR No.', w: 0.09, a: 'l' }, { h: 'Name', w: withDate ? 0.17 : 0.19, a: 'l' },
-      { h: 'Age/Sex', w: 0.08, a: 'c' }, { h: 'CNIC No.', w: 0.155, a: 'l' }, { h: 'Contact No.', w: 0.125, a: 'l' }, { h: 'Address', w: withDate ? 0.22 : 0.24, a: 'l' }];
+    var cols = [{ h: 'No.', w: 0.05, a: 'c' }, { h: withDate ? 'Date, time' : 'Time', w: withDate ? 0.10 : 0.06, a: 'c' }, { h: 'MR No.', w: 0.08, a: 'l' }, { h: 'Name', w: withDate ? 0.15 : 0.17, a: 'l' },
+      { h: 'Age/Sex', w: 0.07, a: 'c' }, { h: 'Died', w: 0.10, a: 'l' }, { h: 'CNIC No.', w: 0.14, a: 'l' }, { h: 'Contact No.', w: 0.11, a: 'l' }, { h: 'Address', w: withDate ? 0.20 : 0.22, a: 'l' }];
     return { wrap: true, cols: cols, rows: bd.map(function (e, i) {
-      var b = e.bd || {}, a = bdAge(e);
-      return [i + 1, (withDate ? dmy(e._date || '').slice(0, 5) + ' ' : '') + hm(e.t), bdMr(e) || '-', UP(e.name), (a !== '' && a != null ? a : '-') + '/' + (e.sex || '-'), b.cnic || '-', b.cell || '-', b.addr ? UP(b.addr) : '-'];
-    }), total: null };
+      var b = e.bd || {}, a = bdAge(e), t = e._ward ? e._time || '-' : hm(e.t);
+      return [i + 1, (withDate ? dmy(e._date || '').slice(0, 5) + ' ' : '') + t, bdMr(e) || '-', UP(e.name), (a !== '' && a != null ? a : '-') + '/' + (e.sex || '-'), diedOf(e), b.cnic || '-', b.cell || '-', b.addr ? UP(b.addr) : '-'];
+    }), total: null, note: (ward || []).length ? 'Expired in ward: from the death certificates; listed here only, not counted in the CEC census.' : '' };
   }
-  function bdSection(list, opt, withDate) { if (opt && opt.bd === false) return []; var t = bdTable(list, withDate); return t ? [['Brought dead patients', t]] : []; }
+  function bdSection(list, opt, withDate) { if (opt && opt.bd === false) return []; var t = bdTable(list, withDate, opt && opt.ward); return t ? [['Deaths', t]] : []; }
   /* Outcome table: only outcomes that occurred. */
   function outTable(list) {
     var g = groupBy(list, function (e) { return e.out || ''; }), t = sexCount(list);
@@ -1787,7 +1805,14 @@ var CEC = (function () {
   function nowStamp() { var d = new Date(); return dmy(ymd(d)) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ' hrs'; }
   function refDate(s) { var p = s.split('-'); return p[0] + '/' + p[2] + p[1]; }
   function hodSign(st) { return [{ name: (st && st.hod) || DEFAULTS.hod, lines: ['Head of Department', 'Cardiac Emergency Centre'] }]; }
-  var LEGEND = 'Cardiac F/U = planned for cardiac follow-up; Other OPD = referred to other OPD; BD = brought dead.';
+  /* 20-11-2026 (V2.9): what the short outcomes in a list mean (only those used; "Cardiac F/U" only on earlier records) */
+  function outLegend(lists) {
+    var has = {};
+    (lists || []).forEach(function (l) { (l || []).forEach(function (e) { if (e && e.out) has[e.out] = 1; }); });
+    var p = [['RIN', 'Other OPD = referred to other OPD'], ['FU', 'Cardiac F/U = planned for cardiac follow-up'], ['HO', 'Next shift = given to next shift'], ['BD', 'BD = brought dead']]
+      .filter(function (x) { return x[0] !== 'FU' || has.FU; }).map(function (x) { return x[1]; });
+    return 'Outcome: ' + p.join('; ') + '; blank = still with the doctor.';
+  }
 
   function shiftModel(shift, st, opt) {
     st = st || DEFAULTS; opt = opt || {};
@@ -1817,6 +1842,7 @@ var CEC = (function () {
 
   function dayModel(date, shifts, st, opt) {
     st = st || DEFAULTS; opt = opt || {};
+    if (opt.till) return tillModel(date, shifts, st, opt);
     var entries = recEntries(shifts), c = sexCount(entries), next = addDays(date, 1), t0 = times(st).M;
     var byCode = {}; shifts.forEach(function (s) { byCode[s.shift] = s; });
     var notes = [];
@@ -1856,6 +1882,55 @@ var CEC = (function () {
     };
   }
 
+  /* 20-11-2026 (V2.9): letters before the day is over. "Today till now": the census day from its start to now. "Last 24 hours": the
+     24 hours up to now (parts of two census days), each shift with its own row. */
+  function tillModel(date, shifts, st, opt) {
+    var m = dayModel(date, shifts, st, { annex: opt.annex, bd: opt.bd, ward: opt.ward }), now = opt.till, t0 = times(st).M, tn = hm(now), dn = dmy(ymd(new Date(now)));
+    m.kind = 'day'; m.title = 'CEC census - ' + dmy(date) + ' till ' + tn;
+    m.waHead = 'Today till now, ' + dmy(date) + ' ' + t0 + ' to ' + dn + ' ' + tn;
+    m.waTitle = 'CENSUS REPORT, TODAY TILL ' + tn + ' HRS'; m.waWhen = ['From: ' + dmy(date) + ', ' + t0 + ' hrs', 'To: ' + dn + ', ' + tn + ' hrs (now)'];
+    m.file = 'CEC_Census_' + dmy(date) + '_till_' + tn.replace(':', '') + '.pdf';
+    m.refNo = 'No. CEC/SGHL/' + refDate(date) + '-T' + tn.replace(':', '');
+    m.dated = dn;
+    m.subject = 'CENSUS REPORT, CARDIAC EMERGENCY CENTRE, ' + dmy(date) + ' (' + t0 + ' HRS TILL ' + tn + ' HRS)';
+    var c = sexCount(recEntries(shifts));
+    m.body = ['The census of patients attended at the Cardiac Emergency Centre from ' + t0 + ' hrs on ' + dmy(date) + ' till ' + tn + ' hrs on ' + dn +
+      ' (the census day is not over yet) is submitted as under. A total of ' + c.T + ' patient' + (c.T === 1 ? '' : 's') + ' (Male ' + c.M + ', Female ' + c.F + ') were attended.'];
+    m.notes = ['This report covers the census day up to ' + tn + ' hrs; the full 24-hour report follows when the Night shift ends.'].concat(unsignedNote(recEntries(shifts)));
+    if (m.annex) m.annex.h = 'ANNEXURE: PATIENT LIST, ' + dmy(date) + ' TILL ' + tn + ' HRS';
+    return m;
+  }
+  function last24Model(nowIso, shifts, st, opt) {
+    st = st || DEFAULTS; opt = opt || {};
+    var to = Date.parse(nowIso), from = to - 86400000, SO = { M: 0, E: 1, N: 2 };
+    var shs = shifts.slice().sort(function (a, b) { return a.censusDate < b.censusDate ? -1 : a.censusDate > b.censusDate ? 1 : (SO[a.shift] || 0) - (SO[b.shift] || 0); }).map(function (s) {
+      return Object.assign({}, s, { entries: (s.entries || []).filter(function (e) { var t = Date.parse(e.t); return t >= from && t <= to; }) });
+    }).filter(function (s) { return s.entries.length; });
+    var entries = recEntries(shs), c = sexCount(entries), fd = dmy(ymd(new Date(from))), td = dmy(ymd(new Date(to))), fh = hm(new Date(from).toISOString()), th = hm(nowIso);
+    var shTab = { cols: [{ h: 'Shift', w: 0.46, a: 'l' }, { h: 'Male', w: 0.18, a: 'c' }, { h: 'Female', w: 0.18, a: 'c' }, { h: 'Total', w: 0.18, a: 'c' }],
+      rows: shs.map(function (s) { var k = sexCount(recEntries([s])); return [shiftName(s.shift) + ' shift, ' + dmy(s.censusDate), k.M, k.F, k.T]; }), total: ['Total', c.M, c.F, c.T], empty: 'No patients recorded' };
+    return {
+      kind: 'last24', title: 'CEC census - last 24 hours - till ' + td + ' ' + th,
+      waHead: 'Last 24 hours, ' + fd + ' ' + fh + ' to ' + td + ' ' + th,
+      waTitle: 'CENSUS REPORT, LAST 24 HOURS', waWhen: ['From: ' + fd + ', ' + fh + ' hrs', 'To: ' + td + ', ' + th + ' hrs (now)'],
+      file: 'CEC_Census_last_24_hours_till_' + td + '_' + th.replace(':', '') + '.pdf',
+      refNo: 'No. CEC/SGHL/' + refDate(ymd(new Date(to))) + '-L' + th.replace(':', ''),
+      dated: td,
+      addressee: st.addressee || DEFAULTS.addressee,
+      subject: 'CENSUS REPORT, CARDIAC EMERGENCY CENTRE (LAST 24 HOURS) FROM ' + fd + ' ' + fh + ' HRS TO ' + td + ' ' + th + ' HRS',
+      body: ['The census of patients attended at the Cardiac Emergency Centre in the last 24 hours, from ' + fh + ' hrs on ' + fd + ' to ' + th + ' hrs on ' + td +
+        ', is submitted as under. A total of ' + c.T + ' patient' + (c.T === 1 ? '' : 's') + ' (Male ' + c.M + ', Female ' + c.F + ') were attended.'],
+      sections: letterSections([['Shift-wise census', half(shTab, true)], ['Category-wise census', catTable(entries)], ['Diagnosis-wise distribution', dxTable(entries)],
+        ['Procedures and interventions', procTable(entries)]].concat(hasMeds(entries) ? [['Medications given in the CEC', medTable(entries)]] : [],
+        [['Outcome of patients', outTable(entries)]], bdSection(entries, opt, true))),
+      notes: ['Shifts are counted for the part of them inside these 24 hours.'].concat(unsignedNote(entries)),
+      closing: 'Submitted for your kind information, please.',
+      signs: hodSign(st), copyTo: ['Office copy.'],
+      footer: 'Generated by CEC Daily Census, SGHL on ' + nowStamp(),
+      annex: opt.annex && entries.length ? { h: 'ANNEXURE: PATIENT LIST, LAST 24 HOURS TILL ' + td + ' ' + th + ' HRS', groups: annexGroups(entries), legend: '' } : null,
+      _shifts: shs
+    };
+  }
   function monthModel(from, to, shifts, st, opt) {
     st = st || DEFAULTS;
     var entries = recEntries(shifts), c = sexCount(entries), days = [], d = from;
@@ -2634,6 +2709,7 @@ var CEC = (function () {
           outs (codes; '_' = no outcome yet), meds (names; '*' = any medication), dx (text, comma separated),
           cols, group ('none' | 'cat' | 'shift' | 'date' | 'out'), sort ('time' | 'mr' | 'name'), page ('auto' | 'portrait' | 'landscape'), title, exclude (entry ids) */
   function erProc(p) { var k = PROCS.filter(function (x) { return x.c === p; })[0]; return !k || k.g === 'er' || k.g === 'old'; }
+  function diedOf(e) { return e.cat === 'BD' || e.out === 'BD' ? 'Brought dead' : e.out === 'EXP' ? 'Expired in CEC' : e.how === 'WARD' ? 'Expired in ward' : ''; }
   function bdMr(e) { return e.bd && e.bd.mr ? e.bd.mr : e.mr; }                 // 19-11-2026: MR No. / age typed on the Brought dead page
   function bdAge(e) { return e.bd && e.bd.age ? e.bd.age : e.age; }
   function ageSex(e) { var a = bdAge(e); return (a !== '' && a != null ? a : '-') + '/' + (e.sex || '-'); }
@@ -2652,6 +2728,7 @@ var CEC = (function () {
     { k: 'bdcnic', m: 70, h: 'CNIC (deceased)', w: 9, a: 'l', bdOnly: true, f: function (e) { return (e.bd && e.bd.cnic) || ''; } },
     { k: 'bdcell', m: 56, h: 'Contact No.', w: 7.5, a: 'l', bdOnly: true, f: function (e) { return (e.bd && e.bd.cell) || ''; } },
     { k: 'bdaddr', m: 80, h: 'Address', w: 13, a: 'l', bdOnly: true, f: function (e) { return (e.bd && e.bd.addr) || ''; } },
+    { k: 'died', m: 74, h: 'Died', w: 10, a: 'l', clin: true, quick: true, f: function (e) { return diedOf(e); } },          // 20-11-2026 (V2.9): Brought dead / Expired in CEC
     { k: 'cat', m: 52, h: 'Category', w: 8.5, a: 'l', f: function (e) { return label(LIST_CATS, listCatOf(e)); } },
     { k: 'bp', m: 40, t: function (e) { return e.bp ? 'BP ' + e.bp : has(e, 'BP') ? 'BP done' : ''; }, h: 'BP', w: 6, a: 'c', f: function (e) { return e.bp || (has(e, 'BP') ? 'Done' : ''); } },
     { k: 'pulse', m: 30, t: function (e) { return e.pulse ? 'Pulse ' + e.pulse + '/min' : ''; }, h: 'Pulse', w: 4.5, a: 'c', f: function (e) { return e.pulse || ''; } },
@@ -2831,7 +2908,7 @@ var CEC = (function () {
       sp.sub = shiftName(shift.shift) + ' shift, ' + weekday(shift.censusDate) + ' ' + dmy(shift.censusDate) + ' \u00b7 ' + from + ' to ' + to + ' hrs \u00b7 ' + sp.n + ' patient' + (sp.n === 1 ? '' : 's');
       sp.file = 'CEC_' + r[2] + '_register_' + shiftName(shift.shift) + '_' + dmy(shift.censusDate) + '_' + to.replace(':', '');
       sp.reg = r[0]; sp.label = r[1];
-      if (sp.cols.some(function (c) { return c.k === 'outck'; })) sp.note = 'Outcome: Other OPD = referred to other OPD; Cardiac F/U = planned for cardiac follow-up; Next shift = given to next shift; BD = brought dead; blank = still with the doctor.';
+      if (sp.cols.some(function (c) { return c.k === 'outck'; })) sp.note = outLegend(sp.groups.map(function (g) { return g.list; }));
       out.push(sp);
     });
     return out;
@@ -2861,7 +2938,7 @@ var CEC = (function () {
       sp.cols.forEach(function (c) { if (c.k === 'no') c.h = 'S.No.'; if (c.k === 'mr') { c.h = r.k === 'opd' ? 'OPD No.' : 'MR No.'; c.f = function (e) { return bdMr(e) || '-'; }; } });
       var from = day ? times(st)[SHIFTS[0].c] : s0.openedAt ? hm(s0.openedAt) : times(st)[s0.shift];
       sp.sub = (day ? 'Census day ' : shiftName(s0.shift) + ' shift, ') + weekday(date) + ' ' + dmy(date) + ' \u00b7 ' + from + ' to ' + to + ' hrs \u00b7 ' + sp.n + ' patient' + (sp.n === 1 ? '' : 's');
-      if (sp.cols.some(function (c) { return c.k === 'outck'; })) sp.note = 'Outcome: Other OPD = referred to other OPD; Cardiac F/U = planned for cardiac follow-up; Next shift = given to next shift; BD = brought dead; blank = still with the doctor.';
+      if (sp.cols.some(function (c) { return c.k === 'outck'; })) sp.note = outLegend(sp.groups.map(function (g) { return g.list; }));
       sp.portrait = true; sp.key = r.k; sp.label = r.l;
       out.push(sp);
     });
@@ -2870,8 +2947,9 @@ var CEC = (function () {
   /* ---------- 19-11-2026 (V2.7 / V2.8): Download registers. Period: this shift, today, one date or dates. What: MR Nos. only in serial order
      (one list), OPD Nos. only in serial order, MR Nos. by kind (ER / Resus, OPD, Echo, ETT, BD each in its own box), or everyone by time.
      No date on the rows: each day and shift has a large heading; S.No. goes on across the headings (by kind: each box counts from 1). ---------- */
-  var DL_KINDS = [{ k: 'EMR', l: 'ER / Resus' }, { k: 'OPD', l: 'OPD' }, { k: 'ECHO', l: 'Echo' }, { k: 'ETT', l: 'ETT' }, { k: 'BD', l: 'BD (brought dead)' }];
-  function dlKindOf(e) { return e.cat === 'BD' || e.out === 'BD' ? 'BD' : e.cat === 'EMR' || e.cat === 'ECHO' || e.cat === 'ETT' ? e.cat : 'OPD'; }
+  /* 20-11-2026 (V2.9): one Deaths box (brought dead and expired in the CEC, each marked); a patient is in one box only */
+  var DL_KINDS = [{ k: 'EMR', l: 'ER / Resus' }, { k: 'OPD', l: 'OPD' }, { k: 'ECHO', l: 'Echo' }, { k: 'ETT', l: 'ETT' }, { k: 'BD', l: 'Deaths (brought dead, expired in CEC)' }];
+  function dlKindOf(e) { return e.cat === 'BD' || e.out === 'BD' || e.out === 'EXP' ? 'BD' : e.cat === 'EMR' || e.cat === 'ECHO' || e.cat === 'ETT' ? e.cat : 'OPD'; }
   function dlByNum(a, b) {
     var x = numP(a.mr), y = numP(b.mr);
     if (x && y && x.p === y.p && x.s === y.s && x.n !== y.n) return x.n - y.n;
@@ -2885,7 +2963,7 @@ var CEC = (function () {
     if (what === 'mrkind') what = 'kind';
     var shs = (shifts || []).filter(Boolean).slice().sort(function (a, b) { return a.censusDate < b.censusDate ? -1 : a.censusDate > b.censusDate ? 1 : (SO[a.shift] || 0) - (SO[b.shift] || 0); });
     var s0 = shs[0] || {}, date = s0.censusDate || ymd(new Date());
-    var base = ['no', 'time', 'mr', 'name', 'agesex'], std = base.concat(what === 'all' || what === 'mr' ? ['cat'] : []).concat(['bpck', 'ecgck', 'rbsck', 'outck']), bdc = base.concat(['bdcnic', 'bdcell', 'bdaddr']);
+    var base = ['no', 'time', 'mr', 'name', 'agesex'], std = base.concat(what === 'all' || what === 'mr' ? ['cat'] : []).concat(['bpck', 'ecgck', 'rbsck', 'outck']), bdc = base.concat(['died', 'bdcnic', 'bdcell', 'bdaddr']);
     var live = function (e) { return !/^(q-|tmp)/.test(e.id || ''); };
     var test = what === 'opd' ? function (e) { return !!e.opd; } : what === 'all' ? function () { return true; } : function (e) { return !e.opd; };
     function mk(sh, t, cols) {
@@ -2934,7 +3012,7 @@ var CEC = (function () {
     var sp = { title: title, sub: subl, cols: cols, groups: groups, portrait: true, n: n, empty: 'No patients.', serialAll: what !== 'kind',
       emptyKinds: what === 'kind' ? DL_KINDS.filter(function (x) { return ks.indexOf(x.k) >= 0 && !perKind[x.k]; }).map(function (x) { return x.l; }) : [] };
     if (groups.some(function (g) { return (g.cols || cols).some(function (c) { return c.k === 'outck'; }); }))
-      sp.note = 'Outcome: Other OPD = referred to other OPD; Cardiac F/U = planned for cardiac follow-up; Next shift = given to next shift; BD = brought dead; blank = still with the doctor.';
+      sp.note = outLegend(groups.map(function (g) { return g.list; }));
     return sp;
   }
   function listText(spec) {
@@ -3746,6 +3824,34 @@ var CEC = (function () {
   }
 
   /* ---------- WhatsApp summary ---------- */
+  /* 20-11-2026 (V2.9): Death register: every death of the period with its certificate particulars (brought dead, expired in CEC, expired
+     in ward); one heading for each day; deaths with no certificate yet marked PENDING. A4 sideways. */
+  var DIED_L = { BD: 'Brought dead', EXP: 'Expired in CEC', WARD: 'Expired in ward' };
+  function deathRegSpec(data) {
+    var rows = (data && data.rows) || [], groups = [], last = null, n = { BD: 0, EXP: 0, WARD: 0 }, pend = 0;
+    rows.forEach(function (r) {
+      if (!last || last.date !== r.date) { last = { date: r.date, list: [] }; groups.push(last); }
+      last.list.push(r); if (n[r.how] != null) n[r.how]++; if (!r.cert) pend++;
+    });
+    var cols = [
+      { h: 'S.No.', m: 26, a: 'c', f: function (r, i) { return i + 1; } },
+      { h: 'Time', m: 30, a: 'c', f: function (r) { return r.time || '-'; } },
+      { h: 'MR No.', m: 46, a: 'l', f: function (r) { return r.mr || '-'; } },
+      { h: 'Name', m: 96, wt: 2, a: 'l', f: function (r) { return UP(r.name) + (r.so && r.soName ? ' ' + r.so + ' ' + UP(r.soName) : ''); } },
+      { h: 'Age/Sex', m: 38, a: 'c', f: function (r) { var a = String(r.age == null ? '' : r.age).replace(/\s*years?$/i, ''); return (a || '-') + '/' + (r.sex || '-'); } },
+      { h: 'Died', m: 82, a: 'l', f: function (r) { return DIED_L[r.how] || '-'; } },
+      { h: 'CNIC No.', m: 72, a: 'l', f: function (r) { return r.cnic || '-'; } },
+      { h: 'Address', m: 86, wt: 2, a: 'l', f: function (r) { return r.addr ? UP(r.addr) : '-'; } },
+      { h: 'Received by', m: 96, wt: 2, a: 'l', f: function (r) { return r.rName ? UP(r.rName) + (r.rRel ? ' (' + UP(r.rRel) + ')' : '') + (r.rCnic ? ', CNIC ' + r.rCnic : '') + (r.rCell ? ', ' + r.rCell : '') : '-'; } },
+      { h: 'Certificate', m: 58, a: 'l', f: function (r) { return r.cert === 'online' ? 'Online' : r.cert === 'paper' ? 'On paper' + (r.paperNo ? ' No. ' + r.paperNo : '') : 'PENDING'; } }
+    ];
+    var multi = data.from !== data.to;
+    return { title: 'DEATH REGISTER', sub: (multi ? 'From ' + weekday(data.from) + ' ' + dmy(data.from) + ' to ' + weekday(data.to) + ' ' + dmy(data.to) : weekday(data.from) + ' ' + dmy(data.from)) +
+        ' \u00b7 ' + rows.length + ' death' + (rows.length === 1 ? '' : 's'),
+      cols: cols, portrait: false, n: rows.length, empty: 'No deaths in these dates.', serialAll: true,
+      groups: groups.map(function (g) { return { h: '', plain: true, title: weekday(g.date).toUpperCase() + ' ' + dmy(g.date) + ' (' + g.list.length + ' death' + (g.list.length === 1 ? '' : 's') + ')', list: g.list }; }),
+      note: rows.length ? 'Brought dead ' + n.BD + ', expired in CEC ' + n.EXP + ', expired in ward ' + n.WARD + ' (expired in ward is not counted in the CEC census).' + (pend ? ' PENDING: no death certificate yet (' + pend + ').' : '') : '' };
+  }
   function summaryText(m, shifts) {
     var entries = recEntries(shifts), dx = dxTable(entries).rows, pr = procTable(entries).rows, md = medTable(entries).rows;
     var L = waText(m, entries, [['Diagnoses', dx.length ? dx.map(function (r) { return r[1] + ': ' + r[4]; }) : ['None recorded']]]
@@ -3757,7 +3863,7 @@ var CEC = (function () {
   return {
     CATS: CATS, OUTS: OUTS, outExtra: outExtra, PROCS: PROCS, SHIFTS: SHIFTS, DEFAULTS: DEFAULTS, label: label, short: short, shiftName: shiftName, ymd: ymd, addDays: addDays,
     dmy: dmy, hm: hm, hm12: hm12, dxOf: dxOf, mainDx: mainDx, shiftTimes: shiftTimes, censusDateFor: censusDateFor, suggestShift: suggestShift, sexCount: sexCount, monthName: monthName,
-    shiftModel: shiftModel, dayModel: dayModel, monthModel: monthModel, letterHtml: letterHtml, letterPdf: letterPdf, summaryText: summaryText, esc: h,
+    shiftModel: shiftModel, dayModel: dayModel, monthModel: monthModel, last24Model: last24Model, deathRegSpec: deathRegSpec, diedOf: diedOf, DIED_L: DIED_L, letterHtml: letterHtml, letterPdf: letterPdf, summaryText: summaryText, esc: h,
     EXAMS: EXAMS, deathCertPdf: deathCertPdf, deathCertSvg: deathCertSvg, svgOf: svgOf, listPlain: listPlain, listPlainPdf: listPlainPdf, opdSlipPdf: opdSlipPdf, slipOps: slipOps, slipPdf: slipPdf, slipPdfMany: slipPdfMany, slipSvg: slipSvg, slipSvgMany: slipSvgMany, slipSheets: slipSheets, isErSlip: isErSlip, slipVitals: slipVitals, SLIP_TOP: SLIP_TOP, STAFF_PROCS: STAFF_PROCS, listPdf: listPdf, listCsv: listCsv,
     LIST_CATS: LIST_CATS, listCatOf: listCatOf, certHtml: certHtml, setDemo: setDemo, DEMO_LINE: DEMO_LINE, weekday: weekday, MEDS: MEDS, DX_GROUPS: DX_GROUPS, DX_LIST: DX_LIST, DXKW: DXKW, FREQ_DX: FREQ_DX, canonDx: canonDx, canonList: canonList, dxMatch: dxMatch, dxKey: dxKey, LIST_KINDS: LIST_KINDS, listSpec: listSpec, LIST_COLS: LIST_COLS, LIST_COLSETS: LIST_COLSETS, LIST_PRESETS: LIST_PRESETS, LIST_DEF: LIST_DEF,
     listCfg: listCfg, presetCfg: presetCfg, listColsFor: listColsFor, buildList: buildList, todayLists: todayLists, REGISTERS: REGISTERS, regCounts: regCounts, registerLists: registerLists, dlLists: dlLists, DL_KINDS: DL_KINDS, dtWeave: dtWeave, jpegImg: jpegImg, DT_FORMS: DT_FORMS, DT_ROWS: DT_ROWS, dtFormPdf: dtFormPdf, dtPrompt: dtPrompt, dtParse: dtParse, listPdfMany: listPdfMany, listText: listText, listTitle: listTitle, APPTS: APPTS, APPT_STATUS: APPT_STATUS, apptType: apptType,
@@ -3852,7 +3958,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   var IDLE_MS = 4 * 3600000;
   /* 14-11-2026: the version of this page (Index.html / phone app) and of the server (Code.gs). Both come from the same build, so they must be the same. */
-  var APP_VER = 'CEC V2.8 (19-11-2026 20:39)';
+  var APP_VER = 'CEC V2.9 (20-11-2026 02:18)';
   function verSame() { return S.serverVer === APP_VER; }
   function verKey(v) { var m = /(\d\d)-(\d\d)-(\d{4}) (\d\d:\d\d)/.exec(String(v || '')); return m ? m[3] + m[2] + m[1] + m[4] : ''; }   // the build time, in time order
   /* 18-11-2026 (night): shown as "CEC V2.1" (versions before V2.1 were named by their date) */
@@ -4007,7 +4113,54 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function isDemo() { return !!(S.me && (S.me.demo || S.me.demoView)); }
   function applyDemo() { var on = isDemo(); CEC.setDemo(on); document.body.classList.toggle('demo', on); }
 
+  /* ---------- 20-11-2026 (V2.9): the colours chosen by the admin (main colour and the line under the heading), on every website and phone
+     app. Every green of the stylesheet takes the new colour at its own lightness; the main colour itself is used exactly. Red (warnings,
+     deletions), amber and blue keep their meaning. Printed letters, certificates and slips do not change. ---------- */
+  var THEME_CSS = null, THEME_BASE = '#0a4a2b', THEME_ACC = '#c9a227', THEME_ON = '';
+  function hexHsl(hx) {
+    var r = parseInt(hx.substr(1, 2), 16) / 255, g = parseInt(hx.substr(3, 2), 16) / 255, b = parseInt(hx.substr(5, 2), 16) / 255;
+    var mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn, hh = 0, sat = 0;
+    if (d) { sat = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn); hh = (mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4) / 6; }
+    return { h: hh, s: sat, l: l };
+  }
+  function hslHex(hh, sat, l) {
+    var f = function (n) { var k = (n + hh * 12) % 12, a = sat * Math.min(l, 1 - l), c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); return ('0' + Math.round(Math.max(0, Math.min(1, c)) * 255).toString(16)).slice(-2); };
+    return '#' + f(0) + f(8) + f(4);
+  }
+  function lumOf(hx) { return [1, 3, 5].map(function (i) { var v = parseInt(hx.substr(i, 2), 16) / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }).reduce(function (a, v, i) { return a + v * [0.2126, 0.7152, 0.0722][i]; }, 0); }
+  function onWhiteOk(hx) { return 1.05 / (lumOf(hx) + 0.05) >= 4.5; }
+  function themeCss(t) {
+    var css = THEME_CSS, M = hexHsl(t.main), B = hexHsl(THEME_BASE), k = B.s ? Math.min(1.4, M.s / B.s) : 1;
+    var shade = function (hx) {
+      var c = hexHsl(hx.length === 4 ? '#' + hx[1] + hx[1] + hx[2] + hx[2] + hx[3] + hx[3] : hx);
+      if (!(c.h > 0.25 && c.h < 0.5 && c.s > 0.12)) return null;     // only the greens
+      return hslHex(M.h, Math.min(1, c.s * k), c.l);
+    };
+    var dark = function (dl) { var l = M.l + dl, x = hslHex(M.h, M.s, l); while (!onWhiteOk(x) && l > 0.05) { l -= 0.02; x = hslHex(M.h, M.s, l); } return x; };
+    css = css.replace(/#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g, function (m) { if (m.toLowerCase() === THEME_ACC) return t.acc || THEME_ACC; var x = m.length === 7 || m.length === 4 ? shade(m) : null; return x || m; })
+      .replace(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/g, function (m, r, g, b, a) {
+        var hx = '#' + [r, g, b].map(function (v) { return ('0' + (+v).toString(16)).slice(-2); }).join(''), x = shade(hx);
+        return x ? 'rgba(' + parseInt(x.substr(1, 2), 16) + ',' + parseInt(x.substr(3, 2), 16) + ',' + parseInt(x.substr(5, 2), 16) + ',' + a + ')' : m;
+      });
+    return css.replace(/--g9:#[0-9a-fA-F]{6}/, '--g9:' + t.main).replace(/--g7:#[0-9a-fA-F]{6}/, '--g7:' + dark(0.055)).replace(/--g6:#[0-9a-fA-F]{6}/, '--g6:' + dark(0.11));
+  }
+  function applyTheme(t, keep) {
+    var el = document.getElementsByTagName('style')[0];
+    if (!el) return;
+    if (THEME_CSS == null) THEME_CSS = el.textContent;
+    t = t && /^#[0-9a-f]{6}$/i.test(t.main || '') ? { main: t.main.toLowerCase(), acc: /^#[0-9a-f]{6}$/i.test(t.acc || '') ? t.acc.toLowerCase() : '' } : null;
+    var key = t ? t.main + t.acc : '';
+    if (keep !== false) store_('cec_theme', t);
+    if (key === THEME_ON) return;
+    THEME_ON = key;
+    el.textContent = t ? themeCss(t) : THEME_CSS;
+    var m = document.querySelector('meta[name=theme-color]');
+    if (m) m.setAttribute('content', t ? t.main : THEME_BASE);
+  }
+  try { applyTheme(store_('cec_theme'), false); } catch (e) { }
+
   function applyState(st) {
+    try { if (st.theme !== undefined && !S.thPrev) applyTheme(st.theme); } catch (e) { }
     if (st.off) { S.me = st.me; S.serverVer = st.ver || ''; S.settings = mergeSettings(st.settings); S.offHours = st.off; S.synced = new Date(); return; }   // a student after the morning shift
     S.offHours = null; S.serverVer = st.ver || '';
     var oldOpen = S.open ? S.open.id : null;
@@ -4282,7 +4435,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (v === 'settings' && isAdmin()) api('apiState').then(function (st) { applyCustom(st.custom); if (S.view === 'settings' && !typing()) render(); }, function () { });   // latest options added by users
   }
   /* 19-11-2026 (V2.7): a refresh (reload) opens the page you were on (within 30 minutes), not Home */
-  var VIEW_BACK = ['shift', 'lists', 'census', 'certs', 'forms', 'tmpdoc', 'appt', 'rosters', 'petty', 'mrreg', 'bulk', 'about', 'settings', 'echo', 'dt', 'bdq', 'vit', 'slipq', 'ecgq', 'rbsq', 'erx'];
+  var VIEW_BACK = ['shift', 'lists', 'census', 'certs', 'acct', 'forms', 'tmpdoc', 'appt', 'rosters', 'petty', 'mrreg', 'bulk', 'about', 'settings', 'echo', 'dt', 'bdq', 'vit', 'slipq', 'ecgq', 'rbsq', 'erx'];
   function viewKeep() { try { store_('cec_view', { v: S.view, ap: S.ap && S.ap.type || '', apStep: S.ap && S.ap.step || '', et: S.echoTab || '', uid: S.me && S.me.id, at: Date.now() }); } catch (e) { } }
   function viewBack() {
     var r = store_('cec_view');
@@ -4333,6 +4486,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     a.push({ v: 'mrreg', l: 'Download registers' });                     // 19-11-2026 (V2.7): was MR register
     if (canEnter()) a.push({ v: 'dt', l: 'Down-time forms' });            // 19-11-2026
     if (canClin()) a.push({ v: 'census', l: 'Census letters', sub: CEN_MODES });   // 19-11-2026 (V2.7): was Patient census
+    if (canAcct()) a.push({ v: 'acct', l: 'Accounting check', badge: S.acctN || 0 });   // 20-11-2026 (V2.9)
     if (isAdmin()) a.push({ v: 'bulk', l: 'Bulk sign-off' });
     a.push({ v: 'about', l: 'About' });
     a.push({ v: 'settings', l: isAdmin() ? 'Account & admin' : 'Account', badge: isAdmin() ? (S.pendingUsers || 0) + (S.pendingResets || 0) : 0 });
@@ -4426,6 +4580,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     else if (S.view === 'rosters') v.innerHTML = canRosters() ? rostersHtml() : '<section class="card">Shifts and rosters are for doctors.</section>';
     else if (S.view === 'about') v.innerHTML = aboutPageHtml();
     else if (S.view === 'certs') v.innerHTML = certsHtml();
+    else if (S.view === 'acct') v.innerHTML = canAcct() ? acctHtml() : '<section class="card">The Accounting check is for doctors and the admin.</section>';
     else if (S.view === 'roster') v.innerHTML = canRosters() ? rosterHtml() : '<section class="card">Shifts and rosters are for doctors.</section>';
     else if (S.view === 'wedit') v.innerHTML = weditHtml();
     else if (S.view === 'appt') v.innerHTML = canAppt() ? apptHtml() : '<section class="card">You do not have the right to book procedures.</section>';
@@ -4553,7 +4708,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* ---------- Patient census: choose per shift, daily, monthly or annual, then the period ---------- */
   var CEN_INFO = {
     shift: ['Per shift data', 'Morning, Evening or Night shift of any day: patient list and shift letter.', '<path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/>'],
-    day: ['Daily data (24 hours)', 'All three shifts combined, 08:30 to 08:30. The letter is ready once the Night shift ends.', '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'],
+    day: ['Daily data (24 hours)', 'All three shifts combined, 08:30 to 08:30. Also today till now, and the last 24 hours up to now.', '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'],
     month: ['Monthly data', 'Choose a month: totals, day-wise census and the monthly letter.', '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M7 14h2M11 14h2M15 14h2M7 18h2M11 18h2"/>'],
     year: ['Annual data', 'Choose a year: month-wise totals and the annual letter.', '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>']
   };
@@ -4615,8 +4770,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
       html = '<div class="narrow">' + cenHead('Daily data (24 hours)') + '<section class="card">' + dateNav() + sumHtml(all) +
         miniTable(['Shift', 'Male', 'Female', 'Total'], rows, ['Total', c.M, c.F, c.T]) + topDx(all, 6) +
         (done ? '<button class="btn pri block" data-act="day-letter">24-hour census letter</button>'
-          : '<div class="warn">The 24-hour letter is ready after the Night shift ends at ' + S.settings.times.M + ' hrs on ' + CEC.dmy(CEC.addDays(S.day, 1)) + '.</div>' +
-            (isAdmin() ? '<button class="btn block" data-act="day-letter">Admin: open the letter so far</button>' : '')) + '</section></div>';
+          : '<div class="warn">The full 24-hour letter is ready after the Night shift ends at ' + S.settings.times.M + ' hrs on ' + CEC.dmy(CEC.addDays(S.day, 1)) + '. Until then:</div>' +
+            '<button class="btn pri block" data-act="day-till">Today till now (letter so far)</button>') +
+        '<button class="btn block" data-act="last24" style="margin-top:8px">Last 24 hours, up to now</button>' + '</section></div>';
       return html;
     }
     if (C.mode === 'month') {
@@ -4657,7 +4813,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function detailHtml() {
     var s = S.detail;
     if (!s) return '<div class="empty">Shift not found.</div>';
-    return '<div class="lv-head"><button class="btn sm" data-act="back">&lsaquo; Per shift data</button><h2>' + h(CEC.shiftName(s.shift)) + ' shift, ' + CEC.dmy(s.censusDate) + '</h2></div>' +
+    return '<div class="lv-head"><button class="btn sm" data-act="back">&lsaquo; ' + (S.prev === 'acct' ? 'Accounting check' : 'Per shift data') + '</button><h2>' + h(CEC.shiftName(s.shift)) + ' shift, ' + CEC.dmy(s.censusDate) + '</h2></div>' +
       '<section class="card"><div class="kv" style="margin:0">' + (s.status === 'open' ? '<span class="pill open">Running</span> ' : '<span class="pill closed">Ended</span> ') +
       h(CEC.shiftTimes(S.settings, s.shift)) + '</div>' +
       statsHtml(s.entries) + '<div class="sbtns">' + (addable(s) ? '<button class="btn sm" data-act="detail-add">+ Add patient</button>' : '') +
@@ -4740,6 +4896,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     }
     html += '</section>';
     html += customCardHtml();
+    html += themeCardHtml();
     html += '<section class="card"><div class="ct">Letter details</div>' +
       '<label class="lb" for="sHod">Head of Department (signs every letter)</label><input class="in" id="sHod" value="' + h(st.hod) + '">' +
       '<label class="lb" for="sTo">Letter addressed to (one line each)</label><textarea class="in" id="sTo" rows="3">' + h(st.addressee.join('\n')) + '</textarea>' +
@@ -4751,6 +4908,36 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<label class="lb" for="sFreq">Frequent diagnoses: tick boxes in the patient form <span class="muted">(one per line)</span></label><textarea class="in" id="sFreq" rows="8">' + h(freqDx().join('\n')) + '</textarea>' +
       '<button class="btn pri block" data-act="save-settings">Save settings</button></section>';
     return html;
+  }
+  /* ---------- 20-11-2026 (V2.9): the admin chooses the colours of the census for everyone ---------- */
+  var TH_TRAY = [['#0a4a2b', 'Original green'], ['#14497e', 'Navy'], ['#0f5c5c', 'Teal'], ['#7b1e2b', 'Maroon'], ['#4b2f8a', 'Purple'], ['#1d4ed8', 'Royal blue'],
+    ['#2b2f36', 'Charcoal'], ['#6b3e1f', 'Brown'], ['#9d174d', 'Rose'], ['#374151', 'Slate']];
+  var TH_ACC = [['#c9a227', 'Gold (original)'], ['#e5e7eb', 'Silver'], ['#ffffff', 'White'], ['#f59e0b', 'Amber'], ['#7dd3fc', 'Sky'], ['#fca5a5', 'Coral']];
+  function themeNow() { var t = store_('cec_theme'); return { main: (t && t.main) || THEME_BASE, acc: (t && t.acc) || THEME_ACC }; }
+  function themeCardHtml() {
+    var P = S.thPrev || themeNow(), sw = function (list, k, cur) {
+      return list.map(function (x) { return '<button type="button" class="thsw' + (x[0] === cur ? ' on' : '') + '" data-act="th-pick" data-k="' + k + '" data-v="' + x[0] + '" title="' + h(x[1]) + '" aria-label="' + h(x[1]) + '" style="background:' + x[0] + '"></button>'; }).join('');
+    };
+    return '<section class="card"><div class="ct">Colours of the census (everyone)</div><p class="muted small" style="margin:0 0 6px">Pick the main colour and the line under the heading. ' +
+      'You see it at once on this screen; <b>Apply to everyone</b> changes every website and phone app (at their next refresh, or at once with Reload everybody). Printed letters, certificates and slips stay as they are.</p>' +
+      '<label class="lb">Main colour</label><div class="thtray">' + sw(TH_TRAY, 'main', P.main) + '<label class="thcus" title="Any colour"><input type="color" id="thMain" value="' + h(P.main) + '"> Any colour</label></div>' +
+      '<label class="lb">Line under the heading</label><div class="thtray">' + sw(TH_ACC, 'acc', P.acc) + '<label class="thcus" title="Any colour"><input type="color" id="thAcc" value="' + h(P.acc) + '"> Any colour</label></div>' +
+      '<div id="thMsg">' + (S.thPrev ? '<p class="small" style="margin:8px 0 0"><b>Preview on this screen only.</b> Tap Apply to everyone to keep it.</p>' : '') + '</div>' +
+      '<div class="sbtns"><button class="btn sm pri" data-act="th-apply"' + (S.thPrev && !onWhiteOk(S.thPrev.main) ? ' disabled' : '') + '>Apply to everyone</button>' +
+      (S.thPrev ? '<button class="btn sm" data-act="th-cancel">Cancel preview</button>' : '') + '<button class="btn sm" data-act="th-reset">Back to original</button></div></section>';
+  }
+  function themePick(k, v) {
+    if (!/^#[0-9a-f]{6}$/i.test(v || '')) return;
+    var P = S.thPrev || themeNow(); P = { main: P.main, acc: P.acc }; P[k] = v.toLowerCase(); S.thPrev = P;
+    if (!onWhiteOk(P.main)) { render(); var m = $('thMsg'); if (m) m.innerHTML = '<div class="err">This main colour is too light: white writing on it would be hard to read. Choose a darker shade.</div>'; return; }
+    applyTheme(P, false); render();
+  }
+  function themeSend(reset) {
+    var P = S.thPrev || themeNow();
+    if (!reset && !onWhiteOk(P.main)) return toast('Choose a darker main colour.');
+    api('apiSetTheme', JSON.stringify(reset ? { reset: true } : { main: P.main, acc: P.acc === THEME_ACC ? '' : P.acc })).then(function (t) {
+      S.thPrev = null; applyTheme(t); toast(reset ? 'Back to the original colours, for everyone' : 'Colours applied for everyone'); render();
+    }, function (e) { toast(errText(e)); });
   }
   /* ---------- admin: protection, backups and the encrypted recycle bin ---------- */
   function loadBin() {
@@ -4882,17 +5069,18 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function buildLetter() {
     var L = S.letter, annex = !!L.annex, bd = L.bd !== false;   // 19-11-2026: brought dead details in the letter unless unticked
     if (L.type === 'shift') return { model: CEC.shiftModel(L.shifts[0], S.settings, { annex: annex, bd: bd }), shifts: L.shifts };
-    if (L.type === 'day') return { model: CEC.dayModel(L.date, L.shifts, S.settings, { annex: annex, bd: bd }), shifts: L.shifts };
+    if (L.type === 'day') return { model: CEC.dayModel(L.date, L.shifts, S.settings, { annex: annex, bd: bd, till: L.till, ward: L.ward }), shifts: L.shifts };
+    if (L.type === 'last24') { var m24 = CEC.last24Model(L.now, L.shifts, S.settings, { annex: annex, bd: bd, ward: L.ward }), sh24 = m24._shifts; delete m24._shifts; return { model: m24, shifts: sh24 }; }
     if (L.type === 'year') return { model: CEC.yearModel(L.year, L.rows, S.settings, currentCensus()), shifts: [] };
-    return { model: CEC.monthModel(L.from, L.to, L.shifts, S.settings, { bd: bd }), shifts: L.shifts };
+    return { model: CEC.monthModel(L.from, L.to, L.shifts, S.settings, { bd: bd, ward: L.ward }), shifts: L.shifts };
   }
   function letterViewHtml() {
     var b = buildLetter(), L = S.letter;
-    var title = L.type === 'shift' ? 'Shift letter' : L.type === 'day' ? '24-hour letter' : L.type === 'year' ? 'Annual letter' : 'Monthly letter';
+    var title = L.type === 'shift' ? 'Shift letter' : L.type === 'day' ? (L.till ? 'Today till now' : '24-hour letter') : L.type === 'last24' ? 'Last 24 hours letter' : L.type === 'year' ? 'Annual letter' : 'Monthly letter';
     return '<div class="lv-head"><button class="btn sm" data-act="back">&lsaquo; Back</button><h2>' + title + '</h2></div>' +
       '<div class="lv-act"><button class="btn" data-act="dl-pv">' + ICON.eye + ' Preview</button><button class="btn pri" data-act="dl-pdf">Save PDF</button><button class="btn" data-act="dl-print">' + ICON.print + ' Print</button><button class="btn" data-act="copy-wa">Copy for WhatsApp</button></div>' +
-      (L.type === 'shift' || L.type === 'day' ? '<label class="check"><input type="checkbox" id="annex"' + (L.annex ? ' checked' : '') + '> Attach patient list (annexure)</label>' : '') +
-      (L.type !== 'year' && letterHasBd() ? '<label class="check"><input type="checkbox" id="bdx"' + (L.bd !== false ? ' checked' : '') + '> Brought dead patients with CNIC, contact No. and address</label>' : L.type === 'year' ? '<div style="height:12px"></div>' : '') +
+      (L.type === 'shift' || L.type === 'day' || L.type === 'last24' ? '<label class="check"><input type="checkbox" id="annex"' + (L.annex ? ' checked' : '') + '> Attach patient list (annexure)</label>' : '') +
+      (L.type !== 'year' && letterHasBd() ? '<label class="check"><input type="checkbox" id="bdx"' + (L.bd !== false ? ' checked' : '') + '> Deaths (brought dead, expired) with CNIC, contact No. and address</label>' : L.type === 'year' ? '<div style="height:12px"></div>' : '') +
       '<div class="paperwrap" id="pw"><div class="paper" id="paper">' + CEC.letterHtml(b.model, LOGO) + '</div></div>';
   }
   function fitPaper() {
@@ -4903,8 +5091,19 @@ if (typeof module !== 'undefined') module.exports = CEC;
     pw.style.height = Math.ceil(p.scrollHeight * sc) + 'px';
   }
   window.addEventListener('resize', fitPaper);
-  function openLetter(spec) { S.letter = spec; setView('letter'); }
-  function letterHasBd() { return ((S.letter && S.letter.shifts) || []).some(function (s) { return (s.entries || []).some(function (e) { return e.cat === 'BD' || e.out === 'BD'; }); }); }
+  function openLetter(spec) { S.letter = spec; setView('letter'); letterWard(spec); }
+  function letterHasBd() { return !!(S.letter && (S.letter.ward || []).length) || ((S.letter && S.letter.shifts) || []).some(function (s) { return (s.entries || []).some(function (e) { return e.cat === 'BD' || e.out === 'BD' || e.out === 'EXP'; }); }); }
+  /* 20-11-2026 (V2.9): deaths in the wards of the letter's days (from their certificates): listed in the Deaths table, not counted in the census */
+  function letterWard(L) {
+    if (!canCert() || isOff() || ['day', 'month', 'last24'].indexOf(L.type) < 0) return;
+    var now = L.now ? Date.parse(L.now) : 0, from = L.type === 'day' ? L.date : L.type === 'month' ? L.from : CEC.ymd(new Date(now - 86400000)), to = L.type === 'day' ? L.date : L.type === 'month' ? L.to : CEC.ymd(new Date(now));
+    api('apiDeathRegister', JSON.stringify({ from: from, to: to, quiet: true })).then(function (r) {
+      var w = (r.rows || []).filter(function (x) { return x.how === 'WARD'; });
+      if (L.type === 'last24') w = w.filter(function (x) { var t = /^\d\d:\d\d/.test(x.time || '') ? Date.parse(x.date + 'T' + x.time.slice(0, 5) + ':00+05:00') : 0; return t ? t >= now - 86400000 && t <= now : x.date === to; });
+      if (!w.length || S.letter !== L) return;
+      L.ward = w; if (S.view === 'letter') { render(); }
+    }, function () { });
+  }
 
   /* ---------------- patient form ---------------- */
   function targetShift() { var t = S.form && S.form.target; return t === 'detail' ? S.detail : t === 'prev' ? S.prevShift : S.work; }
@@ -5501,10 +5700,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<div class="kv" style="margin-top:12px"><b>' + h(e.name) + '</b> &middot; ' + mrTagH(e) + '<div class="muted small">' + h(catLabel(e)) + ' &middot; ' +
       (e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '') + (e.age !== '' && e.age != null ? ', ' + h(e.age) + ' y' : '') + ' &middot; registered ' + CEC.hm(e.t) + '</div>' +
       ((e.adv || []).length ? '<div class="small" style="margin-top:4px"><b class="advt">Doctor advised: ' + h(e.adv.join(' + ')) + '</b></div>' : '') + '</div>' +
-      vitalsHtml(Object.assign({}, e, (S.vdraft || {})[e.id] || {})) + (bpo ? '<div class="slipln onlyn"><span><b>BP check only</b>: no slip (Hypertension, planned for cardiac follow-up). If the patient wants to see the doctor, tap <b>Print slip</b>.</span></div>'
+      vitalsHtml(Object.assign({}, e, (S.vdraft || {})[e.id] || {})) + (bpo ? '<div class="slipln onlyn"><span><b>BP check only</b>: no slip (Hypertension, sent home). If the patient wants to see the doctor, tap <b>Print slip</b>.</span></div>'
         : e.only ? '<div class="slipln onlyn"><span>' + onlyNote(formCat(e), e) + '</span></div>'
         : e.man ? '<div class="slipln"><span><b>Manual slip</b>: written by hand; no slip is printed.</span></div>'
-        : e.tok ? '<div class="slipln"><span>Slip <b>' + h(e.tok) + '</b>: ' + (e.tokPr ? 'printed already, so it is not printed again; the vitals are saved in the patient\u2019s record' : qeChoice(e) ? '<b>Print slip</b> prints it with the vitals. <b>BP only</b>: no slip (Hypertension, planned for cardiac follow-up)' : 'the vitals are added to it when you save') + '</span></div>'
+        : e.tok ? '<div class="slipln"><span>Slip <b>' + h(e.tok) + '</b>: ' + (e.tokPr ? 'printed already, so it is not printed again; the vitals are saved in the patient\u2019s record' : qeChoice(e) ? '<b>Print slip</b> prints it with the vitals. <b>BP only</b>: no slip (Hypertension, sent home)' : 'the vitals are added to it when you save') + '</span></div>'
         : '<div class="fsec">OPD / ER slip</div><div class="seg" id="qSlip"><button type="button" data-act="qe-slipk" data-v="OPD">OPD</button><button type="button" data-act="qe-slipk" data-v="ER">ER</button></div>' +
           '<p class="muted small" style="margin:4px 0 0">The slip number is given when you save, so the slip is ready on the OPD / ER slip page. ' + (e.cat === 'ETT' || e.cat === 'ECHO' ? 'ETT / Echo patients get an OPD slip (ER if needed).' : 'Choosing the other one also changes the category.') + '</p>') +
       '<div id="qErr"></div></form></div><div class="sh-foot" id="qFoot">' + qeFoot(e) + '</div>';
@@ -7880,14 +8079,23 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* ---------- certificates written by hand: a photo of the certificate is compulsory ---------- */
   function openPaper(p) {
     p = p || {};
-    S.pp = { entryId: p.id || '', ph: {} };
+    S.pp = { entryId: p.id || '', ph: {}, how: p.id ? (p.cat === 'BD' ? 'BD' : 'EXP') : '', sex: '' };
     var el = $('sheet'), fixed = !!p.id;
     el.innerHTML = '<div class="sh-head"><button data-act="pp-close">Cancel</button><h3>Paper death certificate</h3><span></span></div><div class="sh-body"><form id="ppf" novalidate autocomplete="off">' +
       '<p class="small" style="margin:12px 0 0">For a certificate written by hand, <b>three photos are compulsory</b>: the filled certificate, the CNIC / B-form of the deceased and the CNIC of the receiver. They are kept privately with the record.</p>' +
       '<div class="fsec">Patient</div>' +
       (fixed ? '<div class="kv"><b>' + h(p.name) + '</b> &middot; MR ' + h(p.mr) + '<div class="muted small">' + (p.cat === 'BD' ? 'Brought dead' : 'Expired in CEC') + ' &middot; ' + CEC.dmy(p.censusDate) + '</div></div>'
-        : '<label class="lb" for="ppMr">MR No. <span class="req">*</span></label><input class="in" id="ppMr" autocapitalize="characters">' +
-          '<label class="lb" for="ppName">Name of the deceased <span class="req">*</span></label><input class="in" id="ppName" autocapitalize="words">') +
+        : '<label class="lb">How the patient died <span class="req">*</span></label><div class="seg" id="ppHow">' + [['BD', 'Brought dead'], ['EXP', 'Expired in CEC'], ['WARD', 'Expired in ward']].map(function (x) {
+            return '<button type="button" data-act="pp-how" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+          '<label class="lb" for="ppMr">MR No. <span class="req">*</span></label><input class="in" id="ppMr" autocapitalize="characters">' +
+          '<label class="lb" for="ppName">Name of the deceased <span class="req">*</span></label><input class="in" id="ppName" autocapitalize="words">' +
+          /* 20-11-2026 (V2.9): a patient not yet in the census is added from these (the time decides the shift) */
+          '<div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><label class="lb">Gender</label><div class="seg" id="ppSex">' + [['M', 'Male'], ['F', 'Female']].map(function (x) {
+            return '<button type="button" data-act="pp-sex" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div></div>' +
+          '<div><label class="lb" for="ppAge">Age (years)</label><input class="in" id="ppAge" inputmode="numeric" maxlength="3"></div></div>' +
+          '<div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><label class="lb" for="ppArrD">Brought to CEC on</label><input class="in" type="date" id="ppArrD"></div>' +
+          '<div><label class="lb" for="ppArrT">at (hrs, 24-hour)</label><input class="in" id="ppArrT" ' + TIME_ATTR + '></div></div>' +
+          '<p class="muted small" style="margin:4px 0 0">Needed when the patient is not in the census yet: the patient is added (the time decides the shift). Not needed for Expired in ward.</p>') +
       '<div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><label class="lb" for="ppNo">Certificate No. on paper</label><input class="in" id="ppNo" placeholder="optional"></div>' +
       '<div><label class="lb" for="ppDate">Date of death</label><input class="in" type="date" id="ppDate" value="' + h(p.censusDate || '') + '"></div></div>' +
       PP_SLOTS.map(function (x) {
@@ -7939,16 +8147,26 @@ if (typeof module !== 'undefined') module.exports = CEC;
     }, function (e) { var pv = $('ppPrev_' + k); if (pv) pv.innerHTML = '<div class="err">' + h(errText(e)) + '</div>'; });
   }
   function savePaper() {
-    var P = S.pp, err = [], d = { entryId: P.entryId, paperNo: up($('ppNo').value.trim()), deathDate: $('ppDate').value };
-    if (!P.entryId) { d.mr = up($('ppMr').value.trim()); d.name = up($('ppName').value.trim().replace(/\s+/g, ' ')); if (!d.mr) err.push('MR No.'); if (!d.name) err.push('name'); }
+    var P = S.pp, err = [], d = { entryId: P.entryId, paperNo: up($('ppNo').value.trim()), deathDate: $('ppDate').value, how: P.how || '' };
+    if (!P.entryId) {
+      d.mr = up($('ppMr').value.trim()).replace(/\s+/g, ''); d.name = up($('ppName').value.trim().replace(/\s+/g, ' ')); d.sex = P.sex || ''; d.age = $('ppAge').value.trim();
+      d.arrDate = $('ppArrD').value ? CEC.dmy($('ppArrD').value) : ''; d.arrTime = $('ppArrT').value.trim();
+      if (!d.how) err.push('how the patient died'); if (!d.mr) err.push('MR No.'); if (!d.name) err.push('name');
+      if (d.arrTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(d.arrTime)) err.push('the time as 24-hour time such as 14:35');
+    }
     PP_SLOTS.forEach(function (x) { if (!P.ph[x.k]) err.push('photo of ' + x.n.replace(/^the /, '')); });
     if (err.length) { $('ppErr').innerHTML = '<div class="err">Please add: ' + h(err.join(', ')) + '.</div>'; return; }
     if (P.busy) return;
-    var b = document.querySelector('[data-act=pp-save]'); P.busy = true; b.disabled = true; b.innerHTML = '<span class="spin"></span>Saving\u2026';
-    api('apiSavePaperCert', JSON.stringify(d), P.ph.cert.d, P.ph.cert.m, P.ph.cnic.d, P.ph.cnic.m, P.ph.rcnic.d, P.ph.rcnic.m).then(function (r) {
-      S.pend = (S.pend || []).filter(function (x) { return x.id !== P.entryId; }); S.pendCerts = Math.max(0, S.pend.length);
-      S.papers = [r].concat(S.papers || []); closePaper(); toast('Paper certificate saved with its photos'); render();
-    }, function (e) { P.busy = false; b.textContent = 'Save'; ppNeed(); $('ppErr').innerHTML = '<div class="err">' + h(errText(e)) + '</div>'; });
+    var b = document.querySelector('[data-act=pp-save]'), fail = function (e) { P.busy = false; if (b) b.textContent = 'Save'; ppNeed(); $('ppErr').innerHTML = '<div class="err">' + h(errText(e)) + '</div>'; };
+    P.busy = true; b.disabled = true; b.innerHTML = '<span class="spin"></span>Checking\u2026';
+    deathAsk(d).then(function (x) {
+      if (!x || !S.pp) { P.busy = false; if (b) b.textContent = 'Save'; ppNeed(); return; }
+      b.innerHTML = '<span class="spin"></span>Saving\u2026';
+      api('apiSavePaperCert', JSON.stringify(Object.assign(d, x)), P.ph.cert.d, P.ph.cert.m, P.ph.cnic.d, P.ph.cnic.m, P.ph.rcnic.d, P.ph.rcnic.m).then(function (r) {
+        S.pend = (S.pend || []).filter(function (y) { return y.id !== P.entryId && y.id !== (r.link && r.link.entryId); }); S.pendCerts = Math.max(0, S.pend.length);
+        S.papers = [r].concat(S.papers || []); closePaper(); toast('Paper certificate saved with its photos' + deathToast(r.link)); render();
+      }, fail);
+    }, fail);
   }
   function closePaper() { S.pp = null; $('sheet').classList.add('hidden'); $('sheet').innerHTML = ''; document.body.style.overflow = ''; overlayClosed(); }
   /* Shows the certificate photo and, when they were taken with it, both CNIC photos, each with its own Download button. */
@@ -7990,18 +8208,24 @@ if (typeof module !== 'undefined') module.exports = CEC;
     }));
     return all.sort(function (a, b) { return a.key < b.key ? 1 : a.key > b.key ? -1 : 0; });
   }
+  /* 20-11-2026 (V2.9): how the patient died, and a certificate whose death is not counted in the census yet (one tap to count it) */
+  function diedTags(c) {
+    return (c.how ? '<span class="tag ' + (c.how === 'BD' ? 'BD' : c.how === 'EXP' ? 'EXP' : 'ward') + '">' + h(CEC.DIED_L[c.how]) + '</span>' : '') +
+      (!c.entryId && c.how !== 'WARD' ? '<span class="tag nocen">Not in the census</span>' : '');
+  }
+  function diedFixBtn(c) { return !c.entryId && c.how !== 'WARD' ? '<button class="btn sm pri" data-act="dc-fix" data-id="' + h(c.id) + '">Count in the census</button>' : ''; }
   function certRowHtml(x) {
     if (x.kind === 'paper') {
       var p = x.p;
-      return '<div class="drow"><div class="pr-name">' + h(p.name) + ' <span class="muted">&middot; MR ' + h(p.mr) + '</span></div><div class="pr-sub"><span class="tag ppr">On paper</span>' + (p.paperNo ? 'No. ' + h(p.paperNo) + ' &middot; ' : '') +
+      return '<div class="drow"><div class="pr-name">' + h(p.name) + ' <span class="muted">&middot; MR ' + h(p.mr) + '</span></div><div class="pr-sub"><span class="tag ppr">On paper</span>' + diedTags(p) + (p.paperNo ? 'No. ' + h(p.paperNo) + ' &middot; ' : '') +
         'photo saved ' + h(fmtTime(p.at)) + (isAdmin() && p.by ? ' by ' + h(p.by) : '') + '</div>' +
-        '<div class="sbtns ico"><button class="btn sm" data-act="pp-view" data-id="' + h(p.id) + '">' + ICON.eye + ' View / download photo' + (p.hasCnic || p.hasRCnic ? 's' : '') + '</button>' +
+        '<div class="sbtns ico">' + diedFixBtn(p) + '<button class="btn sm" data-act="pp-view" data-id="' + h(p.id) + '">' + ICON.eye + ' View / download photo' + (p.hasCnic || p.hasRCnic ? 's' : '') + '</button>' +
         (isAdmin() ? '<button class="btn sm dan" data-act="pp-del" data-id="' + h(p.id) + '">Delete</button>' : '') + '</div></div>';
     }
     var c = x.c;
     return '<div class="drow"><div class="pr-name">' + h(c.name) + (c.mr ? ' <span class="muted">&middot; MR ' + h(c.mr) + '</span>' : '') + '</div>' +
-      '<div class="pr-sub"><span class="tag online">Online</span>' + (x.time ? h(x.time) + ' hrs &middot; ' : '') + (c.mr ? 'MR ' + h(c.mr) : '') + ' &middot; issued ' + h(c.issueDate || '') + (isAdmin() && c.issuedBy ? ' by ' + h(c.issuedBy) : '') + '</div>' +
-      '<div class="sbtns ico"><button class="btn sm" data-act="cert-pv" data-id="' + h(c.id) + '">' + ICON.eye + ' Preview</button><button class="btn sm" data-act="cert-printx" data-id="' + h(c.id) + '">' + ICON.print + ' Print</button>' +
+      '<div class="pr-sub"><span class="tag online">Online</span>' + diedTags(c) + (x.time ? h(x.time) + ' hrs &middot; ' : '') + (c.mr ? 'MR ' + h(c.mr) : '') + ' &middot; issued ' + h(c.issueDate || '') + (isAdmin() && c.issuedBy ? ' by ' + h(c.issuedBy) : '') + '</div>' +
+      '<div class="sbtns ico">' + diedFixBtn(c) + '<button class="btn sm" data-act="cert-pv" data-id="' + h(c.id) + '">' + ICON.eye + ' Preview</button><button class="btn sm" data-act="cert-printx" data-id="' + h(c.id) + '">' + ICON.print + ' Print</button>' +
       (canCertMake() ? '<button class="btn sm" data-act="cert-open" data-id="' + h(c.id) + '">' + ICON.pen + ' Edit</button>' : '') +
       '<button class="btn sm" data-act="cert-dl" data-id="' + h(c.id) + '">' + ICON.dl + ' Download</button></div></div>';
   }
@@ -8021,6 +8245,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
         : '<section class="card"><div class="ct">Death certificate written by hand</div><p class="muted small" style="margin:0 0 4px">Online certificates are made by the doctors. When the certificate is written by hand, upload a photo of it here (once for each patient). ' +
           'A blank certificate can be downloaded to fill by hand.</p>' +
           '<button class="btn pri block" data-act="pp-new">' + ICON.cam + ' Upload a certificate filled by hand (photo)</button><button class="btn block" data-act="blank-dc" style="margin-top:8px">' + ICON.dl + ' Blank certificate (to fill by hand)</button></section>') +
+      '<section class="card"><div class="ct">Death register</div><p class="muted small" style="margin:0">Every death of a day or of dates, with the certificate particulars: brought dead, expired in CEC and expired in ward. ' +
+        'A death still without a certificate shows PENDING.</p><div class="sbtns"><button class="btn sm pri" data-act="dr-go" data-v="dl">' + ICON.dl + ' Download</button><button class="btn sm" data-act="dr-go" data-v="pv">' + ICON.eye + ' Preview</button>' +
+        '<button class="btn sm" data-act="dr-go" data-v="print">' + ICON.print + ' Print</button></div></section>' +
       '<section class="card"><div class="ct">Death certificates (' + list.length + ')</div><p class="muted small" style="margin:0">Newest first, by the date and time of death. Online and paper certificates together.</p>' +
       (groups.length ? groups.slice(0, 120).map(function (g) {
         return '<div class="gh2">' + (g.date ? h(CEC.weekday(g.date) + ', ' + CEC.dmy(g.date)) : 'Date not written') + ' (' + g.items.length + ')</div><div class="plist">' + g.items.map(certRowHtml).join('') + '</div>';
@@ -8991,14 +9218,34 @@ if (typeof module !== 'undefined') module.exports = CEC;
       echoPut(r, print);
     });
   }
+  /* 20-11-2026 (V2.9): every echo patient is counted in the census. A new report whose MR No. is not in the census asks where the patient is counted. */
+  function echoWhere(r) {
+    if (r.id || r.entryId || !r.mr || r.acct || isOff()) return Promise.resolve(r);
+    return api('apiMrFind', r.mr).then(function (f) {
+      if (f.found) return r;
+      return modal('Where is this patient counted?', '<p>MR No. <b>' + h(r.mr) + '</b> (' + h(r.name || '') + ') is not in the census. Every patient is counted once.</p>' +
+        '<label class="lb" for="ewWhy">If not a CEC patient, why</label><select class="in" id="ewWhy"><option value="WARD PATIENT">A ward patient</option><option value="ANOTHER HOSPITAL">From another hospital</option>' +
+        '<option value="PRIVATE / STAFF">Private or staff</option><option value="OTHER">Other</option></select>',
+        [{ label: 'Back', value: null }, { label: 'Not a CEC patient', value: 'form:no' }, { label: 'Add to the census (Echo)', cls: 'pri', value: 'form:add' }], true).then(function (v) {
+        if (!v) return null;
+        if (v._b === 'add') { if (!r.sex) { toast('Choose the gender first: the census needs it.'); return null; } return Object.assign(r, { acct: 'add' }); }
+        return Object.assign(r, { acct: 'skip', acctWhy: v.ewWhy });
+      });
+    }, function () { return r; });
+  }
   function echoPut(r, print) {                        // the report sent to the census (17-11-2026: also from "Check and save")
+    if (!S.ef) return;
+    echoBusy(true);
+    echoWhere(r).then(function (r2) { echoBusy(false); if (r2 && S.ef) echoPut2(r2, print); });
+  }
+  function echoPut2(r, print) {
     if (!S.ef) return;
     (function () {
       if (r.tech) store_('cec_echotech', r.tech);
       toast('Saving…'); echoBusy(true);
       api('apiEchoSave', JSON.stringify(r)).then(function (saved) {
         echoBusy(false);
-        toast('Echo report saved (' + (saved.rs === 'F' ? 'final' : 'provisional') + '): ' + saved.name); closeEcho();
+        toast('Echo report saved (' + (saved.rs === 'F' ? 'final' : 'provisional') + '): ' + saved.name + (saved.acct === 'added' ? '; added to the census (Echo)' : saved.acct === 'attached' ? '; attached to the census record' : saved.acct === 'skipped' ? '; marked not a CEC patient' : '')); closeEcho();
         if (S.echo && S.echo.list) { var l = S.echo.list, i = l.map(function (x) { return x.id; }).indexOf(saved.id), row = { id: saved.id, date: saved.date, name: saved.name, mr: saved.mr, age: saved.age, sex: saved.sex, ref: saved.ref, apptId: saved.apptId, entryId: saved.entryId, at: saved.at };
           row.rs = saved.rs;
           if (i >= 0) l[i] = row; else l.unshift(row); l.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : (a.at || '') < (b.at || '') ? 1 : -1; }); }
@@ -9346,13 +9593,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function nowHm() { return CEC.hm(new Date().toISOString()); }
   function certFromEntry(e, sh) {
     var bd = e.cat === 'BD';
-    return { entryId: e.id, shiftId: sh ? sh.id : '', mr: e.mr, name: e.name, age: e.age !== '' && e.age != null ? e.age + ' years' : '', sex: e.sex,
+    return { entryId: e.id, shiftId: sh ? sh.id : '', mr: e.mr, name: e.name, age: e.age !== '' && e.age != null ? e.age + ' years' : '', sex: e.sex, how: bd || e.out === 'BD' ? 'BD' : 'EXP',
       arrDate: CEC.dmy(CEC.ymd(new Date(e.t))), arrTime: '', status: bd ? 'Brought dead' : '',
       exam: bd ? CEC.EXAMS.map(function (x) { return x.c; }) : [], deathTime: '', deathDate: todayDmy(), doctor: S.me.role === 'doctor' ? S.me.name : '', issueDate: todayDmy() };
   }
   function openCert(c) {
     c = c || { issueDate: todayDmy(), deathDate: todayDmy(), deathTime: '', doctor: S.me.role === 'doctor' ? S.me.name : '', exam: [] };
-    S.cert = { data: c, sex: c.sex || '', so: c.so || '', rSo: c.rSo || '' };
+    S.cert = { data: c, sex: c.sex || '', so: c.so || '', rSo: c.rSo || '', how: c.how || '' };
     function inp(id, label, val, attrs) { return '<label class="lb" for="' + id + '">' + label + '</label><input class="in" id="' + id + '" value="' + h(val || '') + '" ' + (attrs || '') + '>'; }
     function two(a, b) { return '<div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div>' + a + '</div><div>' + b + '</div></div>'; }
     var foot = '<button class="btn" data-act="cert-pvf">' + ICON.eye + ' Preview</button>' + (c.id ? '<button class="btn" data-act="cert-print">Print</button><button class="btn pri" data-act="cert-save">Save changes</button>'
@@ -9363,12 +9610,17 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<div class="sh-body"><form novalidate autocomplete="off">' +
       '<p class="muted small fnote">' + (c.id ? 'Saved certificate. ' : 'Saving keeps these details in the system. ') + 'Fields marked <span class="req">*</span> are needed to save or print.</p>' +
       inp('cIssue', 'Date of issue', dmyToIso(c.issueDate), 'type="date"') +
+      /* 20-11-2026 (V2.9): how the patient died; one MR No., one certificate; a CEC death is counted in the census */
+      (c.entryId ? '<div class="kv small" style="margin:8px 0 0"><b>' + h(CEC.DIED_L[c.how] || 'Death') + '</b> &middot; in the census (MR ' + h(c.mr || '') + ')</div>'
+        : '<label class="lb">How the patient died <span class="req">*</span></label><div class="seg" id="cHow">' + [['BD', 'Brought dead'], ['EXP', 'Expired in CEC'], ['WARD', 'Expired in ward']].map(function (x) {
+          return '<button type="button" data-act="c-how" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+          '<p class="muted small" style="margin:4px 0 0">Brought dead and Expired in CEC are counted in the census (added if not there yet). Expired in ward is listed in the Death register only.</p>') +
       '<div class="fsec">Patient particulars</div>' + inp('cName', 'Name <span class="req">*</span>', c.name, 'autocapitalize="words"') +
       sowoHtml('c', c.so, c.soName) +
       two(inp('cDob', 'Date of birth <span class="req">*</span>', dmyToIso(c.dob), 'type="date"'), inp('cAge', 'Age <span class="muted">(fills itself from the date of birth)</span>', c.age, 'placeholder="e.g. 70 years"')) +
       '<label class="lb">Gender</label><div class="seg" id="cSex">' +
         [['M', 'Male'], ['F', 'Female']].map(function (g) { return '<button type="button" data-act="c-sex" data-v="' + g[0] + '">' + g[1] + '</button>'; }).join('') + '</div>' +
-      two(inp('cMr', 'MR No.' + (c.entryId ? ' <span class="muted">(from the patient entry)</span>' : ''), c.mr, c.entryId ? 'readonly' : ''),
+      two(inp('cMr', 'MR No.' + (c.entryId ? ' <span class="muted">(from the patient entry)</span>' : ' <span class="req">*</span>'), c.mr, c.entryId ? 'readonly' : 'autocapitalize="characters"'),
         inp('cCnic', 'CNIC / B-form No. <span class="req">*</span>', fmtCnic(c.cnic), CNIC_ATTR)) +
       inp('cAddr', 'Address', c.address) +
       '<div class="fsec">Clinical assessment</div>' +
@@ -9389,7 +9641,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<div id="cErr"></div></form></div><div class="sh-foot">' + foot + '</div>';
     el.classList.remove('hidden');
     document.body.style.overflow = 'hidden'; overlayOpened();
-    setOn('cSex', S.cert.sex);
+    setOn('cSex', S.cert.sex); setOn('cHow', S.cert.how);
     if (!S.cert.so && S.cert.sex === 'M') S.cert.so = 'S/O';
     setOn('cSo', S.cert.so); setOn('cRSo', S.cert.rSo);
   }
@@ -9459,6 +9711,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     c.deathTime = v('cDTime'); c.deathDate = isoToDmy(v('cDDate')); c.doctor = v('cDoc'); c.paramedics = v('cPara');
     c.rName = v('cRName'); c.rCnic = v('cRCnic'); c.rRel = v('cRRel'); c.rCell = v('cRCell'); c.rAddress = v('cRAddr');
     c.so = S.cert.so || ''; c.soName = v('cSoName'); c.rSo = S.cert.rSo || ''; c.rSoName = v('cRSoName'); c.dob = isoToDmy(v('cDob'));
+    c.how = S.cert.how || c.how || ''; c.mr = String(c.mr || '').toUpperCase().replace(/\s+/g, '');
     ['name', 'mr', 'address', 'status', 'comments', 'doctor', 'paramedics', 'rName', 'rRel', 'rAddress', 'soName', 'rSoName'].forEach(function (k) { c[k] = up(c[k]); });
     return c;
   }
@@ -9510,16 +9763,108 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function certSave(print) {
     var c = readCert();
     if (!certTimesOk(c) || !certNeededOk(c)) return;
-    certMissingOk(c).then(function (ok) { if (ok) certSend(c, print); });
+    certMissingOk(c).then(function (ok) {
+      if (!ok) return;
+      deathAsk(c).then(function (x) { if (x) certSend(Object.assign(c, x), print); }, function (e) { $('cErr').innerHTML = '<div class="err">' + h(errText(e)) + '</div>'; $('cErr').scrollIntoView({ block: 'nearest' }); });
+    });
   }
   function certSend(c, print) {
     toast('Saving\u2026');
     api('apiSaveCert', JSON.stringify(c)).then(function (saved) {
-      toast('Certificate saved' + (saved.mr ? ' (MR ' + saved.mr + ')' : '')); closeCert();
+      toast('Certificate saved' + (saved.mr ? ' (MR ' + saved.mr + ')' : '') + deathToast(saved.link)); closeCert();
       if (S.certs) { var ci = S.certs.map(function (x) { return x.id; }).indexOf(saved.id); if (ci >= 0) S.certs[ci] = saved; else S.certs.unshift(saved); S.pend = (S.pend || []).filter(function (x) { return x.id !== saved.entryId; }); S.pendCerts = S.pend.length; loadCerts(true); }
       if (S.view === 'certs') render();
       if (print) certPrintNow(saved);
     }, function (e) { $('cErr').innerHTML = '<div class="err">' + h(errText(e)) + '</div>'; });
+  }
+  /* ---------- 20-11-2026 (V2.9): one MR No., one certificate; a death in the CEC is counted in the census. Asked before saving:
+     not in the census -> added; in the census but not marked dead -> marked (asked); another name on that MR No. -> asked. ---------- */
+  function deathWho(e) {
+    return h(e.name) + ' (' + (e.age !== '' && e.age != null ? h(e.age) + ' y, ' : '') + (e.sex === 'F' ? 'female, ' : e.sex === 'M' ? 'male, ' : '') + h(CEC.label(CEC.CATS, e.cat)) +
+      ', ' + h(CEC.shiftName(e.shift)) + ' shift ' + h(CEC.dmy(e.censusDate)) + ')';
+  }
+  function deathAsk(d) {
+    if (d.entryId) return Promise.resolve({});
+    if (!d.how) return Promise.reject(new Error('Choose how the patient died: Brought dead, Expired in CEC or Expired in ward.'));
+    if (!d.mr) return Promise.reject(new Error('Enter the MR No. (one MR No., one certificate).'));
+    if (isOff()) return Promise.reject(new Error('Saving a certificate needs internet.'));
+    return api('apiDeathCheck', JSON.stringify({ id: d.id || '', mr: d.mr, name: d.name, how: d.how })).then(function (r) {
+      var how = '<b>' + h(CEC.DIED_L[d.how] || '') + '</b>';
+      if (r.state === 'hasCert') throw new Error('MR No. ' + r.mr + ' already has a death certificate (' + (r.cert.kind === 'paper' ? 'on paper' : 'online') + (r.cert.name ? ', ' + r.cert.name : '') + '). One MR No. has one certificate.');
+      if (r.state === 'noMr') throw new Error('Enter the MR No.');
+      if (r.state === 'ward') return {};
+      if (r.state === 'none') {
+        var arr = d.arrDate && d.arrTime ? d.arrDate + ' ' + d.arrTime : d.deathDate && d.deathTime ? d.deathDate + ' ' + d.deathTime : '';
+        if (!d.sex) throw new Error('Choose the gender: MR No. ' + r.mr + ' is not in the census yet and the census needs it.');
+        if (!arr) throw new Error('Enter the date and time brought to the CEC: MR No. ' + r.mr + ' is not in the census yet, and they decide its shift.');
+        return modal('Add to the census?', '<p>MR No. <b>' + h(r.mr) + '</b> is not in the census. To keep every patient counted, it will be added as ' + how +
+          ' in the shift of <b>' + h(arr) + '</b> (brought to the CEC), then the certificate is saved.</p>',
+          [{ label: 'Back', value: null }, { label: 'Add to census and save', cls: 'pri', value: {} }]);
+      }
+      var e = r.entry, nameNote = r.sameName ? '' : '<p class="warn" style="margin:8px 0 0">The names differ: the census says <b>' + h(e.name) + '</b>, the certificate <b>' + h(up(d.name || '')) + '</b>. Go on only if it is the same patient.</p>';
+      if (r.state === 'dead') {
+        if (r.sameName) return {};
+        return modal('The same patient?', '<p>MR No. <b>' + h(r.mr) + '</b> in the census is ' + deathWho(e) + '.</p>' + nameNote,
+          [{ label: 'No, check the MR No.', value: null }, { label: 'Yes, the same patient', cls: 'pri', value: { same: true } }]);
+      }
+      return modal('Mark as dead in the census?', '<p>MR No. <b>' + h(r.mr) + '</b> is in the census as ' + deathWho(e) + ', not marked as dead.</p><p>Mark the patient ' + how +
+        ' there and attach this certificate (no second entry is made)?</p>' + nameNote,
+        [{ label: 'Back', value: null }, { label: 'Mark and save', cls: 'pri', value: { mark: true, same: true } }]);
+    });
+  }
+  function deathToast(l) {
+    if (!l) return '';
+    if (l.added) return '; added to the census (' + (CEC.DIED_L[l.how] || '') + ', ' + CEC.shiftName(l.shift) + ' shift ' + CEC.dmy(l.censusDate) + ')';
+    if (l.marked) return '; marked ' + (CEC.DIED_L[l.how] || '') + ' in the census';
+    if (l.how === 'WARD') return '; expired in ward (Death register only)';
+    return l.entryId ? '; attached to the census record' : '';
+  }
+  /* a certificate saved earlier with no census record (from the certificate list or the Accounting check) */
+  function deathFix(it) {
+    var stt = it.state || 'none', sel = function (id, list, cur) { return '<select class="in" id="' + id + '">' + list.map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === cur ? ' selected' : '') + '>' + h(x[1]) + '</option>'; }).join('') + '</select>'; };
+    var body = '<p class="small" style="margin:0 0 6px"><b>' + h(it.name || '') + '</b> &middot; MR ' + h(it.mr || '-') + ' &middot; ' + (it.kind === 'paper' ? 'paper certificate' : 'online certificate') + '</p>' +
+      '<label class="lb" for="fxHow">How the patient died</label>' + sel('fxHow', [['', 'Choose'], ['BD', 'Brought dead'], ['EXP', 'Expired in CEC'], ['WARD', 'Expired in ward (not in the census)']], it.how || '') +
+      (stt === 'none' ? '<div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><label class="lb" for="fxSex">Gender</label>' + sel('fxSex', [['', 'Choose'], ['M', 'Male'], ['F', 'Female']], it.sex || '') + '</div>' +
+        '<div><label class="lb" for="fxAge">Age (years)</label><input class="in" id="fxAge" inputmode="numeric" value="' + h(String(it.age || '').replace(/\s*years?$/i, '')) + '"></div></div>' +
+        '<div class="row2" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><label class="lb" for="fxDate">Brought to CEC on</label><input class="in" type="date" id="fxDate" value="' + h(it.arrDate || it.deathDate || '') + '"></div>' +
+        '<div><label class="lb" for="fxTime">at (hrs)</label><input class="in" id="fxTime" ' + TIME_ATTR + ' value="' + h(it.arrTime || it.deathTime || '') + '"></div></div>' +
+        '<p class="muted small" style="margin:6px 0 0">The date and time decide the census shift.</p>' : '');
+    return modal('Count this death in the census', body, [{ label: 'Cancel', value: null }, { label: 'Save', cls: 'pri', value: 'form' }]).then(function (v) {
+      if (!v) return null;
+      var d = { id: it.id, kind: it.kind, mr: it.mr, name: it.name, how: v.fxHow, sex: v.fxSex || it.sex || '', age: v.fxAge || '', arrDate: v.fxDate ? CEC.dmy(v.fxDate) : '', arrTime: v.fxTime || '' };
+      if (!d.how) { toast('Choose how the patient died.'); return null; }
+      return deathAsk(d).then(function (x) {
+        if (!x) return null;
+        return api('apiDeathFix', JSON.stringify(Object.assign(d, x))).then(function (l) { toast('Saved' + deathToast(l)); return l; });
+      });
+    }).then(null, function (e) { toast(errText(e)); return null; });
+  }
+  /* 20-11-2026 (V2.9): Death register: the period, then the file */
+  function drGo(mode) {
+    var L = store_('cec_dr') || {}, today = CEC.ymd(new Date()), span = L.span || 'today';
+    var opt = function (v, t) { return '<option value="' + v + '"' + (v === span ? ' selected' : '') + '>' + t + '</option>'; };
+    var body = '<label class="lbl">Period</label><select class="in" id="drSpan">' + opt('today', 'Today') + opt('date', 'One date') + opt('range', 'From one date to another') + opt('month', 'This month') + '</select>' +
+      '<div class="dtbar"><input class="in" type="date" id="drFrom" max="' + today + '" value="' + h(L.from || today) + '"> <span>to</span> <input class="in" type="date" id="drTo" max="' + today + '" value="' + h(L.to || today) + '"></div>' +
+      '<p class="muted small" style="margin:4px 0 0">One date: the first date only. The register is in order of the date of death, with one heading for each day.</p>';
+    var lab = mode === 'dl' ? 'Download' : mode === 'print' ? 'Print' : 'Preview';
+    modal('Death register: ' + lab.toLowerCase(), body, [{ label: 'Cancel', value: null }, { label: lab, cls: 'pri', value: 'form' }]).then(function (v) {
+      if (!v) return;
+      var sp = v.drSpan, from = sp === 'today' ? today : sp === 'month' ? today.slice(0, 8) + '01' : v.drFrom, to = sp === 'range' ? v.drTo : sp === 'date' ? v.drFrom : today;
+      store_('cec_dr', { span: sp, from: v.drFrom, to: v.drTo });
+      if (!from || !to) return toast('Choose the date' + (sp === 'range' ? 's' : '') + '.');
+      if (from > to) return toast('The first date is after the second. Change them.');
+      if (isOff()) return toast('The Death register needs internet.');
+      toast('Preparing the Death register\u2026');
+      api('apiDeathRegister', JSON.stringify({ from: from, to: to })).then(function (r) {
+        var spec = CEC.deathRegSpec(r);
+        if (!spec.n) return toast('No deaths in these dates.');
+        var name = 'CEC_Death_register_' + (from === to ? CEC.dmy(from) : CEC.dmy(from) + '_to_' + CEC.dmy(to)) + '.pdf';
+        var pr = function () { printDoc('listPdf', [spec], 'death register'); }, dl = function () { offerFile(name, CEC.listPdf(spec, logoBytes()), 'application/pdf', false); };
+        if (mode === 'dl') return dl();
+        if (mode === 'print') return pr();
+        previewDoc('listPdf', [spec], spec.title, pr, dl);
+      }, function (e) { toast(errText(e)); });
+    });
   }
   function certFromPatient() {
     var sh = targetShift(), e = sh.entries.filter(function (x) { return x.id === S.form.editId; })[0];
@@ -9670,6 +10015,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     ecg: '<path d="M2 12h3l2-6 3 12 3-9 2 3h7"/>', rbs: '<path d="M12 3c-3.5 4.6-6 8-6 11a6 6 0 0 0 12 0c0-3-2.5-6.4-6-11z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/>',
     bd: '<path d="M12 3v18M7 8h10"/><path d="M5 21h14"/>', erx: '<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/>',
     dt: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/><path d="M15 15l4 4M19 15l-4 4"/>',
+    acct: '<path d="M9 11l2 2 4-4"/><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 17h8"/>',
     apg: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>', ereg: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/><path d="M19 3v6M16 6h6"/>',
     ewait: '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c1-3.5 3.5-5 6-5s5 1.5 6 5"/><path d="M16 7h5M16 11h5M16 15h3"/>', enew: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M12 11v6M9 14h6"/>'
   };
@@ -9688,7 +10034,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
       { k: 'dt', act: 'go', v: 'dt', i: TSV.dt, l: 'Down-time forms', s: 'Blank forms when the census is down; enter them back', ok: canEnter() || isEchoId() },
       { k: 'dash', act: 'go', v: 'shift', i: NAV_ICON.shift, l: 'Patient dashboard', s: 'The patients of the shift', ok: !isEchoId() && !!S.me },
       { k: 'lists', act: 'go', v: 'lists', i: NAV_ICON.lists, l: 'List builder', s: 'Your own lists: columns, presets, Excel', ok: canClin() },
-      { k: 'census', act: 'go', v: 'census', i: NAV_ICON.census, l: 'Census letters', s: 'Shift, 24-hour, monthly and annual letters', ok: canClin() },
+      { k: 'census', act: 'go', v: 'census', i: NAV_ICON.census, l: 'Census letters', s: 'Shift, 24-hour (or till now), monthly and annual letters', ok: canClin() },
+      { k: 'acct', act: 'go', v: 'acct', i: TSV.acct, l: 'Accounting check', s: S.acctN ? S.acctN + ' not accounted for' : 'Every patient counted in the census', ok: canAcct(), count: S.acctN, blink: !!S.acctN },
       { k: 'certs', act: 'go', v: 'certs', i: NAV_ICON.certs, l: 'Death certificate', s: S.pendCerts ? S.pendCerts + ' waiting' : 'Make, find and print', ok: canCert(), count: S.pendCerts },
       { k: 'forms', act: 'go', v: 'forms', i: NAV_ICON.forms, l: 'Download forms', s: 'Paper forms to print', ok: canClin() || isPrintId() },
       { k: 'tmpdoc', act: 'go', v: 'tmpdoc', i: NAV_ICON.tmpdoc, l: 'Print a document', s: 'A PDF or photo, kept 1 hour', ok: canTmp() },
@@ -9705,7 +10052,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       { k: 'settings', act: 'go', v: 'settings', i: NAV_ICON.settings, l: isAdmin() ? 'Account & admin' : 'Account', s: 'Password, email' + (isAdmin() ? ', users' : ''), ok: !!S.me }
     ];
   }
-  var TILE_STD = ['slipgen', 'mrreg', 'vit', 'ecg', 'bd', 'erx', 'petty', 'slip', 'rbs'];
+  var TILE_STD = ['slipgen', 'mrreg', 'vit', 'ecg', 'bd', 'erx', 'petty', 'slip', 'rbs', 'acct'];
   var TILE_STD_ECHO = ['ap-echo', 'echo-reg', 'echo-wait', 'echo-new', 'echo-list'];
   function myTiles() {          // a change made here wins for a minute over a state that was already on its way from the server
     if (S.tLoc && Date.now() - S.tLoc.at < 60000) return S.tLoc.k;
@@ -9768,7 +10115,96 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (isEchoId()) { if (!S.echo && !S.echoBusy) setTimeout(loadEcho, 0); return '<div class="home1">' + endNoticeHtml() + tilesHtml() + '</div>'; }   // 15-11-2026: no patient dashboard
     var noDash = !isAdmin() && S.me && (S.me.role === 'doctor' || S.me.role === 'nurse' || S.me.role === 'student');
     var doctor = canEdit() || isAdmin(), dash = noDash ? '' : dashCardHtml(), tiles = tilesHtml();
-    return '<div class="home1">' + (isAdmin() ? verWarn() : '') + endNoticeHtml() + (doctor ? dash + tiles : tiles + dash) + pendAlertHtml() + '</div>';
+    return '<div class="home1">' + (isAdmin() ? verWarn() : '') + endNoticeHtml() + acctPrevHtml() + (doctor ? dash + tiles : tiles + dash) + pendAlertHtml() + '</div>';
+  }
+  /* ---------- 20-11-2026 (V2.9): Accounting check. Every patient is counted in the census: certificates with no census record, MR Nos. with
+     two certificates, deaths without a certificate, numbers missing from the register, echo reports with no census record, patients of
+     ended shifts still awaiting the doctor. Each with a fix. After a shift ends, its own check shows on Home for 2 hours. ---------- */
+  function canAcct() { return !!(S.me && (S.me.canEdit || S.me.admin) && !isEchoId()); }
+  function acctCount(items) { return (items || []).reduce(function (a, it) { return a + (it.type === 'gap' || it.type === 'wait' ? it.n : 1); }, 0); }
+  function loadAcct() {
+    if (S.acctBusy) return;
+    S.acctBusy = true;
+    api('apiAccounts', '{}').then(function (r) { S.acctBusy = false; S.acct = r; S.acctN = acctCount(r.items); if ((S.view === 'acct' || S.view === 'home') && !anyOverlay()) render(); },
+      function (e) { S.acctBusy = false; S.acct = { err: errText(e) }; if (S.view === 'acct') render(); });
+  }
+  function acctPrevHtml() {
+    if (!canAcct() || !S.prevShift || isOff()) return '';
+    var P = S.acctPrev;
+    if (!P || P.id !== S.prevShift.id) {
+      if (!S.acctPrevBusy) { S.acctPrevBusy = true; var sid = S.prevShift.id;
+        api('apiAccounts', JSON.stringify({ shiftId: sid })).then(function (r) { S.acctPrevBusy = false; S.acctPrev = { id: sid, items: r.items || [] }; if (S.view === 'home' && !anyOverlay()) render(); }, function () { S.acctPrevBusy = false; S.acctPrev = { id: sid, items: [] }; }); }
+      return '';
+    }
+    var n = acctCount(P.items);
+    if (!n) return '';
+    var by = {}; P.items.forEach(function (it) { by[it.type] = (by[it.type] || 0) + (it.type === 'gap' || it.type === 'wait' ? it.n : 1); });
+    var parts = [['wait', 'awaiting the doctor (no outcome)'], ['gap', 'numbers missing from the register'], ['nocert', 'deaths without a certificate'], ['cert', 'certificates not in the census'], ['dup', 'MR Nos. with two certificates']]
+      .filter(function (x) { return by[x[0]]; }).map(function (x) { return '<b>' + by[x[0]] + '</b> ' + x[1]; });
+    return '<section class="card pendc"><div class="ct" style="color:var(--red)">' + h(CEC.shiftName(S.prevShift.shift)) + ' shift ' + h(CEC.dmy(S.prevShift.censusDate)) + ': ' + n + ' not accounted for</div>' +
+      '<p class="small" style="margin:0 0 6px">Where is each patient counted? ' + parts.join(', ') + '.</p><button class="btn sm pri" data-act="go" data-v="acct">Open the Accounting check</button></section>';
+  }
+  function acctHtml() {
+    var A = S.acct;
+    if (!A) { setTimeout(loadAcct, 0); return '<section class="card center muted"><span class="spin"></span>Checking every patient&hellip;</section>'; }
+    if (A.err) return '<section class="card"><p>' + h(A.err) + '</p><button class="btn sm" data-act="acct-load">Try again</button></section>';
+    var items = A.items || [], g = {};
+    items.forEach(function (it) { (g[it.type] = g[it.type] || []).push(it); });
+    var n = acctCount(items), sec = function (k, title, help, rows) {
+      var L = g[k] || [];
+      if (!L.length) return '';
+      var cnt = k === 'gap' || k === 'wait' ? L.reduce(function (a, x) { return a + x.n; }, 0) : L.length;
+      return '<section class="card acc-sec"><div class="ct">' + title + '<span class="acc-n">' + cnt + '</span></div><p class="muted small" style="margin:0 0 4px">' + help + '</p>' + L.map(rows).join('') + '</section>';
+    };
+    var who = function (e) { return e ? h(e.name) + ' &middot; MR ' + h(e.mr || '-') + ' &middot; ' + h(CEC.label(CEC.CATS, e.cat)) + ', ' + h(CEC.shiftName(e.shift)) + ' shift ' + h(CEC.dmy(e.censusDate)) : ''; };
+    var st = { dead: 'In the census as a death: attach it.', alive: 'In the census, not marked as dead: mark it and attach.', none: 'Not in the census: add the patient.', hasCert: 'Another certificate has this MR No. (see below).', noMr: 'No MR No. on the certificate: edit it and give the MR No.' };
+    var html = '<div class="narrow"><section class="card"><div class="ct">Accounting check</div><p class="small" style="margin:0">Every patient must be counted in the census, once. ' +
+      (n ? 'These <b>' + n + '</b> are not accounted for yet' : '<span class="acc-ok">&#10003; Everything is accounted for</span>') + ' (the last ' + (A.days || 31) + ' days; certificates: all).</p>' +
+      '<div class="sbtns"><button class="btn sm" data-act="acct-load">&#8635; Check again</button></div></section>';
+    html += sec('cert', 'Certificates not counted in the census', 'A death certificate whose patient is not in the census. One tap counts it (or mark it Expired in ward, which is not in the census).', function (it) {
+      return '<div class="acc-row"><b>' + h(it.name) + '</b> &middot; MR ' + h(it.mr || '-') + ' &middot; ' + (it.kind === 'paper' ? 'on paper' : 'online') + (it.how ? ' &middot; ' + h(CEC.DIED_L[it.how]) : '') +
+        '<div class="muted small">' + h(st[it.state] || '') + (it.entry ? ' ' + who(it.entry) : '') + '</div>' +
+        (it.state === 'hasCert' || it.state === 'noMr' ? '' : '<div class="sbtns"><button class="btn sm pri" data-act="acct-cert" data-id="' + h(it.id) + '">Count in the census</button></div>') + '</div>';
+    });
+    html += sec('dup', 'One MR No. with two certificates', 'One MR No. has one certificate. The admin keeps the right one and deletes the other (Death certificate page).', function (it) {
+      return '<div class="acc-row"><b>MR ' + h(it.mr) + '</b><div class="muted small">' + it.certs.map(function (c) { return h(c.name) + ' (' + (c.kind === 'paper' ? 'on paper' : 'online') + ')'; }).join(' and ') + '</div>' +
+        '<div class="sbtns"><button class="btn sm" data-act="go" data-v="certs">Open Death certificates</button></div></div>';
+    });
+    html += sec('nocert', 'Deaths without a certificate', 'Brought dead or expired in the CEC, with no certificate yet.', function (it) {
+      return '<div class="acc-row">' + who(it.entry) + '<div class="sbtns"><button class="btn sm" data-act="go" data-v="certs">Make or upload the certificate</button></div></div>';
+    });
+    html += sec('gap', 'Numbers missing from the register', 'Numbers between two patients of the census that no patient has. Enter the patients (Down-time forms), or mark the numbers not used.', function (it, i) {
+      var nums = it.nums.length > 1 ? it.nums[0] + ' to ' + it.nums[it.nums.length - 1] : it.nums[0];
+      return '<div class="acc-row"><b>' + (it.reg === 'opd' ? 'OPD' : 'MR') + ' ' + h(nums) + '</b> (' + it.n + ' number' + (it.n === 1 ? '' : 's') + ')' +
+        '<div class="muted small">Between ' + h(it.after.no) + ' (' + h(CEC.shiftName(it.after.shift)) + ' ' + h(CEC.dmy(it.after.censusDate)) + ') and ' + h(it.before.no) + ' (' + h(CEC.shiftName(it.before.shift)) + ' ' + h(CEC.dmy(it.before.censusDate)) + ')' +
+        (it.n > it.nums.length ? '; the first ' + it.nums.length + ' are listed: ' : ': ') + h(it.nums.join(', ')) + '</div>' +
+        '<div class="sbtns"><button class="btn sm pri" data-act="acct-gapdt" data-v="' + (g.gap || []).indexOf(it) + '">Enter on Down-time forms</button><button class="btn sm" data-act="acct-gapno" data-v="' + (g.gap || []).indexOf(it) + '">Not used</button></div></div>';
+    });
+    html += sec('echo', 'Echo reports not in the census', 'An echo report whose patient is not in the census.', function (it) {
+      return '<div class="acc-row"><b>' + h(it.name) + '</b> &middot; ' + (it.mr ? 'MR ' + h(it.mr) : 'no MR No.') + ' &middot; echo ' + h(CEC.dmy(it.date)) +
+        (it.entry ? '<div class="muted small">In the census: ' + who(it.entry) + '</div>' : '') + '<div class="sbtns">' +
+        (it.state === 'attach' ? '<button class="btn sm pri" data-act="acct-echo" data-v="attach" data-id="' + h(it.id) + '">Attach to the census record</button>'
+          : it.state === 'none' ? '<button class="btn sm pri" data-act="acct-echo" data-v="add" data-id="' + h(it.id) + '">Add to the census (Echo)</button>'
+          : '<button class="btn sm pri" data-act="acct-echomr" data-id="' + h(it.id) + '">Give the MR No.</button>') +
+        '<button class="btn sm" data-act="acct-echono" data-id="' + h(it.id) + '">Not a CEC patient</button></div></div>';
+    });
+    html += sec('wait', 'Patients still awaiting the doctor', 'Patients of ended shifts with no outcome. The doctor records the outcome (the admin can sign off many together: Bulk sign-off).', function (it) {
+      return '<div class="acc-row"><b>' + h(CEC.shiftName(it.shift)) + ' shift ' + h(CEC.dmy(it.censusDate)) + '</b>: ' + it.n + ' patient' + (it.n === 1 ? '' : 's') +
+        '<div class="muted small">' + it.names.map(function (x) { return h(x.name) + ' (' + (x.opd ? 'OPD ' : 'MR ') + h(x.mr || '-') + ')'; }).join(', ') + (it.n > it.names.length ? ' and ' + (it.n - it.names.length) + ' more' : '') + '</div>' +
+        '<div class="sbtns"><button class="btn sm" data-act="acct-shift" data-id="' + h(it.shiftId) + '" data-v="' + h(it.censusDate) + '">Open the shift</button></div></div>';
+    });
+    return html + '</div>';
+  }
+  function acctGapNo(it) {
+    var R = [['CANCELLED (NOT GIVEN)', 'Cancelled, not given to a patient'], ['GIVEN TO ANOTHER DEPARTMENT', 'Given to another department'], ['WRITTEN WRONGLY', 'Written wrongly, corrected'], ['OTHER', 'Other (write below)']];
+    modal('Not used: ' + (it.reg === 'opd' ? 'OPD' : 'MR') + ' ' + it.nums[0] + (it.nums.length > 1 ? ' to ' + it.nums[it.nums.length - 1] : ''), '<label class="lb" for="gnWhy">Why</label><select class="in" id="gnWhy">' +
+      R.map(function (x) { return '<option value="' + x[0] + '">' + h(x[1]) + '</option>'; }).join('') + '</select><label class="lb" for="gnTxt">Note <span class="muted">(optional)</span></label><input class="in" id="gnTxt">',
+      [{ label: 'Cancel', value: null }, { label: 'Mark not used', cls: 'pri', value: 'form' }]).then(function (v) {
+      if (!v) return;
+      var why = v.gnWhy === 'OTHER' ? v.gnTxt.trim() : v.gnWhy + (v.gnTxt.trim() ? ': ' + v.gnTxt.trim() : '');
+      if (!why) return toast('Write why.');
+      api('apiAcctMark', JSON.stringify({ keys: it.nums.map(function (x) { return 'gap:' + it.reg + ':' + String(x).toUpperCase(); }), why: why })).then(function () { toast('Marked not used'); S.acct = null; S.acctPrev = null; render(); }, function (e) { toast(errText(e)); });
+    });
   }
   /* A week before the 3-month account period ends. */
   function endNoticeHtml() {
@@ -10439,7 +10875,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'bulk-go': {
         var bl = (S.bulk && S.bulk.list) || [];
         if (!bl.length) break;
-        confirmBox('Sign off ' + bl.length + ' OPD patients?', 'Each gets the diagnosis shown, with outcome Sent home (Planned for cardiac follow-up for chronic conditions). You can undo this later.', 'Sign off', false).then(function (ok) {
+        confirmBox('Sign off ' + bl.length + ' OPD patients?', 'Each gets the diagnosis shown, with outcome Sent home. You can undo this later.', 'Sign off', false).then(function (ok) {
           if (!ok) return;
           var ids = bl.map(function (x) { return x.id; }), done = 0, signed = 0, CH = 400;     // 12-11-2026: in parts of 400, so a long list finishes
           (function next() {
@@ -10548,6 +10984,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         else if (v === 'shift') { setView('shift'); refresh(true); }
         else if (v === 'forms') { setView('forms'); if (S.docs) loadForms(true); }      // the page shows at once; the list is checked again in the background
         else if (v === 'certs') { setView('certs'); if (S.certs) loadCerts(true); }
+        else if (v === 'acct') { setView('acct'); if (S.acct) { S.acct = null; render(); } }        // 20-11-2026 (V2.9): checked again each time
         else if (v === 'bulk') { S.bulk = null; setView('bulk'); }
         else if (v === 'appt') { S.ap.type = null; S.ap.step = ''; setView('appt'); }
         else if (v === 'home') { S.welAt = 0; setView('home'); refresh(true); }
@@ -10744,7 +11181,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
         if (S.view === 'letter') {
           var to = S.prev || 'home'; S.view = to; render(); window.scrollTo(0, 0);
           if (to === 'census' && (S.cen.mode === 'shift' || S.cen.mode === 'day')) loadDayAndRender(S.day); else if (to === 'shift') refresh(true);
-        } else if (S.view === 'detail') { S.cen.mode = 'shift'; S.view = 'census'; loadDayAndRender(S.day); }
+        } else if (S.view === 'detail' && S.prev === 'acct') { S.prev = ''; S.acct = null; setView('acct'); }      // 20-11-2026 (V2.9): back to the Accounting check
+        else if (S.view === 'detail') { S.cen.mode = 'shift'; S.view = 'census'; loadDayAndRender(S.day); }
         else setView('home');
         break;
       case 'shift-letter': {
@@ -10754,6 +11192,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
         break;
       }
       case 'day-letter': S.prev = 'census'; openLetter({ type: 'day', date: S.day, shifts: S.dayShifts, annex: false }); break;
+      case 'day-till': S.prev = 'census'; openLetter({ type: 'day', date: S.day, shifts: S.dayShifts, annex: false, till: new Date().toISOString() }); break;   // 20-11-2026 (V2.9)
+      case 'last24': {
+        if (isOff()) { toast('The letter needs internet.'); break; }
+        var nowL = new Date().toISOString(), tdy = currentCensus();
+        toast('Preparing the last 24 hours\u2026');
+        api('apiGetShiftsInRange', CEC.addDays(tdy, -1), tdy).then(function (list) { S.prev = 'census'; openLetter({ type: 'last24', now: nowL, shifts: list || [], annex: false }); }, function (e) { toast(errText(e)); });
+        break;
+      }
       case 'month-letter': {
         var md = S.cen.mdata;
         if (md) { S.prev = 'census'; openLetter({ type: 'month', from: md.from, to: md.to, shifts: md.shifts }); }
@@ -10916,6 +11362,51 @@ if (typeof module !== 'undefined') module.exports = CEC;
       }
       case 'echo-reg': echoRegister(); break;
       case 'echo-tab': S.echoTab = v; setView('echo'); loadEcho(); if (v === 'wait' && !isOff()) refresh(true); break;     // fresh: bookings and registrations made on other devices
+      case 'dr-go': drGo(v); break;
+      case 'acct-load': S.acct = null; S.acctPrev = null; render(); break;
+      case 'acct-cert': {
+        var ai = ((S.acct && S.acct.items) || []).filter(function (x) { return x.type === 'cert' && x.id === id; })[0];
+        if (ai) deathFix(ai).then(function (l) { if (l) { S.acct = null; S.acctPrev = null; S.certs = null; render(); } });
+        break;
+      }
+      case 'acct-gapdt': {
+        var gi = ((S.acct && S.acct.items) || []).filter(function (x) { return x.type === 'gap'; })[+v];
+        if (!gi) break;
+        var D0 = dtInit(); D0.reg = gi.reg; D0.slot = 'other'; D0.oDate = gi.after.censusDate; D0.oShift = gi.after.shift; D0.from = gi.nums[0]; D0.to = gi.nums[gi.nums.length - 1]; D0.list = null; dtKeep();
+        setView('dt'); toast('Check the shift and the numbers, then tap Make the list.');
+        break;
+      }
+      case 'acct-gapno': { var gn = ((S.acct && S.acct.items) || []).filter(function (x) { return x.type === 'gap'; })[+v]; if (gn) acctGapNo(gn); break; }
+      case 'acct-echo':
+        api('apiEchoAttach', JSON.stringify({ id: id, acct: v === 'add' ? 'add' : '' })).then(function (r) { toast(r.how === 'added' ? 'Added to the census (Echo)' : 'Attached to the census record'); S.acct = null; render(); }, function (e) { toast(errText(e)); });
+        break;
+      case 'acct-echomr':
+        modal('MR No. of this echo report', '<label class="lb" for="aeMr">MR No.</label><input class="in" id="aeMr" autocapitalize="characters" inputmode="numeric">', [{ label: 'Cancel', value: null }, { label: 'Save', cls: 'pri', value: 'form' }]).then(function (x) {
+          if (!x || !x.aeMr.trim()) return;
+          api('apiEchoSetMr', JSON.stringify({ id: id, mr: x.aeMr.trim() })).then(function () { toast('MR No. saved'); S.acct = null; render(); }, function (e) { toast(errText(e)); });
+        });
+        break;
+      case 'acct-echono':
+        modal('Not a CEC patient', '<label class="lb" for="aeWhy">Where is this patient counted?</label><select class="in" id="aeWhy"><option value="WARD PATIENT">A ward patient</option><option value="ANOTHER HOSPITAL">From another hospital</option>' +
+          '<option value="PRIVATE / STAFF">Private or staff</option><option value="OTHER">Other</option></select>', [{ label: 'Cancel', value: null }, { label: 'Mark', cls: 'pri', value: 'form' }]).then(function (x) {
+          if (!x) return;
+          api('apiAcctMark', JSON.stringify({ keys: ['echo:' + id], why: x.aeWhy })).then(function () { toast('Marked: not a CEC patient'); S.acct = null; render(); }, function (e) { toast(errText(e)); });
+        });
+        break;
+      case 'acct-shift':
+        toast('Opening the shift\u2026');
+        api('apiGetShift', id).then(function (sh) { if (!sh) return toast('Shift not found'); S.detail = sh; S.day = v || sh.censusDate; S.prev = 'acct'; setView('detail'); }, function (e) { toast(errText(e)); });
+        break;
+      case 'c-how': S.cert.how = v; setOn('cHow', v); break;          // 20-11-2026 (V2.9): how the patient died
+      case 'pp-how': if (S.pp) { S.pp.how = v; setOn('ppHow', v); } break;
+      case 'pp-sex': if (S.pp) { S.pp.sex = v; setOn('ppSex', v); } break;
+      case 'dc-fix': {
+        var fx = (S.papers || []).filter(function (x) { return x.id === id; })[0], fk = fx ? 'paper' : 'online';
+        var go = function (it) { deathFix(it).then(function (l) { if (l) { S.certs = null; S.acct = null; loadCerts(true); render(); } }); };
+        if (fx) go({ kind: 'paper', id: fx.id, mr: fx.mr, name: fx.name, how: fx.how, deathDate: anyIso(fx.deathDate) });
+        else getCert(id).then(function (c) { if (c) go({ kind: 'online', id: c.id, mr: c.mr, name: c.name, how: c.how, sex: c.sex, age: c.age, arrDate: anyIso(c.arrDate), arrTime: c.arrTime, deathDate: anyIso(c.deathDate), deathTime: c.deathTime }); });
+        break;
+      }
       case 'c-sex': S.cert.sex = v; setOn('cSex', v); if (v === 'M' && !S.cert.so) { S.cert.so = 'S/O'; setOn('cSo', 'S/O'); } break;
       case 'c-so': { var sk = el.getAttribute('data-k'); if (sk === 'c') { S.cert.so = v; setOn('cSo', v); } else { S.cert.rSo = v; setOn('cRSo', v); } break; }
       case 'cert-print': { var cp = readCert(); if (certTimesOk(cp) && certNeededOk(cp)) certMissingOk(cp).then(function (ok) { if (ok) certPrintNow(cp); }); break; }
@@ -11003,6 +11494,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
       }); break;
       case 'sec-backup': toast('Making a backup copy\u2026 this can take a minute'); api('apiBackupNow').then(function (r) { toast('Backup saved: ' + r.name); S.bin = null; render(); }, function (e) { toast(errText(e)); }); break;
       case 'sec-load': S.bin = null; loadBin(); break;
+      case 'th-pick': themePick(el.getAttribute('data-k'), v); break;       // 20-11-2026 (V2.9): colours for everyone
+      case 'th-apply': themeSend(false); break;
+      case 'th-cancel': S.thPrev = null; applyTheme(store_('cec_theme'), false); render(); break;
+      case 'th-reset': confirmBox('Back to the original colours?', 'The original green comes back on every website and phone app.', 'Back to original', false).then(function (ok) { if (ok) themeSend(true); }); break;
       case 'bin-restore-batch': {
         var bg = binGroups(S.bin && S.bin.items || []).filter(function (g) { return g[0].batch === id; })[0] || [];
         confirmBox('Restore all ' + bg.length + ' patients?', 'The ' + bg.length + ' patients deleted together go back where they were.', 'Restore all', false).then(function (ok) {
@@ -11128,6 +11623,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     }
     else if (t.id === 'annex') { S.letter.annex = t.checked; render(); }
     else if (t.id === 'bdx') { S.letter.bd = t.checked; render(); }
+    else if (t.id === 'thMain' || t.id === 'thAcc') themePick(t.id === 'thMain' ? 'main' : 'acc', t.value);
     else if (t.id === 'lFrom' || t.id === 'lTo') {
       if ($('lFromD')) $('lFromD').textContent = $('lFrom').value ? CEC.weekday($('lFrom').value) : '';
       if ($('lToD')) $('lToD').textContent = $('lTo').value ? CEC.weekday($('lTo').value) : '';
