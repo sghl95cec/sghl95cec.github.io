@@ -974,8 +974,22 @@ button.prow.bdrow{width:100%;text-align:left;font:inherit;color:inherit;backgrou
 .acc-row .sbtns{margin-top:6px}
 .acc-ok{color:var(--g7);font-weight:600}
 .acc-n{display:inline-block;min-width:22px;padding:1px 7px;border-radius:10px;background:var(--red0);color:var(--red);font-weight:700;font-size:12px;text-align:center;margin-left:6px}
+/* 20-11-2026 (CEC V3.0): what's new, once, with a party popper */
+.news .newsbadge{display:inline-flex;align-items:center;gap:8px;background:var(--g9);color:#fff;border-radius:999px;padding:6px 14px;font-size:15px;box-shadow:0 0 0 3px var(--g1)}
+.news .newsbadge b{background:#c9a227;color:#1d1a0b;border-radius:999px;padding:1px 9px;font-size:12.5px}
+.news .pop{font-size:22px;display:inline-block;animation:popin .7s ease-out both}
+.news .newsl{margin:0;padding-left:18px}.news .newsl li{margin:6px 0;font-size:14px}
+@keyframes popin{0%{transform:scale(.2) rotate(-30deg)}60%{transform:scale(1.25) rotate(12deg)}100%{transform:scale(1) rotate(0)}}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden}
+.confetti i{position:absolute;bottom:-10px;border-radius:2px;animation:cfly 3.2s cubic-bezier(.15,.7,.4,1) forwards}
+@keyframes cfly{0%{transform:translate(0,0) rotate(0);opacity:1}55%{transform:translate(var(--dx),var(--dy)) rotate(var(--r));opacity:1}100%{transform:translate(calc(var(--dx) * 1.2),40vh) rotate(calc(var(--r) * 2));opacity:0}}
 
 </style>
+<script>
+/* 20-11-2026 (CEC V3.0): the colours chosen by the admin from the first moment (kept on this device by the page) */
+try { (function () { var s = document.getElementsByTagName('style')[0], t = JSON.parse(localStorage.getItem('cec_theme_css') || 'null'); window.__cecCss0 = s.textContent;
+  if (t && t.css && t.n === s.textContent.length) { s.textContent = t.css; window.__cecThemeOn = t.k || ''; var m = document.querySelector('meta[name=theme-color]'); if (m && t.main) m.setAttribute('content', t.main); } })(); } catch (e) { }
+</script>
 </head>
 <body>
 <div class="appbar" id="appbar">
@@ -3958,7 +3972,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   var IDLE_MS = 4 * 3600000;
   /* 14-11-2026: the version of this page (Index.html / phone app) and of the server (Code.gs). Both come from the same build, so they must be the same. */
-  var APP_VER = 'CEC V2.9 (20-11-2026 02:18)';
+  var APP_VER = 'CEC V3.0 (20-11-2026 03:17)';
   function verSame() { return S.serverVer === APP_VER; }
   function verKey(v) { var m = /(\d\d)-(\d\d)-(\d{4}) (\d\d:\d\d)/.exec(String(v || '')); return m ? m[3] + m[2] + m[1] + m[4] : ''; }   // the build time, in time order
   /* 18-11-2026 (night): shown as "CEC V2.1" (versions before V2.1 were named by their date) */
@@ -4116,7 +4130,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* ---------- 20-11-2026 (V2.9): the colours chosen by the admin (main colour and the line under the heading), on every website and phone
      app. Every green of the stylesheet takes the new colour at its own lightness; the main colour itself is used exactly. Red (warnings,
      deletions), amber and blue keep their meaning. Printed letters, certificates and slips do not change. ---------- */
-  var THEME_CSS = null, THEME_BASE = '#0a4a2b', THEME_ACC = '#c9a227', THEME_ON = '';
+  var THEME_CSS = null, THEME_BASE = '#0a4a2b', THEME_ACC = '#c9a227', THEME_ON = window.__cecThemeOn || '';
   function hexHsl(hx) {
     var r = parseInt(hx.substr(1, 2), 16) / 255, g = parseInt(hx.substr(3, 2), 16) / 255, b = parseInt(hx.substr(5, 2), 16) / 255;
     var mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn, hh = 0, sat = 0;
@@ -4147,15 +4161,17 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function applyTheme(t, keep) {
     var el = document.getElementsByTagName('style')[0];
     if (!el) return;
-    if (THEME_CSS == null) THEME_CSS = el.textContent;
+    if (THEME_CSS == null) THEME_CSS = window.__cecCss0 || el.textContent;
     t = t && /^#[0-9a-f]{6}$/i.test(t.main || '') ? { main: t.main.toLowerCase(), acc: /^#[0-9a-f]{6}$/i.test(t.acc || '') ? t.acc.toLowerCase() : '' } : null;
     var key = t ? t.main + t.acc : '';
     if (keep !== false) store_('cec_theme', t);
-    if (key === THEME_ON) return;
-    THEME_ON = key;
-    el.textContent = t ? themeCss(t) : THEME_CSS;
-    var m = document.querySelector('meta[name=theme-color]');
-    if (m) m.setAttribute('content', t ? t.main : THEME_BASE);
+    if (key !== THEME_ON) {
+      THEME_ON = key;
+      el.textContent = t ? themeCss(t) : THEME_CSS;
+      var m = document.querySelector('meta[name=theme-color]');
+      if (m) m.setAttribute('content', t ? t.main : THEME_BASE);
+    }
+    if (keep !== false) store_('cec_theme_css', t ? { k: key, n: THEME_CSS.length, css: el.textContent, main: t.main } : null);   // V2.10: the next opening starts in these colours
   }
   try { applyTheme(store_('cec_theme'), false); } catch (e) { }
 
@@ -4180,7 +4196,48 @@ if (typeof module !== 'undefined') module.exports = CEC;
       if (sh) putEntry(sh, o.e);
     });
     vqShow();
+    newsCheck();
     if (S.deskPaperWant && S.me && S.token && !st.off) { var dpw = S.deskPaperWant; S.deskPaperWant = null; setTimeout(function () { deskPaperApply(dpw); }, 0); }   // the CEC Printer app asked for a paper before sign-in
+  }
+  /* ---------- 20-11-2026 (CEC V3.0): once on each device for each person, the first time the new version opens: a party popper and what is
+     new (only what this person can use). Not for the print desk. ---------- */
+  var NEWS_VER = '3.0';
+  function newsList() {
+    var a = [];
+    if (canEdit() || isAdmin()) a.push(['Accounting check', 'Every patient counted once: missing MR numbers, deaths without a certificate, echo reports and patients still waiting are listed, each with a one-tap fix. The shift that just ended shows on Home.']);
+    if (canCert()) a.push(['Death certificates', 'MR No. and how the patient died (Brought dead, Expired in CEC, Expired in ward). One MR No., one certificate. A CEC death not yet in the census is added to it when the certificate is saved.']);
+    if (canCert()) a.push(['Death register', 'Every death of a day or dates with its certificate details, on the Death certificate page.']);
+    if (canClin()) a.push(['Census letters any time', 'Today till now, and the last 24 hours up to now. Deaths (brought dead and expired) in one table.']);
+    if (canClin()) a.push(['Outcomes', 'Planned for cardiac follow-up is gone; BP only patients are Sent home.']);
+    if (canEchoMake()) a.push(['Echo reports', 'A report of a patient not in the census asks where the patient is counted.']);
+    a.push(['New colours', isAdmin() ? 'Choose the colours of the census for everyone (Account & admin > Colours of the census), and the phone app files in that colour.' : 'The census can now come in the colours the admin chooses.']);
+    return a;
+  }
+  function newsCheck() {
+    if (S.newsBusy || !S.me || isPrintId() || S.offHours || ((typeof window.__gs === 'function' || window.__offset !== undefined) && !window.__cecNews)) return;   // the tests show it only when asked
+    var key = 'cec_news_' + S.me.id;
+    if (store_(key) === NEWS_VER) return;
+    if (anyOverlay() || !$('modal').classList.contains('hidden')) { setTimeout(newsCheck, 3000); return; }
+    S.newsBusy = true;
+    store_(key, NEWS_VER);
+    var body = '<div class="news"><div class="newsbadge"><span class="pop" aria-hidden="true">\ud83c\udf89</span> CEC V' + NEWS_VER + ' <b>Latest and greatest</b></div>' +
+      '<p class="small" style="margin:8px 0 6px">The census has been updated. What is new for you:</p><ul class="newsl">' +
+      newsList().map(function (x) { return '<li><b>' + h(x[0]) + '</b>: ' + h(x[1]) + '</li>'; }).join('') + '</ul></div>';
+    confetti();
+    modal('What\u2019s new', body, [{ label: 'Great, thanks', cls: 'pri', value: true }]).then(function () { S.newsBusy = false; });
+  }
+  function confetti() {
+    try { if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch (e) { }
+    var box = document.createElement('div'), cols = ['#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#a855f7', '#ec4899', '#facc15'];
+    box.className = 'confetti'; box.setAttribute('aria-hidden', 'true');
+    for (var i = 0; i < 90; i++) {
+      var p = document.createElement('i'), side = i % 2, x = side ? 100 : 0;
+      p.style.cssText = 'left:' + x + '%;background:' + cols[i % cols.length] + ';--dx:' + ((side ? -1 : 1) * (20 + Math.random() * 60)).toFixed(1) + 'vw;--dy:' + (-(25 + Math.random() * 45)).toFixed(1) + 'vh;' +
+        '--r:' + Math.round(Math.random() * 720 - 360) + 'deg;animation-delay:' + (Math.random() * 0.25).toFixed(2) + 's;width:' + (6 + Math.round(Math.random() * 6)) + 'px;height:' + (8 + Math.round(Math.random() * 8)) + 'px';
+      box.appendChild(p);
+    }
+    document.body.appendChild(box);
+    setTimeout(function () { if (box.parentNode) box.parentNode.removeChild(box); }, 3600);
   }
   function loadState() {
     return api('apiState').then(function (st) {
@@ -4924,13 +4981,47 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<label class="lb">Line under the heading</label><div class="thtray">' + sw(TH_ACC, 'acc', P.acc) + '<label class="thcus" title="Any colour"><input type="color" id="thAcc" value="' + h(P.acc) + '"> Any colour</label></div>' +
       '<div id="thMsg">' + (S.thPrev ? '<p class="small" style="margin:8px 0 0"><b>Preview on this screen only.</b> Tap Apply to everyone to keep it.</p>' : '') + '</div>' +
       '<div class="sbtns"><button class="btn sm pri" data-act="th-apply"' + (S.thPrev && !onWhiteOk(S.thPrev.main) ? ' disabled' : '') + '>Apply to everyone</button>' +
-      (S.thPrev ? '<button class="btn sm" data-act="th-cancel">Cancel preview</button>' : '') + '<button class="btn sm" data-act="th-reset">Back to original</button></div></section>';
+      (S.thPrev ? '<button class="btn sm" data-act="th-cancel">Cancel preview</button>' : '') + '<button class="btn sm" data-act="th-reset">Back to original</button></div>' +
+      /* 20-11-2026 (CEC V3.0): the phone's own parts (icon, opening screen with the logo, the bar at the bottom) come from files on GitHub */
+      '<div class="fsec" style="margin-top:14px">Phone app: icon, opening screen and bottom bar</div><p class="muted small" style="margin:0 0 6px">Phones take these from the app files on GitHub, not from the census. ' +
+      'Download the 4 files in the colour applied now (<b>' + h(themeNow().main) + '</b>) and upload them to GitHub with index.html and sw.js, then Commit. Phones change by themselves within a day or two ' +
+      '(when the app is opened, then closed while the phone charges on Wi-Fi). The icon: newer phones may ask each person to accept it (Review app update in the app menu).</p>' +
+      '<button class="btn sm" data-act="th-files"' + (S.thPrev ? ' disabled' : '') + '>' + ICON.dl + ' Phone app files in this colour</button></section>';
   }
   function themePick(k, v) {
     if (!/^#[0-9a-f]{6}$/i.test(v || '')) return;
     var P = S.thPrev || themeNow(); P = { main: P.main, acc: P.acc }; P[k] = v.toLowerCase(); S.thPrev = P;
     if (!onWhiteOk(P.main)) { render(); var m = $('thMsg'); if (m) m.innerHTML = '<div class="err">This main colour is too light: white writing on it would be hard to read. Choose a darker shade.</div>'; return; }
     applyTheme(P, false); render();
+  }
+  /* the app icon (the logo on a white circle on the main colour, as build.py makes it) and the app settings file with the colour */
+  function themeIcon(size, pad, main) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () {
+        var c = document.createElement('canvas'); c.width = c.height = size;
+        var g = c.getContext('2d'), r = Math.floor(size * (0.5 - pad)), cx = Math.floor(size / 2), hh = Math.floor(r * 1.45), ww = Math.floor(hh * img.naturalWidth / img.naturalHeight);
+        g.fillStyle = main; g.fillRect(0, 0, size, size);
+        g.fillStyle = '#fff'; g.beginPath(); g.arc(cx, cx, r, 0, Math.PI * 2); g.fill();
+        g.imageSmoothingQuality = 'high'; g.drawImage(img, cx - Math.floor(ww / 2), cx - Math.floor(hh / 2), ww, hh);
+        c.toBlob(function (b) { if (!b) return reject(new Error('The icon could not be made on this device.')); b.arrayBuffer().then(function (ab) { resolve(new Uint8Array(ab)); }); }, 'image/png');
+      };
+      img.onerror = function () { reject(new Error('The logo could not be read.')); };
+      img.src = LOGO;
+    });
+  }
+  function themeFiles() {
+    var main = themeNow().main, tag = main.slice(1), N = [['icon-192-' + tag + '.png', 192, 0.06], ['icon-512-' + tag + '.png', 512, 0.06], ['icon-maskable-512-' + tag + '.png', 512, 0.16]];
+    toast('Making the phone app files\u2026');
+    Promise.all(N.map(function (x) { return themeIcon(x[1], x[2], main); })).then(function (pngs) {
+      var man = { id: './', name: 'CEC Census - SGHL', short_name: 'CEC Census', description: 'Daily patient census of the Cardiac Emergency Centre, Sindh Government Hospital Liaquatabad, Karachi',
+        start_url: './', scope: './', display: 'standalone', orientation: 'portrait', background_color: main, theme_color: main, lang: 'en',
+        icons: [{ src: N[0][0], sizes: '192x192', type: 'image/png', purpose: 'any' }, { src: N[1][0], sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: N[2][0], sizes: '512x512', type: 'image/png', purpose: 'maskable' }] };
+      var files = [{ name: 'manifest.webmanifest', label: 'App settings (colours, icons)', bytes: new TextEncoder().encode(JSON.stringify(man, null, 2)), mime: 'application/manifest+json' }]
+        .concat(N.map(function (x, i) { return { name: x[0], label: 'App icon ' + x[1] + (i === 2 ? ' (for round icons)' : ''), bytes: pngs[i], mime: 'image/png' }; }));
+      offerFiles(files);
+    }, function (e) { toast(errText(e)); });
   }
   function themeSend(reset) {
     var P = S.thPrev || themeNow();
@@ -11496,6 +11587,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'sec-load': S.bin = null; loadBin(); break;
       case 'th-pick': themePick(el.getAttribute('data-k'), v); break;       // 20-11-2026 (V2.9): colours for everyone
       case 'th-apply': themeSend(false); break;
+      case 'th-files': themeFiles(); break;                               // 20-11-2026 (CEC V3.0): icon, opening screen, bottom bar
       case 'th-cancel': S.thPrev = null; applyTheme(store_('cec_theme'), false); render(); break;
       case 'th-reset': confirmBox('Back to the original colours?', 'The original green comes back on every website and phone app.', 'Back to original', false).then(function (ok) { if (ok) themeSend(true); }); break;
       case 'bin-restore-batch': {
