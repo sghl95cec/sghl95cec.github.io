@@ -1315,6 +1315,32 @@ input.wfsel{font:700 18px ui-monospace,Menlo,Consolas,monospace}
 .rglist.rgregs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
 .rglist.rgregs>label{display:flex;align-items:center;gap:6px;min-height:34px;line-height:1.2}
 .rglist.rgrow input,.rglist.rgregs input{width:18px;height:18px;margin:0;flex:0 0 auto}
+/* 27-11-2026 (V4.1): the busy screen after a slow tap (seg/body.js "the busy screen"); above popups, below the toast */
+.bz{position:fixed;inset:0;z-index:35}
+.bz.hidden{display:none}
+.bz.shield{background:transparent;cursor:progress}
+.bz.show{background:rgba(9,28,18,.48);display:flex;align-items:center;justify-content:center;padding:24px;-webkit-backdrop-filter:blur(1.5px);backdrop-filter:blur(1.5px)}
+.bzcard{width:304px;max-width:100%;background:#fff;border-radius:16px;padding:22px 20px 16px;box-shadow:0 18px 40px rgba(0,0,0,.28);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;box-sizing:border-box;color:var(--ink)}
+.bzbadge{width:58px;height:58px;border-radius:50%;background:var(--g9);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;letter-spacing:.05em;box-shadow:0 0 0 3px #c9a227}
+.bzecg .bzbase{fill:none;stroke:var(--g1);stroke-width:3;stroke-linejoin:round}
+.bzecg .bzline{fill:none;stroke:var(--g7);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:80 400}
+.bzt{font-weight:700;font-size:17px;color:var(--g9)}
+.bzs{font-size:13.5px;color:var(--mute)}
+.bzh{font-size:12.5px;color:var(--mute);border-top:1px solid #e4ebe6;padding-top:10px;margin-top:4px;width:100%}
+.bzslow{font-size:13.5px;background:var(--g0);border-radius:8px;padding:9px 10px;width:100%;box-sizing:border-box}
+.bztick{width:62px;height:62px;border-radius:50%;background:var(--g7);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px #c9a227}
+.bzbtn{position:relative;color:transparent!important;cursor:progress}
+.bzbtn svg{visibility:hidden}
+.bzbtn::before{content:'';position:absolute;left:calc(50% - 46px);top:calc(50% - 8px);width:16px;height:16px;border-radius:50%;border:2px solid rgba(127,127,127,.35);border-top-color:var(--g7);box-sizing:border-box;animation:bzspin .8s linear infinite}
+.bzbtn::after{content:'Sending\2026';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-left:22px;color:var(--g9);font-weight:600;white-space:nowrap}
+.btn.pri.bzbtn::after{color:#fff}
+.btn.pri.bzbtn::before{border-color:rgba(255,255,255,.35);border-top-color:#fff}
+@keyframes bzspin{to{transform:rotate(360deg)}}
+@keyframes bzecg{from{stroke-dashoffset:80}to{stroke-dashoffset:-360}}
+@keyframes bzbeat{0%,30%,100%{transform:scale(1)}12%{transform:scale(1.09)}}
+@keyframes bzin{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:no-preference){.bz.show .bzcard{animation:bzin .18s ease-out both}.bzecg .bzline{animation:bzecg 1.4s linear infinite}.bzbadge{animation:bzbeat 1.4s ease-in-out infinite}}
+@media (prefers-reduced-motion:reduce){.bzecg .bzline{stroke-dasharray:none}}
 
 </style>
 <script>
@@ -4828,6 +4854,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function isAuthErr(e) { return /AUTH:/.test((e && e.message) || String(e)); }
   function modal(title, bodyHtml, buttons, stack) {
+    if (typeof busyEnd === 'function') busyEnd();          // V4.1: a popup is the result (or a question): the busy screen goes
     return new Promise(function (resolve) {
       var m = $('modal');
       m.innerHTML = '<div class="mbox' + (stack === 'full' ? ' mfull' : '') + '" role="dialog" aria-modal="true"><h3>' + h(title) + '</h3>' + bodyHtml + '<div class="mbtns' + (stack ? ' col' : '') + '">' +   // V3.7: 'full' = the whole screen
@@ -4873,7 +4900,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   var IDLE_MS = 4 * 3600000;
   /* 14-11-2026: the version of this page (Index.html / phone app) and of the server (Code.gs). Both come from the same build, so they must be the same. */
-  var APP_VER = 'CEC V4.0 (27-11-2026 00:43)';
+  var APP_VER = 'CEC V4.1 (27-11-2026 01:42)';
   function verSame() { return S.serverVer === APP_VER; }
   function verKey(v) { var m = /(\d\d)-(\d\d)-(\d{4}) (\d\d:\d\d)/.exec(String(v || '')); return m ? m[3] + m[2] + m[1] + m[4] : ''; }   // the build time, in time order
   /* 18-11-2026 (night): shown as "CEC V2.1" (versions before V2.1 were named by their date) */
@@ -4963,7 +4990,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
         return parseResult(o.result);
       }, function (e) { if (timer) clearTimeout(timer); var x = offlineErr(); x.retry = true; throw x; });
   }
-  function call(fn, args) {
+  function call(fn, args) {                                  // V4.1: a call made during a busy session holds it until answered
+    var B = S.busy;
+    if (B && !B.ended && !BUSY_BG.test(fn)) { busyCalled(B); return call0(fn, args).then(function (v) { busySettled(B); return v; }, function (e) { busySettled(B); throw e; }); }
+    return call0(fn, args);
+  }
+  function call0(fn, args) {
     if (!inGoogle()) {
       if (!apiUrl()) return Promise.reject(new Error('The census link is not set.'));
       if (navigator.onLine === false) return Promise.reject(offlineErr());
@@ -5119,6 +5151,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var cu = st.custom || {}; S.custom = {}; S.customInfo = isAdmin() ? cu : null; S.lists = st.lists || []; S.demoInfo = st.demo || null; applyDemo();
     S.auto = st.autoprint || null;
     S.eslips = !!st.eslips;                               // 23-11-2026 (V3.2): electronic slips on / off (admin switch)
+    S.busyCfg = st.busy || null;                          // 27-11-2026 (V4.1): the busy screen (on, ms)
     S.fu = st.fu || []; S.cnicMiss = st.cnicMiss || 0; setTimeout(fuTick, 1200);   // 24-11-2026 (V3.3): reminders for this person
     S.att = st.att || null; S.rem = st.rem || null; S.notifOn = !!st.notifOn; S.resets = st.resets || null; setTimeout(function () { gateCheck(); attTick(false); if (S.notePage) { var np = S.notePage; S.notePage = null; notePage(np); } }, 300);
     if (canPrintHere() && S.auto && S.auto.on && !S.auto.dev && S.open && S.auto.shift === S.open.id && !S.apClaiming) {   // 15-11-2026: autoprint set elsewhere, no print desk yet: this Print desk ID device takes it
@@ -5138,11 +5171,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   /* ---------- 20-11-2026 (CEC V3.0): once on each device for each person, the first time the new version opens: a party popper and what is
      new (only what this person can use). Not for the print desk. ---------- */
-  var NEWS_VER = '4.0';
-  function newsList() {                                   // 26-11-2026 (CEC V4.0)
+  var NEWS_VER = '4.1';
+  function newsList() {                                   // 27-11-2026 (CEC V4.1): the busy screen, then the V4.0 list (V4.1 may be installed straight after V3.9)
+    return [['Busy screen', 'After a tap that needs time (Print, Preview, Download, saving a certificate, a photo), the census shows it is working and ignores a second tap. Quick jobs never show it.']].concat(newsListV40());
+  }
+  function newsListV40() {                                // 26-11-2026 (CEC V4.0)
     if (S.aideOff || (isAide() && !canEnter())) return newsListV38();
     var a = [];
-    if (canEnter()) a.push(['Registration on one screen', 'The page fits the phone, nothing to scroll. A number board on top shows the next MR No. (and the next OPD No. on an OPD day); the gold tile is this patient’s. Set corrects it from the paper register. Comments, Done in CEC (and for doctors the diagnosis and outcome) are under + Comments, with tap-to-add suggestions.']);
+    if (canEnter()) a.push(['Registration on one screen', 'The page fits the phone, nothing to scroll. A number board on top shows the next MR No. (and the next OPD No. on an OPD day); the gold tile is this patient’s. Set corrects it from the paper register. Name, age and gender, then the category; BP, ECG, blood sugar and the doctor\u2019s diagnosis and outcome stay on their own tiles.']);
     if (canBd()) a.push(['Deceased patients', 'A red button on the registration page glows while a brought dead or Expired in CEC patient needs the CNIC No., contact No. or address. Anyone can type them; the patient stays in his shift. The Brought dead tile is gone.']);
     if (canCert()) a.push(['No CNIC: referred', 'For a family without a CNIC: "Referred for death certificate (no CNIC)" keeps the record (no certificate is issued); a certificate made later replaces it. Death certificates can be searched by name, MR No. or date.']);
     if (canEnter()) a.push(['Change name', 'A wrong name is changed with Change name on the patient, while his shift is running (the admin any time).']);
@@ -6069,6 +6105,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* ---------- V4.0 (item 13): Account & admin: a tile for each section (YOU / PEOPLE / THE CENSUS / RECORDS AND SAFETY); each opens alone, with Back ---------- */
   function admTiles() { return !(window.__cecOldAdm && !window.__cecNewAdm); }
   var ADM_I = {
+    busy: '<path d="M3 12h4l2-5 3 10 2-5h7"></path>',          // V4.1: a heartbeat line
     me: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>', dev: '<path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>',
     req: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.5c1.8.8 3 2.6 3 4.5"/>', users: '<circle cx="12" cy="8" r="3.5"/><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/>',
     titles: '<rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="2.6"/><path d="M8 16.5c.8-1.6 2.3-2.5 4-2.5s3.2.9 4 2.5"/>', demo: '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/>',
@@ -6091,10 +6128,11 @@ if (typeof module !== 'undefined') module.exports = CEC;
       ['PEOPLE', 'titles', 'Titles', 'HOD, Admin RMO, Head Nurse, Echo aide'],
       ['PEOPLE', 'demo', 'Demonstration IDs', 'Practice IDs for teaching'],
       ['THE CENSUS', 'eslips', 'Electronic slips', S.eslips ? 'On' : 'Off'],
+      ['THE CENSUS', 'busy', 'Busy screen', busyCfg().on ? 'On, after ' + (busyCfg().ms / 1000) + ' s' : 'Off'],
       ['THE CENSUS', 'notif', 'Notifications and reminders', R.on ? 'On' : 'Off'],
       ['THE CENSUS', 'att', 'Attendance and location', 'Location compulsory: ' + (A.gate ? 'on' : 'off')],
       ['THE CENSUS', 'wifi', 'CEC Wi-Fi', W.cur && W.cur.at ? 'Password changed ' + CEC.dmy(CEC.ymd(new Date(W.cur.at))) : 'The password, who may see it'],
-      ['THE CENSUS', 'chips', 'Comment suggestions', nc ? 'Your list: ' + S.noteChips.length + ' groups' : 'The built-in list'],
+      ['THE CENSUS', 'chips', 'Comment suggestions', nc ? 'Your list: ' + S.noteChips.length + ' groups' : 'The built-in list', false],   // V4.1: no comment box on the registration page
       ['THE CENSUS', 'letter', 'Letter details', 'Who signs the letters'],
       ['THE CENSUS', 'theme', 'Colours of the census', 'For everyone'],
       ['THE CENSUS', 'custom', 'Options added by users', cuN + ' new'],
@@ -6125,6 +6163,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (k === 'me') { var di = myHtml.indexOf('<section class="card"><div class="ct">This device: printing'); return di > 0 ? myHtml.slice(0, di) : myHtml; }
     if (k === 'dev') return deviceHtml();
     if (k === 'eslips') return eslipsCardHtml();
+    if (k === 'busy') return busyCardHtml();
     if (k === 'notif') return notifCardHtml();
     if (k === 'att') return attOnlyHtml();
     if (k === 'reset') return resetCardHtml();
@@ -6260,6 +6299,25 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   /* ---------- 23-11-2026 (V3.2): electronic slips switch (the admin). Off: Patient Registration only (manual slip), no Vitals station, no OPD / ER slip
      page, no one-staff desk, no slip numbers. Nothing is deleted: On brings everything back. ---------- */
+  /* V4.1: Account & admin > Busy screen: On / Off for everyone, when it shows, Try it now */
+  function busyCardHtml() {
+    var c = busyCfg();
+    return '<section class="card"><div class="ct">Busy screen</div><p class="muted small" style="margin:0 0 8px">When a tap needs time (Print and sending to the print desk, Preview and Download, saving a death certificate or a referral, sending a photo, Sign in), the census shows it is working and ignores a second tap. A job quicker than the time below never shows it. Not for registration Save (instant), typing or menus.</p>' +
+      '<div class="lb">Show the busy screen</div><div class="seg"><button type="button" data-act="bz-set" data-v="on" class="' + (c.on ? 'on' : '') + '">On</button><button type="button" data-act="bz-set" data-v="off" class="' + (c.on ? '' : 'on') + '">Off</button></div>' +
+      '<div class="lb" style="margin-top:10px">Show it after</div><div class="seg">' + [300, 400, 600, 1000].map(function (ms) { return '<button type="button" data-act="bz-ms" data-v="' + ms + '" class="' + (c.ms === ms ? 'on' : '') + '"' + (c.on ? '' : ' disabled') + '>' + (ms / 1000) + ' s</button>'; }).join('') + '</div>' +
+      '<p class="muted small" style="margin:6px 0 10px">0.4 s is suggested. Off: the tapped button still says Sending\u2026 and a second tap is still ignored; only the busy screen is not shown.</p>' +
+      '<button type="button" class="btn block" data-act="bz-try">Try it now</button></section>';
+  }
+  function busyTry() {                                        // shows it on this screen as staff see it (nothing is sent)
+    var b = document.querySelector('[data-act=bz-try]'), was = window.__cecBusyTest; window.__cecBusyTest = 1;
+    S.busy = null; busyStart(b, 'try', '');
+    if (S.busy) { S.busy.k = 'Trying the busy screen\u2026'; S.busy.sub = 'This is how staff see it.'; S.busy.any = true; S.busy.later(function () { busyEnd('Done'); }, busyCfg().ms + 1400); }
+    window.__cecBusyTest = was;
+  }
+  function busySave(d, msg) {
+    var prev = S.busyCfg; S.busyCfg = Object.assign({}, busyCfg(), d); render();     // shown at once, put back if not saved
+    api('apiSetBusy', JSON.stringify(d)).then(function (r) { S.busyCfg = r; toast(msg(r)); if (S.view === 'settings') render(); }, function (e) { S.busyCfg = prev; render(); toast('Not saved: ' + errText(e)); });
+  }
   function eslipsCardHtml() {
     var on = !!S.eslips;
     return '<section class="card"><div class="ct">Electronic slips</div><p class="muted small" style="margin:0 0 6px">' +
@@ -6803,14 +6861,16 @@ if (typeof module !== 'undefined') module.exports = CEC;
         '<button type="button" class="lnk" data-act="hand-go">Start the ' + h(CEC.shiftName(S.hand.next)) + ' register</button></div>' : '') +
       '<div id="fBoard"></div><div id="fDay"></div>' +
       '<div class="r4hid"><label id="fMrL"></label><label class="tog"><input type="checkbox" id="fAuto"> <span id="fAutoL"></span></label><input id="fMr"><div id="mrInfo"></div></div>' +
-      '<div class="r4main"><label class="lb">Category <span class="req">*</span></label><div class="seg cats4" id="fCat">' +
-      formCats().map(function (c) { return '<button type="button" data-act="f-cat" data-v="' + c[0] + '"' + (c[0] === 'BD' ? ' class="bdb"' : '') + '>' + h(c[0] === 'EMR' ? 'Emergency / Resus' : c[1]) + '</button>'; }).join('') + '</div>' +
-      '<p class="muted small fnote hidden" id="fEnNote" style="margin:6px 0 0">Evening and Night: emergencies and brought dead only.</p>' +
-      '<p class="muted small fnote hidden" id="fOnlyNote"></p><div id="fEcgBox" class="ecgbox hidden"></div>' +
+      /* 27-11-2026 (V4.1, his words): "Remove comment box"; the categories go below age and gender, swapped with the red Deceased button.
+         (BP, ECG, blood sugar and the doctor's diagnosis / outcome have their own tiles; the "More details" panel stays in the page, never opened.) */
+      '<div class="r4main"><div id="fDec"></div>' +
       '<label class="lb" for="fName">Patient name <span class="req">*</span></label><input class="in" id="fName" autocapitalize="characters" value="">' +
       '<div class="r4as"><div><label class="lb" for="fAge">Age (years)</label><input class="in" id="fAge" inputmode="numeric" maxlength="3" value=""></div>' +
       '<div><label class="lb">Gender <span class="req">*</span></label><div class="seg" id="fSex"><button type="button" data-act="f-sex" data-v="M">Male</button><button type="button" data-act="f-sex" data-v="F">Female</button></div></div></div>' +
-      '<div id="fDec"></div><button type="button" class="r4more" id="fMoreBtn" data-act="more-open">+ Comments</button>' +
+      '<label class="lb">Category <span class="req">*</span></label><div class="seg cats4" id="fCat">' +
+      formCats().map(function (c) { return '<button type="button" data-act="f-cat" data-v="' + c[0] + '"' + (c[0] === 'BD' ? ' class="bdb"' : '') + '>' + h(c[0] === 'EMR' ? 'Emergency / Resus' : c[1]) + '</button>'; }).join('') + '</div>' +
+      '<p class="muted small fnote hidden" id="fEnNote" style="margin:6px 0 0">Evening and Night: emergencies and brought dead only.</p>' +
+      '<p class="muted small fnote hidden" id="fOnlyNote"></p><div id="fEcgBox" class="ecgbox hidden"></div>' +
       '<div id="fErr"></div></div></form></div>' +
       '<div class="sh-foot r4foot"><div id="apLine">' + apLineHtml() + '</div><button class="btn pri" data-act="save-next" id="fSave">Save</button></div>' +
       /* "More details": a second panel over the registration; its fields are kept with this patient and saved with the registration */
@@ -8526,6 +8586,103 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* 14-11-2026: a demonstration ID (or the admin's demonstration view) on a phone prints at the REAL print desk when its autoprint is on;
      the print desk prints those jobs with DEMONSTRATION on them. */
   function canDesk() { return !canPrintHere() && (isDemo() ? !!(S.realDesk && S.realDesk.on) : apOn()); }
+  /* ---------- 27-11-2026 (V4.1): the busy screen after a slow tap ----------
+     A tap on Print, Preview / Download, a certificate or referral save, a photo or Sign in: at once the screen ignores a second tap (a clear
+     shield) and, after 0.15 s, the tapped button says "Sending…"; still working after S.busyCfg.ms (0.4 s; the admin: 0.3 / 0.4 / 0.6 / 1 s): the busy
+     screen (the CEC badge and a heartbeat line). Shown at least 0.5 s; a print sent: a tick for 0.6 s. After 10 s: "Still sending…" with
+     Carry on working (Back does the same). It ends when the result shows (a popup, the preview, the file, the print desk's answer) or when its
+     census calls are done. Admin Off: only the tapped button says Sending… and ignores a second tap. Registration Save never uses it.
+     Tests: window.__cecNoBusy (fakeclock.js: the older tests) unless window.__cecBusyTest. */
+  var BUSY_ACTS = {};
+  ('cert-print cert-printx cert-saveprint doc-print dl-print ec-print ec-printnow ec-saveprint ett-print ett-printcur lb-print lst-print pv-print q-print q-printall q-printsel ' +
+    'slip-reprint tmp-print tpv-print cert-dl cert-pv cert-pvf dl-all dl-one dl-pdf dl-pv ec-dl ec-pv ec-pvnow ett-dl ett-dlcur ett-pv lb-pdf lb-pv lst-pdf mine-pdf pv-dl ' +
+    'q-pv tmp-pv dtf-get day-letter letter-now month-letter shift-letter year-letter doc-get cert-save ett-save ec-save pp-save dt-save sec-backup doc-upload roster-upload ' +
+    'img-upload do-login').split(' ').forEach(function (a) { BUSY_ACTS[a] = 1; });
+  var BUSY_MODAL = /^(Preview|Download|Print|Print on paper|One side|Both sides|Test first \(2 sheets\)|One file|Two files|Save referral|Register and save)$/;   // popup buttons that start the work (Registers, Death register, both sides, the referral)
+  var BUSY_BG = /^api(State|Beat|Ping|Nums|JobTake|DeskPaper|Notices|WifiLog|Wifi|EcgShifts|BdList|PettyQueue|Recent|Info|ReloadAt|Attend|PushSub|PushKey|ProcWait|DcOpen|Accounts|Renew)$/;   // background calls never hold it
+  var BUSY_ECG = 'M0 24 L28 24 L34 20 L40 24 L50 24 L54 28 L60 4 L66 40 L71 24 L84 24 L92 18 L100 24 L110 24 L138 24 L144 20 L150 24 L160 24 L164 28 L170 4 L176 40 L181 24 L194 24 L202 18 L210 24 L220 24';
+  function busyAllowed() { return !(window.__cecNoBusy && !window.__cecBusyTest); }
+  function busyCfg() { var c = S.busyCfg || {}; return { on: c.on !== false, ms: [300, 400, 600, 1000].indexOf(+c.ms) >= 0 ? +c.ms : 400 }; }
+  function busyTitle(act, label) {
+    var a = String(act || '') + ' ' + String(label || '');
+    if (/login/.test(a)) return 'Signing in…';
+    if (/print|Print/.test(a)) return 'Sending to the print desk…';
+    if (/(^|-)pv|prev|Preview/.test(a)) return 'Making the preview…';
+    if (/upload|photo/.test(a)) return 'Sending…';
+    if (/save|Save|Register|backup/.test(a)) return 'Saving…';
+    return 'Making the file…';
+  }
+  function busyEl() {
+    var x = $('busy');
+    if (!x) {
+      x = document.createElement('div'); x.id = 'busy'; x.className = 'bz hidden'; document.body.appendChild(x);
+      x.addEventListener('click', function (ev) {              // the shield: a second tap does nothing (Carry on working excepted)
+        ev.preventDefault(); ev.stopPropagation();
+        if (ev.target.closest && ev.target.closest('[data-bz=carry]')) { busyCarry(); return; }
+        S.busyIgnored = (S.busyIgnored || 0) + 1;
+      });
+    }
+    return x;
+  }
+  function busyLoader() {
+    return '<div class="bzbadge">CEC</div><svg class="bzecg" width="220" height="44" viewBox="0 0 220 44" aria-hidden="true"><path class="bzbase" d="' + BUSY_ECG + '"></path><path class="bzline" d="' + BUSY_ECG + '"></path></svg>';
+  }
+  function busyCard(B, mode) {
+    var sub = B.sub ? '<div class="bzs">' + h(B.sub) + '</div>' : '';
+    if (mode === 'done') return '<div class="bzcard"><div class="bztick"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></div><div class="bzt">' + h(B.done) + '</div>' + sub + '</div>';
+    if (mode === 'slow') return '<div class="bzcard">' + busyLoader() + '<div class="bzt">' + h(/print desk/.test(B.k) ? 'Still sending…' : 'Still working…') + '</div>' + sub +
+      '<div class="bzslow">The census is slow right now. It keeps trying by itself; nothing is lost.</div><button type="button" class="btn block" data-bz="carry">Carry on working</button>' +
+      '<div class="bzh" style="border:0;padding:0">It finishes by itself.</div></div>';
+    return '<div class="bzcard">' + busyLoader() + '<div class="bzt">' + h(B.k) + '</div>' + sub + '<div class="bzh">Please wait. No need to tap again.</div></div>';
+  }
+  function busyPaint(B, mode) {
+    if (S.busy !== B || B.carry) return;
+    var x = busyEl(); x.className = 'bz show'; x.setAttribute('role', 'status'); x.setAttribute('aria-live', 'polite'); x.innerHTML = busyCard(B, mode); B.mode = mode;
+  }
+  function busyStart(el, act, label) {
+    if (!busyAllowed() || (!S.me && act !== 'do-login')) return;
+    if (S.busy && !S.busy.ended) return;                     // one at a time
+    var c = busyCfg(), B = { t0: Date.now(), el: el, n: 0, any: false, k: busyTitle(act, label), sub: '', shownAt: 0, off: !c.on, tm: [] };
+    S.busy = B;
+    B.later = function (fn, ms) { B.tm.push(setTimeout(function () { if (S.busy === B && !B.ended) fn(); }, ms)); };
+    if (!B.off) { var x = busyEl(); x.className = 'bz shield'; x.innerHTML = ''; x.removeAttribute('role'); }
+    B.later(function () { if (el && el.isConnected) el.classList.add('bzbtn'); }, 150);
+    if (!B.off) B.later(function () { B.shownAt = Date.now(); busyPaint(B, 'busy'); }, c.ms);
+    B.later(function () { if (!B.n && !B.any) busyEnd(); }, 400);   // nothing sent to the census and no result yet: a quick job on the phone
+    B.later(function () { if (B.shownAt && !B.carry) busyPaint(B, 'slow'); }, 10000);
+    B.later(function () { busyEnd(); }, 90000);
+  }
+  function busySub(t) { var B = S.busy; if (B && !B.ended && t) { B.sub = t.charAt(0).toUpperCase() + t.slice(1); if (B.mode === 'busy') busyPaint(B, 'busy'); } }
+  function busyOn() { return !!(S.busy && !S.busy.ended); }
+  function busyEnd(done) {
+    var B = S.busy; if (!B || B.ended) return;
+    B.ended = true; B.tm.forEach(clearTimeout);
+    var fin = function () {
+      if (B.el && B.el.classList) B.el.classList.remove('bzbtn');
+      if (S.busy === B) { S.busy = null; var x = $('busy'); if (x) { x.className = 'bz hidden'; x.innerHTML = ''; x.removeAttribute('role'); } }
+    };
+    if (B.off || B.carry || !B.shownAt) { setTimeout(fin, B.off || B.carry ? 0 : 250); return; }   // taps made while the phone was working still land on the shield
+    setTimeout(function () {
+      if (done && S.busy === B) { B.done = done; B.carry = false; busyPaint(B, 'done'); setTimeout(fin, 600); } else fin();
+    }, Math.max(0, 500 - (Date.now() - B.shownAt)));              // once shown: at least 0.5 s (never a flicker)
+  }
+  function busyCarry() {                                       // Carry on working (or Back): the screen goes, the job finishes by itself
+    var B = S.busy; if (!B || B.ended) return false;
+    B.carry = true; var x = $('busy'); if (x) { x.className = 'bz hidden'; x.innerHTML = ''; }
+    return true;
+  }
+  function busyCalled(B) { B.n++; B.any = true; }
+  function busySettled(B) { B.n--; if (B.n <= 0) B.later(function () { if (B.n <= 0) busyEnd(); }, 500); }
+  document.addEventListener('click', function (ev) {            // capture: the session starts before the page acts on the tap
+    if (!busyAllowed()) return;
+    var t = ev.target, el = t && t.closest ? t.closest('[data-act]') : null;
+    var B = S.busy;
+    if (B && !B.ended && B.off && el && el === B.el) { ev.preventDefault(); ev.stopPropagation(); S.busyIgnored = (S.busyIgnored || 0) + 1; return; }   // Off: that button ignores a second tap
+    if (el) { var a = el.getAttribute('data-act'); if (BUSY_ACTS[a] && !el.disabled) busyStart(el, a, ''); return; }
+    var mb = t && t.closest ? t.closest('#modal .mbtns button') : null;
+    if (mb && BUSY_MODAL.test((mb.textContent || '').trim())) busyStart(mb, '', mb.textContent.trim());
+  }, true);
+  window.__cecBusy = function () { var B = S.busy; return B ? { mode: B.ended ? 'ended' : B.carry ? 'carry' : B.mode || (B.off ? 'off' : 'shield'), k: B.k, sub: B.sub, n: B.n, off: B.off } : null; };   // for the tests
   function deskJob(job, label, sure) {
     if (isOff()) { toast('No internet: ' + label + ' could not be sent to the print desk. Try again when the internet is back.'); return; }
     if (isDemo() && !sure && !window.__cecPrintOk) {  // 19-11-2026 (V2.6): a practice ID asks before every print (paper is not wasted on practice); __cecPrintOk: older tests
@@ -8537,13 +8694,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
       return;
     }
     job.jid = 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);   // sent twice (lost answer): printed once
-    toast('Sending ' + label + ' to the print desk\u2026');
+    if (busyOn() && !S.busy.off) busySub(label); else toast('Sending ' + label + ' to the print desk\u2026');   // V4.1: the busy screen says it
     apiRetry('apiPrintJob', JSON.stringify(job)).then(function (r) { deskSent(r, label, false); }, function (e) { toast('Not sent to the print desk: ' + errText(e)); });
   }
   /* 13-11-2026: the message after sending is based on the census's answer at that moment (not on what this phone last heard). */
   function deskSeen(age) { if (age != null) S.apBeat = age >= 0 ? Date.now() - age : 0; }
   function deskSent(r, what, many) {
     deskSeen(r && r.beatAge);
+    busyEnd(r && r.deskOn === false ? '' : 'Sent to the print desk');   // V4.1: a tick on the busy screen
     var W = what.charAt(0).toUpperCase() + what.slice(1);
     if (r && r.deskOn === false) {                        // autoprint was switched off at the print desk meanwhile: kept, printed when it is on again
       S.auto = null;
@@ -8733,6 +8891,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* ---------- 15-11-2026: Preview: exactly the pages that will print (SVG, the same drawing as the print), with Back, Download and Print.
      A long register shows its first 20 pages and how many there are in all. ---------- */
   function preview(title, pagesFn, acts) {
+    busyEnd();                                              // V4.1: the preview shows its own progress
     var el = $('pvw');
     if (!el) { el = document.createElement('div'); el.id = 'pvw'; el.className = 'pvw hidden'; el.setAttribute('role', 'dialog'); document.body.appendChild(el); }
     S.pv = { acts: acts || {} };
@@ -14392,6 +14551,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'wfa-copyn': case 'wfa-copyc': { var wp2 = S.wfa && (act === 'wfa-copyn' ? S.wfa.next && S.wfa.next.pw : S.wfa.cur && S.wfa.cur.pw); if (!wp2) break;   // V4.0 (item 11)
         var wd2 = function () { toast(act === 'wfa-copyn' ? 'Next password copied. Put it on the router, then tap Password changed.' : 'Copied.'); };
         if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(wp2).then(wd2, function () { showText(wp2); }); else showText(wp2); break; }
+      case 'bz-set': busySave({ on: v === 'on' }, function (r) { return 'The busy screen is ' + (r.on ? 'on' : 'off') + ' for everyone.'; }); break;   // V4.1
+      case 'bz-ms': busySave({ ms: +v }, function (r) { return 'The busy screen shows after ' + (r.ms / 1000) + ' s.'; }); break;
+      case 'bz-try': busyTry(); break;
       case 'wfa-changed': {
         if (!S.wfa || !S.wfa.next) break;
         var wk = v;
@@ -15774,6 +15936,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var m = $('modal'), modOn = m && !m.classList.contains('hidden'), hadMod = S.modEntry, hadSheet = S.ovEntry;
     S.inBack = true;
     try {
+      if (S.busy && !S.busy.ended && !S.busy.off && !S.busy.carry && busyCarry()) { histMove(1); return; }   // V4.1: Back on the busy screen = Carry on working
       if (S.menuOpen) { menu(false); if (!hadMod && !hadSheet) histMove(1); return; }
       if (modOn) {                                          // 1. a popup closes; nothing else
         S.modEntry = false;
