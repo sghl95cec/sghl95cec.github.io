@@ -4614,7 +4614,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   var IDLE_MS = 4 * 3600000;
   /* 14-11-2026: the version of this page (Index.html / phone app) and of the server (Code.gs). Both come from the same build, so they must be the same. */
-  var APP_VER = 'CEC V3.8 (25-11-2026 19:48)';
+  var APP_VER = 'CEC V3.9 (26-11-2026 04:35)';
   function verSame() { return S.serverVer === APP_VER; }
   function verKey(v) { var m = /(\d\d)-(\d\d)-(\d{4}) (\d\d:\d\d)/.exec(String(v || '')); return m ? m[3] + m[2] + m[1] + m[4] : ''; }   // the build time, in time order
   /* 18-11-2026 (night): shown as "CEC V2.1" (versions before V2.1 were named by their date) */
@@ -4879,8 +4879,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   /* ---------- 20-11-2026 (CEC V3.0): once on each device for each person, the first time the new version opens: a party popper and what is
      new (only what this person can use). Not for the print desk. ---------- */
-  var NEWS_VER = '3.8';
-  function newsList() {                                   // 25-11-2026 (CEC V3.8)
+  var NEWS_VER = '3.9';
+  function newsList() {                                   // 26-11-2026 (CEC V3.9): the census itself is unchanged; the new separate app
+    if (S.aideOff || (isAide() && !canEnter())) return newsListV38();
+    return [['CEC Code Assistant', 'A separate phone app for emergencies: the cardiac arrest clock and recorder, rhythm, chest pain, heart failure and blood pressure guides. Sign in with your census login ID and password. Ask the admin for the link.']].concat(newsListV38());
+  }
+  function newsListV38() {                                // 25-11-2026 (CEC V3.8)
     var a = [];
     if (S.aideOff || (isAide() && !canEnter())) return [['Echo aide', 'You can give echo appointments, see the patients registered for echo and print echo reports at any hour. Everything else opens in the morning shift.']];
     if (canEchoMake()) a.push(['Echo report', 'Make echo report lists the patients registered for echo: a report is made only for a registered patient with an MR No. Every change is kept on this phone and saved as provisional by itself about every minute. \u2191 moves a line up; tap a line to change its words; saved lines can be changed.']);
