@@ -1215,6 +1215,10 @@ input.wfsel{font:700 18px ui-monospace,Menlo,Consolas,monospace}
 .admwarn{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#fff7e0;border:1px solid #e9c77d;color:#5b3b00}
 .admwarn .btn{background:#7a4a00;color:#fff;border-color:#7a4a00}
 .admback{display:flex;align-items:center;gap:12px;margin:0 0 10px}.admback h3{margin:0;font-size:18px}
+/* V4.2 (item 13): the version and the two buttons for everyone, on the tiles page */
+.admtop{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:0 0 4px}
+.admver{color:var(--mute);font-weight:600}.admver.vbad{color:#b71c1c}
+.admquick{display:flex;gap:8px;flex-wrap:wrap}
 @media (max-width:620px){.admgrid{grid-template-columns:1fr 1fr}.admt{flex-direction:column;min-height:120px}}
 /* V4.0 (item 5): Drive space of the photos */
 .spgrid{border:1px solid var(--line);border-radius:10px;overflow:hidden}
@@ -4900,7 +4904,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   var IDLE_MS = 4 * 3600000;
   /* 14-11-2026: the version of this page (Index.html / phone app) and of the server (Code.gs). Both come from the same build, so they must be the same. */
-  var APP_VER = 'CEC V4.1 (27-11-2026 01:42)';
+  var APP_VER = 'CEC V4.2 (27-11-2026 18:27)';
   function verSame() { return S.serverVer === APP_VER; }
   function verKey(v) { var m = /(\d\d)-(\d\d)-(\d{4}) (\d\d:\d\d)/.exec(String(v || '')); return m ? m[3] + m[2] + m[1] + m[4] : ''; }   // the build time, in time order
   /* 18-11-2026 (night): shown as "CEC V2.1" (versions before V2.1 were named by their date) */
@@ -4946,7 +4950,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* "BP check only" and "ECG only" (11-11-2026): OPD patients (regular check-up) with an MR number and never a slip. They do not wait for a doctor:
      one hour after registration they close by themselves (BP check only: BP "NORMAL" if no BP was typed). In the form they are the categories BPO / ECGO. */
   var ONLY_L = { BP: 'BP check only', ECG: 'ECG only' }, ONLY_MS = 3600000;
-  function catLabel(e) { return e && e.only ? ONLY_L[e.only] || 'OPD' : e && e.petty ? 'Petty OPD: ' + (PETTY_L[e.petty] || '').toLowerCase() : CEC.label(CEC.CATS, e && e.cat); }
+  /* V4.2 (item 7): the word "petty" only for the admin and the HOD (his words, 14:06 and 17:20: "Nowhere petty should appear for users") */
+  function pettySee() { return isAdmin() || hasTitle('hod'); }
+  function catLabel(e) { return e && e.only ? ONLY_L[e.only] || 'OPD' : e && e.petty && pettySee() ? 'Petty OPD: ' + (PETTY_L[e.petty] || '').toLowerCase() : CEC.label(CEC.CATS, e && e.cat); }
   function awaitsDoc(e) { return !e.signed && !e.only; }
   function onlyEnds(e) { return new Date((Date.parse(e.t) || Date.now()) + ONLY_MS).toISOString(); }
   /* OPD day (12-11-2026): an OPD-day OPD patient's number (e.mr) is an OPD No., not an MR No. */
@@ -5171,8 +5177,16 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   /* ---------- 20-11-2026 (CEC V3.0): once on each device for each person, the first time the new version opens: a party popper and what is
      new (only what this person can use). Not for the print desk. ---------- */
-  var NEWS_VER = '4.1';
-  function newsList() {                                   // 27-11-2026 (CEC V4.1): the busy screen, then the V4.0 list (V4.1 may be installed straight after V3.9)
+  var NEWS_VER = '4.2';
+  function newsList() {                                   // 27-11-2026 (CEC V4.2), then V4.1 and V4.0 (a phone may come straight from V3.9)
+    var a = [];
+    if (canEnter()) a.push(['One number, one patient', 'The census never gives a number that is already in the census, also when the last number is set back. Only the admin can set it back (after a warning).']);
+    a.push(['Patient dashboard in number order', 'Patients are listed by their MR No., the highest on top; on an OPD day the OPD Nos. follow in their own block.']);
+    if (canAcct()) a.push(['Accounting check', 'A number given to two patients is listed; the admin gives one of them the next free number.']);
+    if (isAdmin()) a.push(['Account & admin', 'The version, Reload everybody and Sign out everybody are back on the first page. The Petty OPD register has its own 4-digit PIN, asked every time it opens.']);
+    return a.concat(newsListV41());
+  }
+  function newsListV41() {                                // 27-11-2026 (CEC V4.1): the busy screen, then the V4.0 list (V4.1 may be installed straight after V3.9)
     return [['Busy screen', 'After a tap that needs time (Print, Preview, Download, saving a certificate, a photo), the census shows it is working and ignores a second tap. Quick jobs never show it.']].concat(newsListV40());
   }
   function newsListV40() {                                // 26-11-2026 (CEC V4.0)
@@ -5660,6 +5674,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function headerHeight() { var t = $('top'); if (t) document.documentElement.style.setProperty('--hh', t.offsetHeight + 'px'); }
   window.addEventListener('resize', headerHeight);
   function render() {
+    if (S.ptWas && S.view !== 'petty') { S.ptWas = false; S.ptPin = null; S.pq = null; if (S.me && !isOff()) api('apiPettyLock').then(null, function () { }); }   // V4.2 (item 7): the Petty PIN again next time
     var nav = $('nav'), ub = $('userbar'), v = $('view'), a = $('actions');
     a.classList.add('hidden'); a.innerHTML = ''; lnavPaint();   // V4.0: the left menu on the website
     if (!S.me) {
@@ -5721,7 +5736,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     else if (S.view === 'echo') v.innerHTML = echoPageHtml();
     else if (S.view === 'tmpdoc') v.innerHTML = canTmp() ? tmpHtml() : '<section class="card">Printing a document is for doctors and the admin.</section>';
     else if (S.view === 'bulk') v.innerHTML = bulkHtml();
-    else if (S.view === 'petty') v.innerHTML = isAdmin() ? pettyHtml() : '<section class="card">The petty OPD register is for the admin.</section>';
+    else if (S.view === 'petty') { S.ptWas = true; v.innerHTML = isAdmin() ? (S.ptPin !== 'ok' ? pettyPinHtml() : pettyHtml()) : '<section class="card">The petty OPD register is for the admin.</section>'; }
     else if (S.view === 'mrreg') v.innerHTML = mrRegHtml();
     else if (S.view === 'ettrep') v.innerHTML = canClin() ? ettListHtml() : '<section class="card">ETT reports are for doctors and nursing staff.</section>';   // 23-11-2026 (V3.2)
     else if (S.view === 'ettform') v.innerHTML = canClin() ? ettFormHtml() : '<section class="card">ETT reports are for doctors and nursing staff.</section>';
@@ -5756,8 +5771,26 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '</b><span>Female</span></div><div class="' + (c.wait ? 'w' : '') + '"><b>' + c.wait + '</b><span>Awaiting doctor</span></div></div>' +
       '<div class="catline">' + CEC.CATS.map(function (k) { return h(k.l) + ' <b>' + (c.byCat[k.c] || 0) + '</b>'; }).join(' &middot; ') + '</div>';
   }
+  /* V4.2 (item 9; his words 16:14: "So it show in proper order not in between like this 14 15 16 11 17 18 on patient dashboard"; his choice 16:20:
+     "Sort the dashboard by MR No."): the patients in number order, the highest on top, each register in its own block (the two registers are
+     never mixed): first any patient still without a number (newest first), then the MR Nos., the OPD Nos. (OPD day), the Day Care Nos.
+     Each block has its own serial (1 = its lowest number), so the serial follows the register. */
+  function numParts(no) { var m = /^(.*?)(\d+)(\D*)$/.exec(String(no || '').toUpperCase().replace(/\s+/g, '')); return m ? { p: m[1], n: +m[2], s: m[3] } : { p: String(no || ''), n: -1, s: '' }; }
+  function dashBlock(e) { return !e.mr ? 0 : e.cat === 'DC' ? 3 : e.opd ? 2 : 1; }
+  function dashList(entries) {
+    if (window.__cecOldDash && !window.__cecNewDash) return entries.map(function (e, i) { return { e: e, n: i + 1 }; }).reverse();   // the older automated tests: by time
+    var blk = [[], [], [], []], out = [];
+    entries.forEach(function (e) { blk[dashBlock(e)].push({ e: e, n: '' }); });
+    blk[0].reverse().forEach(function (x) { x.n = '&ndash;'; out.push(x); });
+    blk.slice(1).forEach(function (L) {
+      L.sort(function (a, b) { var x = numParts(a.e.mr), y = numParts(b.e.mr); return x.p < y.p ? -1 : x.p > y.p ? 1 : x.n !== y.n ? x.n - y.n : x.s < y.s ? -1 : x.s > y.s ? 1 : (a.e.t < b.e.t ? -1 : a.e.t > b.e.t ? 1 : 0); });
+      L.forEach(function (x, i) { x.n = i + 1; });
+      for (var i = L.length - 1; i >= 0; i--) out.push(L[i]);
+    });
+    return out;
+  }
   function rowsHtml(entries, q, filter, src, cat) {
-    var list = entries.map(function (e, i) { return { e: e, n: i + 1 }; });
+    var list = dashList(entries);
     if (cat) list = list.filter(function (x) { return x.e.cat === cat; });
     list = list.filter(function (x) { return stageTest(filter, x.e); });
     if (q) {
@@ -5767,7 +5800,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (!entries.length) return '<div class="empty">No patients recorded yet.' + (canEnter() ? ' Tap <b>+ New patient</b> to add the first one.' : '') + '</div>';
     if (!list.length) return '<div class="empty">' + (q ? 'No patient matches.' : filterName(filter || '') ? 'No patients: ' + h(filterName(filter).toLowerCase()) + (cat ? ' (' + h(CEC.label(CEC.CATS, cat)) + ')' : '') + '.'
       : cat && filter !== 'wait' ? 'No ' + h(CEC.label(CEC.CATS, cat)) + ' patients in this shift.' : filter === 'wait' ? 'No patients are waiting for a doctor.' : filter === 'seen' ? 'No patients have been signed off yet.' : 'No patient matches.') + '</div>';
-    return list.reverse().map(function (x) {
+    return list.map(function (x) {
       var e = x.e, dx = CEC.dxOf(e).join(', '), st = stageOf(e), left = advLeft(e);
       var rd = vitalsText(e);
       var procs = (e.procs || []).filter(function (p) { return !(p === 'BP' && e.bp) && !(p === 'BSR' && e.rbs); }).map(function (p) { return CEC.label(CEC.PROCS, p); }).concat(canClin() ? e.meds || [] : []).join(', ');
@@ -6151,7 +6184,11 @@ if (typeof module !== 'undefined') module.exports = CEC;
     }
     var groups = [], last = null;
     admList().forEach(function (x) { if (!last || last.g !== x[0]) { last = { g: x[0], l: [] }; groups.push(last); } last.l.push(x); });
-    return '<div class="admtiles">' + warn + groups.map(function (g) {
+    /* V4.2 (item 13, his words 17:55: "unable to see reload and refresh everyone and logout every option ... Version of software installed has
+       also disappeared"): since V4.0 they were inside the My account and Data protection tiles; now on this page too */
+    var top = '<div class="admtop"><div class="admver small' + (verSame() ? '' : ' vbad') + '" id="admVer">' + h(verText()) + '</div><div class="admquick">' +
+      '<button class="btn sm" data-act="sec-reload">Reload everybody (new version)</button><button class="btn sm dan" data-act="sec-all">Sign out everybody</button></div></div>';
+    return '<div class="admtiles">' + warn + top + groups.map(function (g) {
       return '<div class="admg">' + h(g.g) + '</div><div class="admgrid">' + g.l.map(function (x) {
         return '<button type="button" class="admt' + (x[1] === 'reset' ? ' red' : '') + '" data-act="adm-sec" data-v="' + x[1] + '"><span class="admi" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ADM_I[x[1]] + '</svg></span>' +
           '<span class="admtx"><b>' + h(x[2]) + '</b><span>' + h(x[3]) + '</span></span>' + (x[5] ? '<span class="admc">' + x[5] + '</span>' : '') + '</button>';
@@ -6616,8 +6653,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function securityHtml() {
     var b = S.bin;
-    if (!b) { setTimeout(loadBin, 0); return '<section class="card"><div class="ct">Data protection</div><div class="center muted"><span class="spin"></span>Loading&hellip;</div></section>'; }
-    if (b.err) return '<section class="card"><div class="ct">Data protection</div><p class="small">' + h(b.err) + '</p><button class="btn sm" data-act="sec-load">Try again</button></section>';
+    var btns = '<div class="sbtns"><button class="btn sm" data-act="sec-backup">Back up now</button><button class="btn sm" data-act="sec-reload">Reload everybody (new version)</button><button class="btn sm dan" data-act="sec-all">Sign out everybody</button><button class="btn sm" data-act="sec-load">&#8635; Refresh</button></div>';
+    /* V4.2 (item 13): the buttons show at once; only the recycle bin waits for its list (before, a slow or failed list hid them) */
+    if (!b) { setTimeout(loadBin, 0); return '<section class="card"><div class="ct">Data protection</div>' + btns + '<div class="center muted"><span class="spin"></span>Loading the recycle bin&hellip;</div></section>'; }
+    if (b.err) return '<section class="card"><div class="ct">Data protection</div>' + btns + '<p class="small">The recycle bin could not be read: ' + h(b.err) + '</p><button class="btn sm" data-act="sec-load">Try again</button></section>';
     var warn = [];
     if (!b.protected) warn.push('Run <b>setup</b> once in Apps Script to protect the tabs and start the nightly backup.');
     if (!b.nightly) warn.push('The nightly backup is not set. Run <b>setup</b> once in Apps Script.');
@@ -6628,7 +6667,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     return '<section class="card"><div class="ct">Data protection</div>' +
       (warn.length ? '<div class="warn" style="margin:0 0 10px">' + warn.join('<br>') + '</div>' : '<p class="small" style="margin:0 0 8px">&#10003; Tabs protected &middot; nightly backup on &middot; sign-in lock after 5 wrong passwords.</p>') +
       '<div class="kv small" style="margin:0 0 8px">Last backup copy: <b>' + (b.lastBackup ? h(fmtTime(b.lastBackup)) : 'none yet') + '</b> (Drive folder \u201cCEC Census Backups\u201d)</div>' +
-      '<div class="sbtns"><button class="btn sm" data-act="sec-backup">Back up now</button><button class="btn sm" data-act="sec-reload">Reload everybody (new version)</button><button class="btn sm dan" data-act="sec-all">Sign out everybody</button><button class="btn sm" data-act="sec-load">&#8635; Refresh</button></div>' +
+      btns +
       '<div class="gh">Recycle bin (' + items.length + ')</div><p class="muted small" style="margin:0 0 6px">Deleted patients, certificates, photos, appointments and documents are kept encrypted <b>for ever</b> and can be put back at any time; nobody can remove them. ' +
       (b.versions ? b.versions + ' earlier version' + (b.versions === 1 ? '' : 's') + ' of changed patient entries are also kept for ' + b.days + ' days (open a patient and tap Earlier versions).' : '') + '</p>' +
       (items.length ? '<div class="plist">' + binGroups(items).slice(0, 300).map(function (g) {
@@ -7128,7 +7167,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<p class="muted small" style="margin:4px 0 0">The patient then appears on the ECG page until the ECG is done (or the RBS is written).</p>' + slipLine(e);
   }
   function slipLine(e) {
-    if (e.petty) return '<div class="slipln"><span>Petty OPD from the register: ' + h(PETTY_L[e.petty] || '') + ' (no slip)</span></div>';
+    if (e.petty) return '<div class="slipln"><span>' + (pettySee() ? 'Petty OPD from the register: ' + h(PETTY_L[e.petty] || '') + ' (no slip)' : 'OPD: no slip') + '</span></div>';   // V4.2 (item 7)
     if (e.only) return '<div class="slipln"><span>' + h(ONLY_L[e.only]) + ': no OPD / ER slip' + (e.signed ? ' (closed as an OPD regular check-up)' : '; closes by itself at ' + CEC.hm(onlyEnds(e))) + '</span></div>';
     if (e.signed) return e.tok ? '<div class="slipln"><span>OPD / ER slip: <b>' + h(e.tok) + '</b> (signed off)</span></div>' : '';
     return '<div class="slipln"><span>' + (e.tok ? 'OPD / ER slip: <b>' + h(e.tok) + '</b>' : 'No OPD / ER slip yet (it is made when the vitals are saved)') + '</span>' +
@@ -9564,8 +9603,54 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function pettyLoad() {
     if (isOff() || S.pqBusy) return;
+    if (window.__cecOldPin && !window.__cecNewPin) S.ptPin = 'ok';   // the older automated tests: no PIN set, the page opens as before
+    if (S.ptPin !== 'ok') { if (!S.ptPin) pettyPinAsk(); return; }   // V4.2 (item 7): nothing is read before the PIN
     S.pqBusy = true;
-    api('apiPettyQueue').then(function (q) { S.pqBusy = false; S.pq = q; if (S.view === 'petty' && !typing() && !anyOverlay()) render(); }, function () { S.pqBusy = false; });
+    api('apiPettyQueue').then(function (q) { S.pqBusy = false; S.pq = q; if (S.view === 'petty' && !typing() && !anyOverlay()) render(); },
+      function (e) { S.pqBusy = false; if (/PETTYPIN:/.test(errText(e))) { S.ptPin = 'ask'; S.ptPinSet = true; if (S.view === 'petty' && !anyOverlay()) render(); } });
+  }
+  /* ---------- V4.2 (item 7, 27-11-2026): the Petty PIN, asked every time the page opens. His words (17:20): "Create pin instead. Because
+     someone who can log in by password can do the same again." The server checks it on every petty call (this sign-in only). ---------- */
+  function pettyPinAsk() {
+    S.ptPin = 'busy';
+    api('apiPettyUnlock', '').then(function (r) { S.ptPinSet = !!(r && r.pinSet); S.ptPin = 'ask'; if (S.view === 'petty' && !anyOverlay()) render(); },
+      function (e) { S.ptPinSet = true; S.ptPin = 'ask'; S.ptPinErr = /locked/.test(errText(e)) ? errText(e) : ''; if (S.view === 'petty' && !anyOverlay()) render(); setTimeout(function () { var x = $('ptPin'); if (x) x.focus(); }, 50); });
+  }
+  function pettyPinHtml() {
+    if (isOff()) return '<div class="narrow"><section class="card">The Petty OPD register needs internet.</section></div>';
+    if (S.ptPin !== 'ask') { if (!S.ptPin) setTimeout(pettyLoad, 0); return '<div class="narrow"><section class="card center muted"><span class="spin"></span>Opening&hellip;</section></div>'; }
+    var pinIn = function (id, lab) { return '<label class="lb" for="' + id + '">' + lab + '</label><input class="in ptpin" id="' + id + '" type="password" inputmode="numeric" maxlength="4" autocomplete="off" pattern="[0-9]*">'; };
+    if (!S.ptPinSet) return '<div class="narrow"><section class="card"><div class="ct">Set the Petty PIN</div><p class="small" style="margin:0 0 6px">This page gets its own <b>4-digit PIN</b>, asked every time it opens. The sign-in password alone no longer opens it. ' +
+      'Keep the PIN to yourself. A forgotten PIN can be cleared only by the owner of the Google Sheet (Apps Script: run <b>resetPettyPin</b>).</p>' +
+      '<label class="lb" for="ptPw">Your password</label><input class="in" id="ptPw" type="password" autocomplete="current-password">' + pinIn('ptPin1', 'New PIN (4 digits)') + pinIn('ptPin2', 'The PIN again') +
+      '<p class="err small hidden" id="ptPinErr"></p><div class="sbtns"><button class="btn pri" data-act="pt-pinset">Set the PIN</button></div></section></div>';
+    return '<div class="narrow"><section class="card ptlock"><div class="ct">Petty OPD register</div><p class="small" style="margin:0 0 6px">Type the 4-digit Petty PIN.</p>' + pinIn('ptPin', 'PIN') +
+      '<p class="err small' + (S.ptPinErr ? '' : ' hidden') + '" id="ptPinErr">' + h(S.ptPinErr || '') + '</p><div class="sbtns"><button class="btn pri" data-act="pt-pin">Open</button></div>' +
+      '<p class="muted small" style="margin:10px 0 0"><button type="button" class="lnk" data-act="pt-pinchg">Change the PIN</button> &middot; Forgotten: the owner of the Google Sheet runs <b>resetPettyPin</b> in Apps Script.</p></section></div>';
+  }
+  function pettyPinErr(t) { var x = $('ptPinErr'); if (x) { x.textContent = t; x.classList.remove('hidden'); } }
+  function pettyPinGo() {
+    var x = $('ptPin'), pin = x ? x.value.trim() : '';
+    if (!/^\d{4}$/.test(pin)) return pettyPinErr('Type the 4 digits.');
+    api('apiPettyUnlock', pin).then(function () { S.ptPin = 'ok'; S.ptPinErr = ''; render(); pettyLoad(); },
+      function (e) { if (x) { x.value = ''; x.focus(); } pettyPinErr(errText(e)); });
+  }
+  function pettyPinSet() {
+    var pw = ($('ptPw') || {}).value || '', a = (($('ptPin1') || {}).value || '').trim(), b = (($('ptPin2') || {}).value || '').trim();
+    if (!pw) return pettyPinErr('Type your password.');
+    if (!/^\d{4}$/.test(a)) return pettyPinErr('The PIN is 4 digits.');
+    if (a !== b) return pettyPinErr('The two PINs are not the same.');
+    api('apiPettyPinSet', JSON.stringify({ pw: pw, pin: a })).then(function () { S.ptPin = 'ok'; S.ptPinSet = true; toast('Petty PIN set. It is asked every time this page opens.'); render(); pettyLoad(); }, function (e) { pettyPinErr(errText(e)); });
+  }
+  function pettyPinChange() {
+    var pinIn = function (id, lab) { return '<label class="lb" for="' + id + '">' + lab + '</label><input class="in ptpin" id="' + id + '" type="password" inputmode="numeric" maxlength="4" autocomplete="off">'; };
+    modal('Change the Petty PIN', pinIn('pcOld', 'Old PIN') + pinIn('pcNew', 'New PIN (4 digits)') + pinIn('pcNew2', 'The new PIN again'), [{ label: 'Back', value: null }, { label: 'Change the PIN', cls: 'pri', value: 'form' }]).then(function (v) {
+      if (!v) return;
+      var o = (v.pcOld || '').trim(), a = (v.pcNew || '').trim(), b = (v.pcNew2 || '').trim();
+      if (!/^\d{4}$/.test(a) || !/^\d{4}$/.test(o)) return toast('A PIN is 4 digits.');
+      if (a !== b) return toast('The two new PINs are not the same.');
+      api('apiPettyPinSet', JSON.stringify({ old: o, pin: a })).then(function () { S.ptPin = 'ok'; toast('Petty PIN changed.'); render(); pettyLoad(); }, function (e) { toast(errText(e)); });
+    });
   }
   function pettyRows() {
     var P = S.petty, lines = String(P.file ? P.file.text : P.text || '').split(/\r?\n/);
@@ -13678,8 +13763,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<button class="btn" data-act="acs-dt" data-v="type">' + ICON.pen + ' Type the patients</button>' +
       (gaps.length && acctFull() ? '<button class="btn" data-act="acs-gapno">Mark numbers not used</button>' : '') +
       '<button class="btn" data-act="paper-mark" data-id="' + h(did) + '">On the manual register, to be entered</button></div>';
-    var mine = it.filter(function (x) { return x.type === 'gap' || ACCT_DEATH[x.type] || x.type === 'wait'; });
+    var mine = it.filter(function (x) { return x.type === 'gap' || ACCT_DEATH[x.type] || x.type === 'wait' || x.type === 'twice'; });
     if (mine.length) html += '<div class="acslist">' + mine.map(function (x) {
+      if (x.type === 'twice') return '<div class="acc-row"><b>' + (x.reg === 'opd' ? 'OPD No. ' : 'MR ') + h(x.no) + '</b> given to two patients: ' + x.list.map(function (y) { return h(y.name); }).join(', ') + '</div>';   // V4.2 (item 8)
       if (x.type === 'gap') return '<div class="acc-row' + (x.n < 3 ? ' acc-small' : '') + '"><b>' + (x.reg === 'opd' ? 'OPD ' : 'MR ') + h(x.nums[0]) + (x.nums.length > 1 ? ' to ' + h(x.nums[x.nums.length - 1]) : '') + '</b> missing (' + x.n + ')' + (x.paper ? ' &middot; on paper' : '') + '</div>';
       if (x.type === 'wait') return '<div class="acc-row muted small">' + x.n + ' patient' + (x.n === 1 ? '' : 's') + ' without an outcome: ' + x.names.slice(0, 6).map(function (y) { return h(y.name); }).join(', ') + (x.n > 6 ? '&hellip;' : '') + '</div>';
       return '<div class="acc-row acc-dead"><b>' + (x.type === 'nocert' ? 'Death without a certificate' : x.type === 'dup' ? 'One MR No. with two certificates' : x.type === 'bd2' ? 'Two brought dead with one number' : 'Certificate not in the census') + '</b>' +
@@ -13698,7 +13784,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var pitems = P.items.filter(function (it) { return it.type !== 'empty'; }), n = acctCount(pitems);   // V3.7: an empty shift has its own card (paperAskHtml)
     if (!n) return '';
     var by = {}; pitems.forEach(function (it) { if (!ACCT_INFO[it.type] && !it.paper) by[it.type] = (by[it.type] || 0) + (it.type === 'gap' || it.type === 'wait' ? it.n : 1); });
-    var parts = [['wait', 'awaiting the doctor (no outcome)'], ['gap', 'numbers missing from the register'], ['nocert', 'deaths without a certificate'], ['cert', 'certificates not in the census'], ['dup', 'MR Nos. with two certificates'], ['bd2', 'two brought dead with one number']]
+    var parts = [['twice', 'numbers given to two patients'], ['wait', 'awaiting the doctor (no outcome)'], ['gap', 'numbers missing from the register'], ['nocert', 'deaths without a certificate'], ['cert', 'certificates not in the census'], ['dup', 'MR Nos. with two certificates'], ['bd2', 'two brought dead with one number']]
       .filter(function (x) { return by[x[0]]; }).map(function (x) { return '<b>' + by[x[0]] + '</b> ' + x[1]; });
     return '<section class="card pendc"><div class="ct" style="color:var(--red)">' + h(CEC.shiftName(S.prevShift.shift)) + ' shift ' + h(CEC.dmy(S.prevShift.censusDate)) + ': ' + n + ' not accounted for</div>' +
       '<p class="small" style="margin:0 0 6px">Where is each patient counted? ' + parts.join(', ') + '.</p><button class="btn sm pri" data-act="go" data-v="acct">Open the Accounting check</button></section>';
@@ -13734,6 +13820,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
     html += sec('bd2', 'Two brought dead with one number', 'Two brought dead (or expired) patients have the same number. Both are kept: check the register and correct one of them.', function (it) {
       return '<div class="acc-row"><b>' + (it.opd ? 'OPD No. ' : 'MR ') + h(it.no) + '</b> &middot; ' + h(it.a) + ' and ' + h(it.b) + '<div class="muted small">' + sLbl(it.shiftId) + '</div>' +
         '<div class="sbtns"><button class="btn sm" data-act="acct-shift" data-id="' + h(it.shiftId) + '" data-v="' + h(String(it.shiftId).slice(0, 10)) + '">Open the shift</button>' + (full ? '<button class="btn sm" data-act="acct-iss" data-id="' + h(it.id) + '">Corrected</button>' : '') + '</div></div>';
+    });
+    html += sec('twice', 'One number given to two patients', 'Two different patients have the same number. ' + (isAdmin() ? 'Give one of them the next free number (the other keeps it).' : 'The admin gives one of them the next free number.'), function (it) {   // V4.2 (item 8)
+      return '<div class="acc-row"><b>' + (it.reg === 'opd' ? 'OPD No. ' : 'MR ') + h(it.no) + '</b>' + it.list.map(function (x) {
+        return '<div class="small" style="margin:4px 0 0"><b>' + h(x.name) + '</b> &middot; ' + sLbl(x.shiftId) + (x.t ? ', ' + h(fmtTime(x.t)) : '') + (x.by ? ' &middot; entered by ' + h(x.by) : '') +
+          (isAdmin() ? ' <button class="btn sm" data-act="acct-freeno" data-id="' + h(x.id) + '" data-v="' + h(x.name) + '">Give the next number</button>' : '') + '</div>';
+      }).join('') + '<div class="sbtns"><button class="btn sm" data-act="acct-shift" data-id="' + h(it.list[0].shiftId) + '" data-v="' + h(String(it.list[0].shiftId).slice(0, 10)) + '">Open the shift</button></div></div>';
     });
     html += sec('nocert', 'Deaths without a certificate', 'Brought dead or expired in the CEC, with no certificate yet.', function (it) {
       return '<div class="acc-row">' + who(it.entry) + '<div class="sbtns"><button class="btn sm" data-act="go" data-v="certs">Make or upload the certificate</button></div></div>';
@@ -14140,7 +14232,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var sh = targetShift(); if (!sh || shOpd(sh) === on) return;
     if (isOff()) return toast('Changing the day needs internet.');
     confirmBox(on ? 'Make this morning an OPD day?' : 'Make this morning an Emergency day?',
-      on ? 'For everyone: patients registered from now get OPD numbers (OPD register), except Emergency / Resus and Brought dead (MR numbers). No petty OPD names are added this morning.'
+      on ? 'For everyone: patients registered from now get OPD numbers (OPD register), except Emergency / Resus and Brought dead (MR numbers).' + (pettySee() ? ' No petty OPD names are added this morning.' : '')
         : 'For everyone: every patient registered from now gets an MR No.', on ? 'OPD day' : 'Emergency day').then(function (ok) {
       if (!ok) return;
       api('apiOpdDay', sh.id, on).then(function (r) {
@@ -14166,7 +14258,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   /* 24-11-2026 (V3.3): the new numbers show at once on this phone (form, Download registers); one call saves both in the background.
      A patient registered meanwhile waits for it (apiRetry), so he never gets the old number. If it fails, the old numbers come back. */
-  function setNums(mr, op) {
+  function setNums(mr, op, force) {
     var oldMr = S.mr, oldOpd = S.opdc, oldR = S.mrreg ? { mr: S.mrreg.mr, opd: S.mrreg.opd } : null, at = new Date().toISOString(), said = [];
     if (mr) { S.mr = { last: mr, at: at, next: nextMr(mr) }; said.push('next MR ' + S.mr.next); if (S.mrreg) S.mrreg.mr = mr; }
     if (op) { S.opdc = { last: up(op), at: at, next: nextMr(up(op)) }; said.push('next OPD No. ' + S.opdc.next); if (S.mrreg) S.mrreg.opd = up(op); }
@@ -14174,11 +14266,15 @@ if (typeof module !== 'undefined') module.exports = CEC;
     S.numsSaving = true; syncMr(); if (S.view === 'mrreg') render();
     toast('Automatic numbers: ' + said.join(', ') + '.');
     var done = function () { S.numsSaving = false; S.numsP = null; syncMr(); if (S.view === 'mrreg') render(); };
-    S.numsP = apiRetry0('apiSetNums', JSON.stringify({ mr: mr || '', opd: op || '' })).then(function (r) {
+    S.numsP = apiRetry0('apiSetNums', JSON.stringify(force ? { mr: mr || '', opd: op || '', force: true } : { mr: mr || '', opd: op || '' })).then(function (r) {
       if (r && r.mr && mr) S.mr = r.mr; if (r && r.opdc && op) S.opdc = r.opdc; done();
     }, function (e) {
       S.mr = oldMr; S.opdc = oldOpd; if (S.mrreg && oldR) { S.mrreg.mr = oldR.mr; S.mrreg.opd = oldR.opd; } done();
-      modal('Numbers not saved', '<p>' + h(errText(e)) + '</p><p>The numbers are as before. Set them again.</p>', [{ label: 'OK', cls: 'pri', value: true }]);
+      var t = errText(e);
+      if (/^NUMBACK:/.test(t) && isAdmin()) {               // V4.2 (item 8): back below a number already given: the admin is warned and may go on
+        return modal('Set the number back?', '<p>' + h(t.replace(/^NUMBACK:\s*/, '')) + '</p>', [{ label: 'Back', value: null }, { label: 'Set it back', cls: 'dan', value: true }]).then(function (v) { if (v) setNums(mr, op, true); });
+      }
+      modal('Numbers not saved', '<p>' + h(t.replace(/^NUMBACK:\s*/, '')) + '</p><p>The numbers are as before.' + (/already given/.test(t) ? '' : ' Set them again.') + '</p>', [{ label: 'OK', cls: 'pri', value: true }]);
     });
     return S.numsP;
   }
@@ -14541,6 +14637,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
         D1.from = pv[1] || ''; D1.to = pv[2] || ''; D1.list = null; dtKeep();
         setView('dt'); toast('Check the shift and the numbers, then tap Make the list.'); break;
       }
+      case 'acct-freeno': confirmBox('Give the next free number?', '<b>' + h(v || '') + '</b> gets the next free number of his register; the other patient keeps this number. The change is logged (the old record is kept in the recycle bin).', 'Give the next number', false).then(function (ok) {   // V4.2 (item 8)
+        if (ok) api('apiGiveFreeNo', id).then(function (r) { toast((r.name || 'The patient') + ' now has ' + (r.opd ? 'OPD No. ' : 'MR ') + r.no + ' (was ' + r.was + ').'); if (r.mrState) S.mr = r.mrState; if (r.opdState) S.opdc = r.opdState; [S.work, S.open, S.detail, S.prevShift].forEach(function (x) { (x && x.entries || []).forEach(function (y) { if (y.id === id) y.mr = r.no; }); }); S.acct = null; S.acctS = null; S.acctPrev = null; render(); }, function (e) { toast(errText(e)); });
+      }); break;
       case 'acct-iss': api('apiAcctMark', JSON.stringify({ keys: ['iss:' + id], why: 'SEEN' })).then(function () { toast('Noted'); S.acct = null; S.acctS = null; render(); }, function (e) { toast(errText(e)); }); break;
       case 'wf-copy': wifiCopy(v); break;                // 24-11-2026 (V3.5): CEC Wi-Fi
       case 'wf-pop': wifiPopShow(true); break;
@@ -14631,6 +14730,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
         api('apiPettyFind', fq).then(function (r) { S.petty.find = r; render(); }, function (x) { S.petty.find = null; toast(errText(x)); render(); });
         break; }
       case 'pt-file': { var pf = $('ptFile'); if (pf) pf.click(); break; }
+      case 'pt-pin': pettyPinGo(); break;                // V4.2 (item 7): the Petty PIN
+      case 'pt-pinset': pettyPinSet(); break;
+      case 'pt-pinchg': pettyPinChange(); break;
       case 'pt-clear': S.petty.text = ''; S.petty.file = null; S.petty.result = null; S.petty.stopped = null; render(); break;
       case 'pt-kind': { var pk = $('ptText'); if (pk) S.petty.text = pk.value; S.petty.kind = v; setOn('ptKind', v); break; }
       case 'pt-add': pettyAdd(); break;
@@ -15530,6 +15632,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (S.ef) { ev.preventDefault(); if (ev.target.id === 'efAddIn') echoAdd(); else ev.target.blur(); return; }
     if (S.form && ev.target.id === 'fEcgQ') { ev.preventDefault(); ecgFind(); return; }
     if (ev.target.id === 'dcQ') { ev.preventDefault(); dcFind(); return; }   // 23-11-2026 (V3.2)
+    if (ev.target.id === 'ptPin') { ev.preventDefault(); pettyPinGo(); return; }   // V4.2 (item 7)
     if (ev.target.id === 'ettQ') { ev.preventDefault(); ettFind(); return; }
     if (ev.target.id === 'ettS') { ev.preventDefault(); ev.target.blur(); return; }
     if (!S.form) return;
