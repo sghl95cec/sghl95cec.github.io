@@ -1345,6 +1345,63 @@ input.wfsel{font:700 18px ui-monospace,Menlo,Consolas,monospace}
 @keyframes bzin{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:no-preference){.bz.show .bzcard{animation:bzin .18s ease-out both}.bzecg .bzline{animation:bzecg 1.4s linear infinite}.bzbadge{animation:bzbeat 1.4s ease-in-out infinite}}
 @media (prefers-reduced-motion:reduce){.bzecg .bzline{stroke-dasharray:none}}
+/* V4.3 (item 12): one badge for each register made */
+.rgout{margin:12px 0 0;border-top:1px solid var(--line);padding-top:10px}
+.rgoh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 8px;font-size:14px}
+.rgb{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 8px;background:#fff}
+.rgbt{display:flex;flex-direction:column;gap:2px;min-width:140px}.rgbt span{font-size:13px;color:var(--mute)}
+.rgbb{display:flex;gap:6px;flex-wrap:wrap}
+/* V4.3 (item 4): Change name on a patient row */
+.rnrow{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;margin-left:6px;border-radius:8px;color:var(--g7);vertical-align:middle;border:1px solid var(--line);background:#fff;cursor:pointer}
+.rnrow:hover{background:var(--g0)}
+.erwait{color:#8a4b00}
+/* V4.3 (item 10): the dashboard's bin and Select mode (admin) */
+.dbar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.dselbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff7e0;border:1px solid #e9c77d;border-radius:10px;padding:8px 10px;margin:0 0 8px;font-size:14px}
+.dck{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:2px solid var(--line);border-radius:6px;color:transparent;font-size:14px;margin-bottom:4px}
+.dck.on{background:var(--g7);border-color:var(--g7);color:#fff}
+.prow.dsel{box-shadow:inset 0 0 0 2px var(--g7)}
+.dbrow{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 8px}
+.dbrow.on{box-shadow:inset 0 0 0 2px var(--g7)}.dbm{flex:1;min-width:0}.dbck input{width:20px;height:20px}
+/* V4.3 (item 11): Staff activity */
+.sagrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.sat{display:flex;flex-direction:column;gap:3px;text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;font:inherit;color:inherit}
+.sat:hover{box-shadow:inset 0 0 0 2px var(--g7)}.sat.red{border-color:#e4b1b1;background:#fffafa}.sat b{font-size:15.5px}
+.satags{display:flex;gap:4px;flex-wrap:wrap}.tag.sared{background:#fbeaea;color:#b71c1c}
+.saal .saalr{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:0 0 6px;font:inherit;color:inherit;cursor:pointer}
+.saal .saalr span{display:block}.saal .saalr.fresh{border-color:#e4b1b1;background:#fff5f5}
+.saph{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
+.sachips{flex-wrap:wrap}
+.saday{font-size:12px;font-weight:800;letter-spacing:.1em;color:var(--g7);margin:14px 2px 6px;text-transform:uppercase}
+.sal{display:flex;gap:8px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:0 0 6px}
+.sal.risky{border-color:#e4b1b1}.sal.risky b{color:#b71c1c}.sal.undone{opacity:.8;background:#fafafa}
+.salm{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer}
+.salt{display:inline-block;min-width:44px;color:var(--mute);font-variant-numeric:tabular-nums}
+.saund{display:block;margin-top:4px;color:#b71c1c;font-weight:700;font-size:13px}.saspace{width:20px;flex:none}
+.whyl{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+/* V4.3 (item 14): the phone's menu in the same design as the website's left menu: a dark green drawer from the right (the thumb's side), grouped */
+@media (max-width:899px){
+  body.pnav .nav,body.pnav .nav.many{position:fixed;right:0;top:0;bottom:0;left:auto;width:min(300px,86vw);max-height:none;display:flex!important;flex-direction:column;gap:0;padding:0 10px 14px;
+    background:var(--g9);border:0;border-radius:16px 0 0 16px;box-shadow:-6px 0 28px rgba(0,0,0,.3);overflow-y:auto;z-index:15;transform:translateX(105%);transition:transform .22s ease;visibility:hidden}   /* his words 19:38: "keep the drop menu on right thumb side" */
+  body.pnav .nav.open{transform:none;visibility:visible}
+  body.pnav .nav .nbrand{display:flex;align-items:center;gap:10px;padding:16px 4px 14px;border-bottom:1px solid rgba(255,255,255,.14);margin-bottom:6px;color:#fff}
+  body.pnav .nbadge{flex:none;width:44px;height:44px;border-radius:50%;background:#fff;color:var(--g9);font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center}
+  body.pnav .nbrt{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+  body.pnav .nbrt small{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.75}
+  body.pnav .nbrt b{font-size:15px}body.pnav .nbrt span{font-size:12.5px;opacity:.85}
+  body.pnav .nbtog{margin-left:auto;flex:none;width:38px;height:38px;border-radius:9px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.06);color:#fff;font-size:22px;line-height:1;cursor:pointer}
+  body.pnav .nav .ngh{display:block;padding:14px 10px 6px;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+  body.pnav .nav .ngh.nline{padding:0;margin:6px 4px;border-top:1px solid rgba(255,255,255,.14)}
+  body.pnav .nav .nsp{display:block;flex:1 0 8px}
+  body.pnav .nav .ni>button{padding:11px 10px;font-size:15px;font-weight:500;gap:12px;color:#e9f1ec;border:0;border-radius:9px;line-height:1.25}
+  body.pnav .nav .ni>button svg{color:#cfe3d7}
+  body.pnav .nav .ni>button.on{background:rgba(255,255,255,.14);color:#fff;box-shadow:inset 3px 0 0 #c9a227}
+  body.pnav .nav .ni>button.on svg{color:#fff}
+  body.pnav .nav .ni.so>button,body.pnav .nav .ni.so>button svg{color:#ffb4b4}
+  @media (prefers-reduced-motion:reduce){body.pnav .nav{transition:none}}
+}
+/* V4.3 (item 15): the echo report's preview step */
+.ewprev{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 4px}.ewprev .btn{flex:1;min-width:140px;min-height:48px}
 
 </style>
 <script>
@@ -4191,6 +4248,10 @@ var CEC = (function () {
   REG_DEF.bd = { t: 'BROUGHT DEAD AND DEATHS', code: 'CEC-BD', bd: true,
     cols: [{ k: 'sno', h: 'S.No.', w: 26 }, { k: 'no', h: 'MR No.', w: 50 }, { k: 'time', h: 'Time', w: 32 },
       { k: 'name', h: 'Patient name (CAPITALS)', sub: 'Brought dead: CNIC, contact No., address on the next row' }, { k: 'age', h: 'Age', w: 26 }, { k: 'sex', h: 'Sex', w: 28 }, { k: 'text', h: 'Death', w: 78, f: 'death' }] };
+  /* V4.3 (item 12, his words 27-11-2026 17:20 "same for echo or ett"): the ETT register (ETT patients only) */
+  REG_DEF.ett = { t: 'ETT REGISTER', code: 'CEC-ETT',
+    cols: [{ k: 'sno', h: 'S.No.', w: 26 }, { k: 'no', h: 'MR No.', w: 52 }, { k: 'time', h: 'Time', w: 34 }, { k: 'name', h: 'Patient name (CAPITALS)' },
+      { k: 'age', h: 'Age', w: 26 }, { k: 'sex', h: 'Sex', w: 28 }, { k: 'tick', h: 'BP', w: 32, f: 'bp' }, { k: 'tick', h: 'ETT', h2: 'done', w: 36, f: 'ett' }, { k: 'text', h: 'Remarks', w: 96, f: 'rem' }] };
   var REG_SHIFTS = [['M', 'Morning'], ['E', 'Evening'], ['N', 'Night']];
   function regFz(t, f, z, w, min) { while (z > min && PDFGen.width(String(t), f, z) > w) z -= 0.25; return z; }   // a number is made smaller, never cut
   function regTick(d, x, y, s) { d.line(x + 0.2 * s, y + 0.55 * s, x + 0.42 * s, y + 0.8 * s, 1.6); d.line(x + 0.42 * s, y + 0.8 * s, x + 0.85 * s, y + 0.18 * s, 1.6); }
@@ -4355,6 +4416,7 @@ var CEC = (function () {
       var cm = String(e.note || e.cm || ''), m = /^REFERRED BY\s+((?:(?:DR|PROF|MR|MRS|MS|ST|NO)\.\s*|[^.])*)(?:\.\s*([\s\S]*))?$/i.exec(cm);
       r.ref = m ? UP(m[1]).trim() : ''; r.rem = UP(m ? m[2] || '' : cm);
     } else if (reg === 'dc') { r.of = UP(e.dcOf || ''); r.why = UP(e.dcWhy || ''); r.disp = REG_DISP[e.out] || ''; }
+    else if (reg === 'ett') { r.bp = true; r.ett = has(e, 'ETT'); r.rem = UP(String(e.note || e.cm || '')); }   // V4.3
     return r;
   }
   /* the shift's summary (stamp) of an MR or OPD register: o.clin adds the outcomes (doctors, nursing staff and the admin only, as everywhere) */
@@ -4378,11 +4440,11 @@ var CEC = (function () {
   function regSpec(shifts, reg, o) {
     var SO = { M: 0, E: 1, N: 2 }, F = REG_DEF[reg] || REG_DEF.mr, n = 0;
     var test = reg === 'dc' ? function (e) { return e.cat === 'DC'; } : reg === 'opd' ? function (e) { return !!e.opd; } : reg === 'echo' ? function (e) { return e.cat === 'ECHO'; } :
-      reg === 'bd' ? function (e) { return regBD(e) || e.out === 'EXP'; } : function (e) { return !e.opd && e.cat !== 'DC'; };   // V4.0: bd
+      reg === 'bd' ? function (e) { return regBD(e) || e.out === 'EXP'; } : reg === 'ett' ? function (e) { return e.cat === 'ETT'; } : function (e) { return !e.opd && e.cat !== 'DC'; };   // V4.0: bd; V4.3: ett
     var shs = (shifts || []).filter(Boolean).slice().sort(function (a, b) { return a.censusDate < b.censusDate ? -1 : a.censusDate > b.censusDate ? 1 : (SO[a.shift] || 0) - (SO[b.shift] || 0); });
     var out = shs.map(function (sh) {
       var list = (sh.entries || []).filter(function (e) { return !/^(q-|tmp)/.test(e.id || '') && test(e); });
-      list.sort(reg === 'echo' ? function (a, b) { return (a.t || '') < (b.t || '') ? -1 : (a.t || '') > (b.t || '') ? 1 : 0; } : dlByNum);
+      list.sort(reg === 'echo' || reg === 'ett' ? function (a, b) { return (a.t || '') < (b.t || '') ? -1 : (a.t || '') > (b.t || '') ? 1 : 0; } : dlByNum);
       n += list.length;
       return { date: sh.censusDate, shift: sh.shift, rows: list.map(function (e, i) { var r = regRow(e, reg); r.sno = i + 1; return r; }), sum: F.stamp ? regSum(sh, list, reg, o) : null, dt: [] };
     }).filter(function (s) { return s.rows.length; });
@@ -4904,7 +4966,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   var IDLE_MS = 4 * 3600000;
   /* 14-11-2026: the version of this page (Index.html / phone app) and of the server (Code.gs). Both come from the same build, so they must be the same. */
-  var APP_VER = 'CEC V4.2 (27-11-2026 18:27)';
+  var APP_VER = 'CEC V4.3 (27-11-2026 21:02)';
   function verSame() { return S.serverVer === APP_VER; }
   function verKey(v) { var m = /(\d\d)-(\d\d)-(\d{4}) (\d\d:\d\d)/.exec(String(v || '')); return m ? m[3] + m[2] + m[1] + m[4] : ''; }   // the build time, in time order
   /* 18-11-2026 (night): shown as "CEC V2.1" (versions before V2.1 were named by their date) */
@@ -5158,6 +5220,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     S.auto = st.autoprint || null;
     S.eslips = !!st.eslips;                               // 23-11-2026 (V3.2): electronic slips on / off (admin switch)
     S.busyCfg = st.busy || null;                          // 27-11-2026 (V4.1): the busy screen (on, ms)
+    S.alertN = st.alertN || 0;                            // V4.3 (item 11): the admin's alerts not seen
     S.fu = st.fu || []; S.cnicMiss = st.cnicMiss || 0; setTimeout(fuTick, 1200);   // 24-11-2026 (V3.3): reminders for this person
     S.att = st.att || null; S.rem = st.rem || null; S.notifOn = !!st.notifOn; S.resets = st.resets || null; setTimeout(function () { gateCheck(); attTick(false); if (S.notePage) { var np = S.notePage; S.notePage = null; notePage(np); } }, 300);
     if (canPrintHere() && S.auto && S.auto.on && !S.auto.dev && S.open && S.auto.shift === S.open.id && !S.apClaiming) {   // 15-11-2026: autoprint set elsewhere, no print desk yet: this Print desk ID device takes it
@@ -5177,8 +5240,20 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   /* ---------- 20-11-2026 (CEC V3.0): once on each device for each person, the first time the new version opens: a party popper and what is
      new (only what this person can use). Not for the print desk. ---------- */
-  var NEWS_VER = '4.2';
-  function newsList() {                                   // 27-11-2026 (CEC V4.2), then V4.1 and V4.0 (a phone may come straight from V3.9)
+  var NEWS_VER = '4.3';
+  function newsList() {                                   // 27-11-2026 (CEC V4.3), then V4.2, V4.1 and V4.0 (a phone may come straight from V3.9)
+    var a = [];
+    a.push(['One ID, one device', 'Signing in on another phone or computer signs this ID out of the first one.']);
+    a.push(['One look everywhere', 'The menu has the dark green design of the website: on a phone it slides in from the right, under your thumb, grouped; the GitHub address on a computer has the left menu too.']);
+    if (canEdit()) a.push(['Diagnosis and disposal on OPD / ER Patients', 'Doctors choose the working diagnosis and the disposal right there (Day Care: the diagnosis). Patients not signed off stay on top under "Awaiting the doctor" until signed off.']);
+    if (canEnter()) a.push(['Change name in the lists', 'The pen beside a name changes it, also from the patient dashboard and OPD / ER Patients.']);
+    if (canEnter()) a.push(['The reason for a late change', 'Changing a patient of an earlier shift, or after sign-off, asks why (tick the reason).']);
+    a.push(['Registers', 'Several registers at once: one file each, with Preview, Download and Print. A new ETT register.']);
+    if (canEchoMake()) a.push(['Echo report: the last steps', 'Step 20 is now Final reporting comments, then Note, Arrange the report body, Arrange the final comments and Preview the report (opens by itself; Print from there), then Check and save. Every change is saved to the census by itself within 3 seconds.']);
+    if (isAdmin()) a.push(['Staff activity', 'Account & admin > Staff activity: what each ID did, Undo with a reason (kept as proof), Freeze ID, a proof PDF, alerts and the sealed log. The dashboard has a Bin (7 days) and Select.']);
+    return a.concat(newsListV42());
+  }
+  function newsListV42() {                                // 27-11-2026 (CEC V4.2)
     var a = [];
     if (canEnter()) a.push(['One number, one patient', 'The census never gives a number that is already in the census, also when the last number is set back. Only the admin can set it back (after a warning).']);
     a.push(['Patient dashboard in number order', 'Patients are listed by their MR No., the highest on top; on an OPD day the OPD Nos. follow in their own block.']);
@@ -5612,7 +5687,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* ---------- V4.0 (item 12): the website's menu on the left (wide screens): fixed while the page scrolls, grouped, closes to an icon rail
      (kept on this computer); a thin strip on top with the page name, the date and shift, and who is signed in. The phone app keeps its menu. ---------- */
   function lnavWide() { try { return window.matchMedia('(min-width:900px)').matches; } catch (e) { return false; } }
-  function lnavOn() { return !APP_BUILD && !!S.me && !window.__cecOldNav && !S.offHours && lnavWide(); }
+  function pnavNew() { return !(window.__cecOldPnav && !window.__cecNewPnav) && !window.__cecOldNav; }   // V4.3 (item 14)
+  /* V4.3 (item 14, his answer 27-11-2026 19:3x: "Yes. I think phone app will also look cool with same design language"): the GitHub copy (the
+     phone app build) opened on a computer has the same left menu as the Apps Script website; on a phone the Menu opens the same dark green
+     menu, grouped, as a drawer from the right (his words 19:38: "keep the drop menu on right thumb side. It is easy to approach there for phone") */
+  function lnavOn() { return (!APP_BUILD || pnavNew()) && !!S.me && !window.__cecOldNav && !S.offHours && lnavWide(); }
+  function pnavOn() { return pnavNew() && !!S.me && !S.offHours && !lnavWide(); }
   window.addEventListener('resize', function () { var w = lnavWide(); if (S.lnW !== undefined && S.lnW !== w && S.me && !anyOverlay() && !typing()) render(); S.lnW = w; });
   function lnavClosed() { try { return localStorage.getItem('cec_lnav_c') === '1'; } catch (e) { return false; } }
   var LNAV_G = { home: 0, shift: 0, opdp: 0, erx: 0, appt: 1, certs: 1, bdq: 1, dcadm: 1, bulk: 1, mrreg: 2, petty: 2, dt: 2, census: 2, acct: 2, mine: 2,
@@ -5620,7 +5700,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   var LNAV_H = ['', 'Clinical', 'Registers', 'Staff', 'Tools'];
   function lnavPaint() {
     var on = lnavOn(), c = on && lnavClosed();
-    document.body.classList.toggle('lnav', on); document.body.classList.toggle('lnc', c);
+    document.body.classList.toggle('lnav', on); document.body.classList.toggle('lnc', c); document.body.classList.toggle('pnav', pnavOn());
   }
   function pageName() {
     var on = navOn(), it = navItems().filter(function (x) { return x.v === on; })[0];
@@ -5629,13 +5709,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function navHtml() {
     var on = navOn(), items = navItems();
-    if (lnavOn()) {                                        // V4.0: grouped, in a fixed order
+    if (lnavOn() || pnavOn()) {                            // V4.0: grouped, in a fixed order (V4.3: the phone's drawer too)
       items = items.map(function (it, i) { return { it: it, g: LNAV_G[it.v] == null ? 0 : LNAV_G[it.v], i: i }; }).sort(function (a, b) { return a.g - b.g || a.i - b.i; });
-      var cl = lnavClosed(), lastG = -1, out = '<div class="nbrand"><span class="nbadge">CEC</span><span class="nbrt"><small>Government of Sindh</small><b>SGH Liaquatabad</b><span>Cardiac Emergency Centre</span></span>' +
-        '<button type="button" class="nbtog" data-act="lnav-tog" title="' + (cl ? 'Open the menu' : 'Close the menu to icons') + '" aria-label="' + (cl ? 'Open the menu' : 'Close the menu to icons') + '">' + (cl ? '&raquo;' : '&laquo;') + '</button></div>';
+      var ph = !lnavOn(), cl = !ph && lnavClosed(), lastG = -1, out = '<div class="nbrand"><span class="nbadge">CEC</span><span class="nbrt"><small>Government of Sindh</small><b>SGH Liaquatabad</b><span>Cardiac Emergency Centre</span></span>' +
+        (ph ? '<button type="button" class="nbtog" data-act="pnav-x" title="Close the menu" aria-label="Close the menu">&times;</button></div>'
+          : '<button type="button" class="nbtog" data-act="lnav-tog" title="' + (cl ? 'Open the menu' : 'Close the menu to icons') + '" aria-label="' + (cl ? 'Open the menu' : 'Close the menu to icons') + '">' + (cl ? '&raquo;' : '&laquo;') + '</button></div>');
       items.forEach(function (x) {
         if (x.g !== lastG) { out += x.g === 9 ? '<div class="nsp"></div><div class="ngh nline"></div>' : x.g ? '<div class="ngh"><span>' + h(LNAV_H[x.g]) + '</span></div>' : ''; lastG = x.g; }
-        out += niHtml(x.it, on, true);
+        out += niHtml(x.it, on, !ph);
       });
       return out;
     }
@@ -5789,6 +5870,29 @@ if (typeof module !== 'undefined') module.exports = CEC;
     });
     return out;
   }
+  /* V4.3 (item 10): the patient dashboard's bin (admin): deleted in the last 7 days; Undo one or the ticked ones */
+  function dbinLoad() {
+    if (isOff() || S.dbinBusy || !isAdmin()) return;
+    S.dbinBusy = true;
+    api('apiDashBin').then(function (r) { S.dbinBusy = false; S.dbin = { at: Date.now(), items: (r && r.items) || [], days: (r && r.days) || 7 }; if (S.view === 'shift' && !anyOverlay() && !typing()) render(); }, function () { S.dbinBusy = false; S.dbin = S.dbin || { at: Date.now(), items: [], days: 7 }; });
+  }
+  function dbinHtml() {
+    var B = S.dbin; if (!B) return '<div class="empty"><span class="spin"></span>Reading the bin&hellip;</div>';
+    var L = B.items, sel = S.binSel || {}, k = L.filter(function (x) { return sel[x.id]; }).length;
+    var head = '<div class="dselbar"><span>Deleted in the last ' + B.days + ' days: <b>' + L.length + '</b></span>' + (L.length ? '<button class="lnk" data-act="dbin-all">' + (k === L.length ? 'Tick none' : 'Tick all') + '</button>' +
+      '<button class="btn sm pri" data-act="dbin-undo-sel"' + (k ? '' : ' disabled') + '>Undo selected (' + k + ')</button>' : '') + '</div>';
+    if (!L.length) return head + '<div class="empty">Nothing deleted in the last ' + B.days + ' days.</div>';
+    return head + L.map(function (x) {
+      return '<div class="dbrow' + (sel[x.id] ? ' on' : '') + '"><label class="dbck"><input type="checkbox" data-act="dbin-tog" data-id="' + h(x.id) + '"' + (sel[x.id] ? ' checked' : '') + ' aria-label="Tick ' + h(x.name) + '"></label><div class="dbm"><b>' + h(x.name || '(no name)') + '</b> &middot; ' +
+        (x.cat === 'DC' ? h(x.mr) : (x.opd ? 'OPD No. ' : 'MR ') + h(x.mr || '-')) + '<div class="muted small">' + h(CEC.shiftName(x.shift)) + ' shift ' + h(CEC.dmy(x.censusDate)) + ' &middot; deleted ' + h(fmtTime(x.at)) + (x.by ? ' by ' + h(x.by) : '') + '</div></div>' +
+        '<button class="btn sm" data-act="dbin-undo" data-id="' + h(x.id) + '">Undo</button></div>';
+    }).join('') + '<p class="muted small" style="margin:8px 2px">Everything deleted stays in Account &amp; admin &gt; Data protection &gt; Recycle bin for ever.</p>';
+  }
+  function dbinDone(r, n) {
+    S.dbin = null; S.binSel = {}; dbinLoad(); refresh(true);
+    toast((n === 1 ? 'Put back.' : n + ' patients put back.') + (r && r.renum && r.renum.length ? ' Given meanwhile, so the next free number: ' + r.renum.join(', ') + '.' : ''));
+  }
+  function rowShift(src) { return (src === 'prev' ? S.prevShift : src === 'detail' ? S.detail : S.work) || {}; }
   function rowsHtml(entries, q, filter, src, cat) {
     var list = dashList(entries);
     if (cat) list = list.filter(function (x) { return x.e.cat === cat; });
@@ -5809,8 +5913,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
       var stTag = e.signed ? (e.cat !== 'BD' && out ? '<span class="tag out">' + h(out) + '</span>' : '') + '<span class="tag ok">&#10003; ' + (e.only ? 'Closed (regular check-up)' : canClin() ? 'Signed off' : 'Seen by doctor') + '</span>'
         : e.only ? '<span class="tag only">Closes by itself at ' + CEC.hm(onlyEnds(e)) + '</span>'
         : (left.length ? '<span class="tag adv">' + h(left.join(' + ')) + ' advised</span>' : '') + '<span class="tag wait">Awaiting doctor</span>';
-      return '<button class="prow" data-act="edit-pt" data-src="' + (src || 'work') + '" data-id="' + h(e.id) + '"><div class="pr-l"><div class="pr-no">' + x.n + '</div><div class="pr-t">' + CEC.hm(e.t) +
-        '</div></div><div class="pr-m"><div class="pr-name">' + (e.tok ? '<span class="tokb ' + (e.tok.indexOf('ER') === 0 ? 'er' : '') + '">' + h(e.tok) + '</span> ' : '') + h(e.name || '(no name)') + ' <span class="muted">&middot; ' + (e.mr ? '' + mrTagH(e) : '</span><span class="mrp">MR pending</span><span>') + '</span></div>' +
+      var dsl = S.dselOn && src === 'work' && isAdmin();   // V4.3 (item 10): Select mode: a tap ticks
+      return '<button class="prow' + (dsl && S.dsel[e.id] ? ' dsel' : '') + '" data-act="' + (dsl ? 'dsel-tog' : 'edit-pt') + '" data-src="' + (src || 'work') + '" data-id="' + h(e.id) + '"><div class="pr-l">' + (dsl ? '<span class="dck' + (S.dsel[e.id] ? ' on' : '') + '" aria-hidden="true">&#10003;</span>' : '') + '<div class="pr-no">' + x.n + '</div><div class="pr-t">' + CEC.hm(e.t) +
+        '</div></div><div class="pr-m"><div class="pr-name">' + (e.tok ? '<span class="tokb ' + (e.tok.indexOf('ER') === 0 ? 'er' : '') + '">' + h(e.tok) + '</span> ' : '') + h(e.name || '(no name)') + ' <span class="muted">&middot; ' + (e.mr ? '' + mrTagH(e) : '</span><span class="mrp">MR pending</span><span>') + '</span>' + rnRowHtml(rowShift(src), e) + '</div>' +
         '<div class="pr-sub">' + (e.sex === 'M' ? 'Male' : e.sex === 'F' ? 'Female' : '') + (e.age !== '' && e.age != null ? ', ' + h(e.age) + ' y' : '') +
         (canClin() ? ' &middot; ' + (dx ? '<span class="up">' + h(dx) + '</span>' : '<i>Diagnosis pending</i>') : '') + '</div>' +
         (procHtml ? '<div class="pr-proc">' + procHtml + '</div>' : '') +
@@ -5853,6 +5958,15 @@ if (typeof module !== 'undefined') module.exports = CEC;
       var n = k[0] ? s.entries.filter(function (x) { return x.cat === k[0]; }).length : s.entries.length;
       return '<button class="' + (dc === k[0] ? 'on' : '') + '" data-act="dash-cat" data-v="' + k[0] + '">' + h(k[1]) + ' <span>' + n + '</span></button>';
     }).join('') + '</div>';
+    var dadm = isAdmin() && !(window.__cecOldDbin && !window.__cecNewDbin);   // V4.3 (item 10): the admin's bin and Select
+    if (dadm) {
+      if ((!S.dbin || Date.now() - (S.dbin.at || 0) > 60000) && !S.dbinBusy) setTimeout(dbinLoad, 0);
+      var bn = S.dbin ? S.dbin.items.length : 0, dk = Object.keys(S.dsel || {}).filter(function (k) { return S.dsel[k]; }).length;
+      html += '<div class="dbar"><button class="btn sm' + (S.dashBin ? ' pri' : '') + '" data-act="dbin-open">' + (S.dashBin ? '&lsaquo; Back to the patients' : '&#128465; Bin (' + bn + ')') + '</button>' +
+        (S.dashBin ? '' : '<button class="btn sm' + (S.dselOn ? ' pri' : '') + '" data-act="dsel-on">' + (S.dselOn ? 'Cancel' : 'Select') + '</button>') + '</div>';
+      if (S.dashBin) return html + '<div class="plist" id="plist">' + dbinHtml() + '</div></div></div>';
+      if (S.dselOn) html += '<div class="dselbar"><span>Tap patients to tick them: <b>' + dk + '</b> ticked</span><button class="lnk" data-act="dsel-all">All shown</button><button class="btn sm dan" data-act="dsel-del"' + (dk ? '' : ' disabled') + '>Delete selected</button></div>';
+    }
     html += '<div class="seg filt"><button data-act="filter" data-v="wait" class="' + (S.filter === 'wait' ? 'on' : '') + '">Pending (' + c.wait + ')</button>' +
       '<button data-act="filter" data-v="seen" class="' + (S.filter === 'seen' ? 'on' : '') + '">Seen (' + (c.T - c.wait) + ')</button>' +
       '<button data-act="filter" data-v="all" class="' + (S.filter === 'all' ? 'on' : '') + '">All (' + c.T + ')</button></div>';
@@ -5873,9 +5987,11 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (isEchoId() && e.cat !== 'ECHO') return false;
     return isAdmin() || !!(S.open && sh && sh.id === S.open.id);
   }
-  function renameAsk() {
-    var f = S.form; if (!f || !f.editId) return;
-    var sh = targetShift(), e = sh && sh.entries.filter(function (x) { return x.id === f.editId; })[0]; if (!e) return;
+  /* V4.3 (item 4, his answer 17:25): Change name from the lists too (dashboard, OPD / ER Patients), the same rules as on the patient page */
+  function rnRowHtml(sh, e) { return canRename(sh, e) && !(window.__cecOldRn && !window.__cecNewRn) ? '<span class="rnrow" role="button" tabindex="0" data-act="rn-row" data-src="' + h(sh.id) + '" data-id="' + h(e.id) + '" title="Change name" aria-label="Change the name of ' + h(e.name || '') + '">' + ICON.pen + '</span>' : ''; }
+  function renameAsk(sh0, e0) {
+    var f = S.form; if (!e0 && (!f || !f.editId)) return;
+    var sh = sh0 || targetShift(), e = e0 || (sh && sh.entries.filter(function (x) { return x.id === f.editId; })[0]); if (!e) return;
     modal('Change name', '<p class="muted small" style="margin:0 0 6px">' + h(e.opd ? 'OPD No. ' : 'MR No. ') + h(e.mr || '') + '. The patient stays in his own shift and register; the change is kept in the Activity log.</p>' +
       '<label class="lb" for="rnName">Patient name</label><input class="in" id="rnName" autocapitalize="characters" autocomplete="off" value="' + h(e.name || '') + '">' +
       ((e.cat === 'BD' || e.out === 'EXP') ? '<p class="muted small" style="margin:8px 0 0">A death certificate already made keeps its own name: the doctor corrects it on the certificate.</p>' : ''),
@@ -5884,13 +6000,17 @@ if (typeof module !== 'undefined') module.exports = CEC;
       var nm = up(String(v.rnName || '').replace(/\s+/g, ' ').trim());
       if (nm.length < 2) { toast('Type the name.'); return; }
       if (nm === e.name) return;
-      api('apiRenameEntry', JSON.stringify({ id: e.id, name: nm })).then(function (r) {
-        [S.work, S.open, S.detail, S.prevShift].forEach(function (x) { (x && x.entries || []).forEach(function (y) { if (y.id === e.id) y.name = r.entry.name; }); });
+      var late = !(window.__cecOldWhy && !window.__cecNewWhy) && (e.signed || !(S.open && sh && sh.id === S.open.id));   // V4.3 (item 11): the reason box
+      (late ? whyAsk() : Promise.resolve('')).then(function (why) { if (late && !why) return;
+      api('apiRenameEntry', JSON.stringify({ id: e.id, name: nm, why: why || '' })).then(function (r) {
+        [S.work, S.open, S.detail, S.prevShift, S.dcOpen].concat((S.recent && S.recent.shifts) || []).forEach(function (x) { (x && x.entries || []).forEach(function (y) { if (y.id === e.id) y.name = r.entry.name; }); });
+        ((S.unsg && S.unsg.list) || []).forEach(function (y) { if (y.id === e.id) y.name = r.entry.name; });   // V4.3
         if (S.form && S.form.editId === e.id && $('fName')) $('fName').value = r.entry.name;
         if (S.form && S.form.orig && S.form.editId === e.id) S.form.orig.name = r.entry.name;
         toast('Name changed to ' + r.entry.name + '.' + (r.cert ? ' The death certificate keeps its own name: correct it on the certificate.' : ''));
         if (!S.form) render();
       }, function (er) { toast('Not changed: ' + errText(er)); });
+      });
     });
     setTimeout(function () { var i = $('rnName'); if (i) { i.focus(); i.select(); } }, 60);
   }
@@ -6139,6 +6259,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function admTiles() { return !(window.__cecOldAdm && !window.__cecNewAdm); }
   var ADM_I = {
     busy: '<path d="M3 12h4l2-5 3 10 2-5h7"></path>',          // V4.1: a heartbeat line
+    staff: '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17.5" cy="15.5" r="3.5"/><path d="M20 18l2 2"/>',   // V4.3: Staff activity
     me: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>', dev: '<path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>',
     req: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.5c1.8.8 3 2.6 3 4.5"/>', users: '<circle cx="12" cy="8" r="3.5"/><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/>',
     titles: '<rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="2.6"/><path d="M8 16.5c.8-1.6 2.3-2.5 4-2.5s3.2.9 4 2.5"/>', demo: '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/>',
@@ -6149,6 +6270,162 @@ if (typeof module !== 'undefined') module.exports = CEC;
     custom: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>', log: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/>',
     sec: '<path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>', space: '<path d="M4 7a8 3 0 0 0 16 0a8 3 0 0 0-16 0v10a8 3 0 0 0 16 0V7"/><path d="M4 12a8 3 0 0 0 16 0"/>',
     reset: '<path d="M4 12a8 8 0 1 0 2.5-5.8L4 8.5"/><path d="M4 3.5v5h5"/>' };
+  /* ---------- V4.3 (item 11, 27-11-2026): Staff activity (admin only). His words (17:02): "every user is present in tiles with name and ID. On
+     touching their tile. It gives there all logs like making entry deleting something. No need of logging in and out to show there"; (17:08)
+     "Everyone should be under scrutiny and there action be undone by admin only. And there undone action shoukd get saved for proof". ---------- */
+  var SA_F = [['all', 'All'], ['add', 'Added'], ['chg', 'Changed'], ['del', 'Deleted'], ['num', 'Numbers'], ['cert', 'Certificates'], ['undone', 'Undone']];
+  var UNDO_W = [['FAKE', 'Fake entry'], ['WRONG', 'Wrong data'], ['SAB', 'Sabotage'], ['MIS', 'Mistake'], ['OTH', 'Other']];
+  function saF(x, f) {
+    var a = x.action;
+    if (f === 'add') return /^Added|^Restored|^Registered/.test(a);
+    if (f === 'chg') return /^(Edited|Corrected|Changed|Signed off|Added vitals|Day Care disposal|Gave the next free number)/.test(a);
+    if (f === 'del') return /^Deleted/.test(a);
+    if (f === 'num') return /(MR No\.|OPD No\.|number)/i.test(a) && !/^Added/.test(a);
+    if (f === 'cert') return /certificate|referral|Referred/i.test(a);
+    if (f === 'undone') return !!x.undone || /^Undid/.test(a);
+    return true;
+  }
+  function saLoad(force) {
+    if (S.saBusy || isOff()) return;
+    S.saBusy = true;
+    api('apiStaffSum').then(function (r) { S.saBusy = false; S.sa = r; S.sa.t = Date.now(); if (S.admSec === 'staff' && !anyOverlay() && !typing()) render(); }, function (e) { S.saBusy = false; S.sa = { err: errText(e), t: Date.now() }; if (S.admSec === 'staff') render(); });
+    if (force || !S.saAl) api('apiAlerts').then(function (r) { S.saAl = r; S.alertN = 0; if (S.admSec === 'staff' && !anyOverlay() && !typing()) render(); }, function () { });
+  }
+  function saLogLoad() {
+    var W = S.saW; if (!W || W.busy) return;
+    W.busy = true; W.err = '';
+    var per = W.per || '7', today = CEC.ymd(new Date()), from = per === 'today' ? today : per === '30' ? CEC.ymd(new Date(Date.now() - 29 * 86400000)) : per === 'dates' ? W.from || today : CEC.ymd(new Date(Date.now() - 6 * 86400000)), to = per === 'dates' ? W.to || today : today;
+    api('apiUserLog', JSON.stringify({ login: W.login, from: from, to: to })).then(function (r) { if (S.saW !== W) return; W.busy = false; W.r = r; W.sel = {}; if (S.admSec === 'staff' && !anyOverlay() && !typing()) render(); },
+      function (e) { if (S.saW !== W) return; W.busy = false; W.err = errText(e); render(); });
+  }
+  function saCheckHtml(c) {
+    if (!c) return '<p class="muted small" style="margin:0">The seal of the Activity log is checked every night. <button class="lnk" data-act="sa-check">Check it now</button></p>';
+    var bad = c.nBad || 0, mis = c.nMissing || 0;
+    return '<p class="small" style="margin:0;' + (bad || mis ? 'color:#b71c1c;font-weight:700' : '') + '">' + (bad || mis ? '&#9888; The Activity log was changed outside the census: ' + bad + ' line' + (bad === 1 ? '' : 's') + ' changed, ' + mis + ' missing.' : '&#10003; Activity log sealed: no line changed or removed.') +
+      ' <span class="muted" style="font-weight:400">Checked ' + h(fmtTime(c.at)) + ' (' + (c.lines || 0) + ' lines).</span> <button class="lnk" data-act="sa-check">Check now</button></p>' +
+      (bad ? '<div class="muted small">' + (c.bad || []).slice(0, 8).map(function (x) { return 'Row ' + x.row + ': ' + h(x.name) + ', ' + h(x.action) + ' (' + h(fmtTime(x.t)) + ')'; }).join('<br>') + '</div>' : '') +
+      (mis ? '<div class="muted small">Missing line numbers: ' + (c.missing || []).slice(0, 8).map(function (m) { return m[0] === m[1] ? m[0] : m[0] + '–' + m[1]; }).join(', ') + '</div>' : '');
+  }
+  function staffHtml() {
+    if (S.saW) return saPersonHtml();
+    var A = S.sa;
+    if (!A || Date.now() - (A.t || 0) > 300000) setTimeout(saLoad, 0);
+    if (!A) return '<section class="card center muted"><span class="spin"></span>Reading the Activity log&hellip;</section>';
+    if (A.err) return '<section class="card"><p class="small">' + h(A.err) + '</p><button class="btn sm" data-act="sa-reload">Try again</button></section>';
+    var q = (S.saQ || '').toLowerCase(), list = (A.list || []).filter(function (p) { return !q || (p.name + ' ' + p.login + ' ' + p.role + ' ' + (p.titles || []).join(' ')).toLowerCase().indexOf(q) >= 0; });
+    var al = (S.saAl && S.saAl.list) || [], fresh = al.filter(function (a) { return a.fresh; });
+    var html = '<section class="card"><p class="small" style="margin:0 0 6px">Everyone is here, the admin too. Tap a person: everything that ID did (sign-in and sign-out left out). Only the admin can undo, and what is undone is kept as proof.</p>' + saCheckHtml(A.check || (S.saAl && S.saAl.check)) + '</section>';
+    if (al.length) html += '<section class="card saal"><div class="ct">Alerts' + (fresh.length ? ' <span class="acc-n blink">' + fresh.length + ' new</span>' : '') + '</div>' + al.slice(0, S.saAlAll ? 120 : 8).map(function (a) {
+      return '<button type="button" class="saalr' + (a.fresh ? ' fresh' : '') + '" data-act="sa-who" data-v="' + h(a.login) + '"><b>' + h(a.name) + '</b> &middot; ' + h(a.text) + '<span class="muted small">' + h(fmtTime(a.at)) + (a.d ? ' &middot; ' + h(a.d) : '') + '</span></button>';
+    }).join('') + (al.length > 8 && !S.saAlAll ? '<button class="lnk" data-act="sa-alall">All ' + al.length + ' alerts</button>' : '') + '</section>';
+    html += '<input class="in" id="saQ" placeholder="Search a name, login ID or title" value="' + h(S.saQ || '') + '" style="margin:6px 0 10px"><div class="sagrid">' + list.map(function (p) {
+      return '<button type="button" class="sat' + (p.risky ? ' red' : '') + '" data-act="sa-who" data-v="' + h(p.login) + '"><b>' + h(p.name) + '</b><span class="muted small">' + h(p.login) + ' &middot; ' + h(p.removed ? 'removed ID' : p.role || '') + (p.main ? ' (main admin)' : p.admin ? ' (admin)' : '') + '</span>' +
+        ((p.titles || []).length ? '<span>' + p.titles.map(function (t) { return '<i class="pill">' + h(t) + '</i>'; }).join(' ') + '</span>' : '') +
+        '<span class="small">' + p.n + ' action' + (p.n === 1 ? '' : 's') + ' in ' + (A.days || 7) + ' days' + (p.last ? ' &middot; last ' + h(fmtTime(p.last)) : '') + '</span>' +
+        '<span class="satags">' + (p.risky ? '<i class="tag sared">' + p.risky + ' risky</i>' : '') + (p.undone ? '<i class="tag sared">' + p.undone + ' undone</i>' : '') + (p.device ? '<i class="tag">' + p.device + '&times; another device signed out</i>' : '') + (p.frozen ? '<i class="tag sared">Frozen</i>' : '') + '</span></button>';
+    }).join('') + '</div>' + (list.length ? '' : '<div class="empty">Nobody matches.</div>');
+    return html;
+  }
+  function saPersonHtml() {
+    var W = S.saW, R = W.r;
+    if (!R && !W.busy && !W.err) setTimeout(saLogLoad, 0);
+    var p = ((S.sa && S.sa.list) || []).filter(function (x) { return x.login === W.login; })[0] || {};
+    var chip = function (v, l, on, act) { return '<button type="button" class="' + (on ? 'on' : '') + '" data-act="' + act + '" data-v="' + v + '">' + l + '</button>'; };
+    var html = '<section class="card"><div class="saph"><div><b style="font-size:17px">' + h(R ? R.name : p.name || W.login) + '</b><div class="muted small">' + h(W.login) + ' &middot; ' + h(R ? R.role || (p.removed ? 'removed ID' : '') : p.role || '') + '</div></div>' +
+      '<div class="sbtns">' + (p.id && !p.admin && !p.main ? '<button class="btn sm' + (p.frozen ? ' pri' : ' dan') + '" data-act="sa-freeze" data-v="' + (p.frozen ? '0' : '1') + '">' + (p.frozen ? 'Unfreeze ID' : 'Freeze ID') + '</button>' : '') +
+      '<button class="btn sm" data-act="sa-pdf" data-v="pv">' + ICON.eye + ' Proof PDF</button><button class="btn sm" data-act="sa-pdf" data-v="dl">' + ICON.dl + '</button><button class="btn sm" data-act="sa-pdf" data-v="print">' + ICON.print + '</button></div></div>' +
+      (p.frozen ? '<p class="err small" style="margin:6px 0 0">Frozen: signed out everywhere; sign-in refused until unfrozen.</p>' : '') +
+      '<div class="seg sachips" style="margin-top:10px">' + [['today', 'Today'], ['7', '7 days'], ['30', '30 days'], ['dates', 'Dates']].map(function (x) { return chip(x[0], x[1], (W.per || '7') === x[0], 'sa-per'); }).join('') + '</div>' +
+      ((W.per || '7') === 'dates' ? '<div class="dtbar"><input class="in" type="date" id="saFrom" value="' + h(W.from || '') + '"> to <input class="in" type="date" id="saTo" value="' + h(W.to || '') + '"><button class="btn sm" data-act="sa-dates">Show</button></div>' : '') +
+      '<div class="seg sachips" style="margin-top:8px">' + SA_F.map(function (x) { return chip(x[0], x[1], (W.f || 'all') === x[0], 'sa-f'); }).join('') + '</div></section>';
+    if (W.busy) return html + '<section class="card center muted"><span class="spin"></span>Reading&hellip;</section>';
+    if (W.err) return html + '<section class="card"><p class="small">' + h(W.err) + '</p><button class="btn sm" data-act="sa-relog">Try again</button></section>';
+    if (!R) return html;
+    var lines = R.lines.filter(function (x) { return saF(x, W.f || 'all'); }), can = lines.filter(function (x) { return x.can; }), k = can.filter(function (x) { return W.sel[x.ch]; }).length;
+    html += '<div class="dselbar"><span><b>' + lines.length + '</b> line' + (lines.length === 1 ? '' : 's') + (can.length ? ' &middot; ' + k + ' ticked' : '') + '</span>' + (can.length ? '<button class="lnk" data-act="sa-all">' + (k === can.length ? 'Tick none' : 'Tick all shown (' + can.length + ')') + '</button><button class="btn sm dan" data-act="sa-undo-sel"' + (k ? '' : ' disabled') + '>Undo selected</button>' : '') + '</div>';
+    if (!lines.length) return html + '<div class="empty">Nothing in this period.</div>';
+    var day = '';
+    html += '<div class="salog">' + lines.map(function (x) {
+      var d = CEC.ymd(new Date(x.t)), head = d !== day ? '<div class="saday">' + h(CEC.weekday(d)) + ' ' + h(CEC.dmy(d)) + '</div>' : ''; day = d;
+      return head + '<div class="sal' + (x.risky ? ' risky' : '') + (x.undone ? ' undone' : '') + '">' + (x.can ? '<label class="dbck"><input type="checkbox" data-act="sa-tog" data-id="' + h(x.ch) + '"' + (W.sel[x.ch] ? ' checked' : '') + ' aria-label="Tick this line"></label>' : '<span class="saspace"></span>') +
+        '<button type="button" class="salm" data-act="sa-line" data-id="' + h(x.ch || '') + '"><span class="salt">' + h(CEC.hm(x.t)) + '</span><b>' + h(x.action) + '</b>' + (x.mr ? ' &middot; ' + h(x.mr) : '') + (x.details ? '<span class="muted small"> ' + h(x.details) + '</span>' : '') +
+        (x.undone ? '<span class="saund">UNDONE by ' + h(x.undone.by || '') + ', ' + h(fmtTime(x.undone.at)) + ': ' + h(x.undone.why || '') + '</span>' : '') + '</button></div>';
+    }).join('') + '</div>';
+    return html;
+  }
+  /* the before and after of one change (tap a line); Undo from there */
+  function saLine(ch) {
+    if (!ch) return toast('This line has no change kept (made before V4.3, or not a patient record or a number).');
+    api('apiChangeGet', ch).then(function (c) {
+      var body = '<p class="small" style="margin:0 0 6px">' + h(c.name) + ' (' + h(c.login) + '), ' + h(fmtTime(c.t)) + '</p>';
+      if (c.kind === 'edit') body += '<p style="margin:0 0 6px"><b>' + h(c.who || '') + '</b> ' + h(c.no || '') + '</p><table class="mini"><tr><th>What</th><th>Before</th><th>After</th></tr>' + (c.diff || []).map(function (f) { return '<tr><td>' + h(f.l) + '</td><td>' + h(f.b || '-') + '</td><td>' + h(f.a || '-') + '</td></tr>'; }).join('') + '</table>';
+      else if (c.kind === 'num') body += '<p>The last ' + (c.nk === 'opd' ? 'OPD No.' : 'MR No.') + ': <b>' + h(c.b || '(not set)') + '</b> &rarr; <b>' + h(c.a || '') + '</b></p>';
+      else body += '<p>' + (c.kind === 'add' ? 'Added / put back' : 'Deleted') + ': ' + (c.rows || []).map(function (x) { return '<b>' + h(x.name) + '</b> ' + h(x.no || ''); }).join(', ') + '</p>';
+      if (c.undone) body += '<p class="saund">UNDONE by ' + h(c.undone.by) + ', ' + h(fmtTime(c.undone.at)) + ': ' + h(c.undone.why) + '</p>';
+      modal(c.summary || 'Change', body, c.undone ? [{ label: 'Close', value: null }] : [{ label: 'Close', value: null }, { label: 'Undo this', cls: 'dan', value: 'u' }]).then(function (v) { if (v === 'u') saUndo([ch]); });
+    }, function (e) { toast(errText(e)); });
+  }
+  function saUndo(ids, force, why0) {
+    var go = function (w) {
+      api('apiUndo', JSON.stringify({ ids: ids, why: w.why, note: w.note, force: !!force })).then(function (r) {
+        if (r.conflicts && r.conflicts.length && !force) {
+          return modal('Changed again later', '<p class="small">The same detail was changed again after this change. Undo anyway?</p>' + r.conflicts.map(function (c) { return '<p class="small" style="margin:4px 0"><b>' + h(c.name) + '</b>: ' + c.fields.map(function (f) { return h(f.l) + ' was ' + h(f.was || '-') + ', then ' + h(f.then || '-') + ', now ' + h(f.now || '-'); }).join('; ') + '</p>'; }).join(''),
+            [{ label: 'Back', value: null }, { label: 'Undo anyway', cls: 'dan', value: true }]).then(function (v) { if (v) saUndo(r.conflicts.map(function (c) { return c.id; }), true, w); if (r.done && r.done.length) saAfterUndo(r); });
+        }
+        saAfterUndo(r);
+      }, function (e) { toast(errText(e)); });
+    };
+    if (why0) return go(why0);
+    modal('Undo ' + ids.length + ' change' + (ids.length === 1 ? '' : 's') + '?', '<p class="small" style="margin:0 0 6px">The change is reversed. What was undone is kept for ever as proof, with your reason.</p><label class="lb">Reason</label><div class="seg" id="uWhy">' +
+      UNDO_W.map(function (x) { return '<button type="button" data-act="u-why" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div><input type="hidden" id="uWhyV" value=""><label class="lb" for="uNote">Note <span class="muted">(needed for Other)</span></label><input class="in" id="uNote" autocomplete="off">',
+      [{ label: 'Back', value: null }, { label: 'Undo', cls: 'dan', value: 'form' }]).then(function (v) {
+      if (!v) return;
+      if (!v.uWhyV) { toast('Choose the reason.'); return saUndo(ids, force); }
+      if (v.uWhyV === 'OTH' && !String(v.uNote || '').trim()) { toast('Write the reason.'); return saUndo(ids, force); }
+      go({ why: v.uWhyV, note: v.uNote || '' });
+    });
+  }
+  function saAfterUndo(r) {
+    var n = (r.done || []).length, sk = (r.skipped || []).length;
+    toast(n ? n + ' change' + (n === 1 ? '' : 's') + ' undone. Kept as proof.' + (sk ? ' ' + sk + ' skipped: ' + r.skipped.map(function (x) { return x.why; }).join(', ') + '.' : '') : sk ? 'Nothing undone: ' + r.skipped.map(function (x) { return x.why; }).join(', ') + '.' : 'Nothing undone.');
+    if (S.saW) { S.saW.r = null; S.saW.sel = {}; saLogLoad(); } S.sa = null; S.dbin = null; refresh(true);
+  }
+  function saPdf(mode) {
+    var W = S.saW, R = W && W.r; if (!R) return;
+    var lines = R.lines.filter(function (x) { return saF(x, W.f || 'all'); }), groups = [], last = null;
+    lines.slice().reverse().forEach(function (x) { var d = CEC.ymd(new Date(x.t)); if (!last || last.k !== d) { last = { k: d, title: CEC.weekday(d) + ', ' + CEC.dmy(d), list: [] }; groups.push(last); } last.list.push(x); });
+    var cols = [{ k: 'tm', h: 'Time', w: 0.07, f: function (x) { return CEC.hm(x.t); } }, { k: 'ac', h: 'Action', w: 0.27, f: function (x) { return x.action; } }, { k: 'mr', h: 'MR / OPD No.', w: 0.1, f: function (x) { return x.mr || ''; } },
+      { k: 'de', h: 'Details', w: 0.36, f: function (x) { return x.details || ''; } }, { k: 'un', h: 'Undone (by, when, why)', w: 0.2, f: function (x) { return x.undone ? x.undone.by + ', ' + fmtTime(x.undone.at) + ': ' + x.undone.why : ''; } }];
+    var spec = { title: 'STAFF ACTIVITY: ' + up(R.name) + ' (' + R.login + ')', sub: (R.role ? R.role + ' · ' : '') + CEC.dmy(R.from.slice(0, 10)) + ' to ' + CEC.dmy(R.to.slice(0, 10)) + (W.f && W.f !== 'all' ? ' · ' + SA_F.filter(function (x) { return x[0] === W.f; })[0][1] : '') + ' · made by ' + S.me.name + ' on ' + fmtTime(new Date().toISOString()), cols: cols, groups: groups, portrait: false, empty: 'Nothing in this period.' };
+    var name = 'CEC_Staff_activity_' + R.login + '_' + CEC.dmy(R.from.slice(0, 10)) + '_to_' + CEC.dmy(R.to.slice(0, 10)) + '.pdf', pr = function () { printDoc('listPdf', [spec], 'staff activity'); }, dl = function () { offerFile(name, CEC.listPdf(spec, logoBytes()), 'application/pdf', false); };
+    if (mode === 'dl') return dl(); if (mode === 'print') return pr();
+    previewDoc('listPdf', [spec], spec.title, pr, dl);
+  }
+  function alertCardHtml() {
+    if (!isAdmin() || !S.alertN || (window.__cecOldSa && !window.__cecNewSa)) return '';
+    return '<section class="card pendc"><div class="ct" style="color:var(--red)">' + S.alertN + ' risky action' + (S.alertN === 1 ? '' : 's') + ' to look at</div><p class="small" style="margin:0 0 6px">Deletions, numbers set back, names changed, changes after sign-off, a frozen ID trying to sign in&hellip;</p><button class="btn sm pri" data-act="sa-open">Open Staff activity</button></section>';
+  }
+  /* V4.3 (item 11, his answer 17:16: "give him pre made option to tick like by mistake or wrong name or wrong age etc"): the reason for a change of
+     a patient of an earlier shift or after sign-off (everyone, the admin too) */
+  var WHY_L = ['By mistake', 'Wrong name', 'Wrong age', 'Wrong gender', 'Wrong MR / OPD No.', 'Wrong category', 'Wrong diagnosis', 'Wrong outcome', 'Wrong vitals'];
+  function whyNeed(sh, old, e) {
+    if ((window.__cecOldWhy && !window.__cecNewWhy) || !old || !e) return false;
+    var late = old.signed || !(S.open && sh && sh.id === S.open.id);
+    if (!late) return false;
+    var ch = ['name', 'age', 'sex', 'mr', 'cat'].some(function (k) { return e[k] !== undefined && String(old[k] == null ? '' : old[k]) !== String(e[k] == null ? '' : e[k]); });
+    var od = CEC.dxOf(old).join('|'), nd = e.dxs ? e.dxs.join('|') : od;
+    return ch || (od && od !== nd) || (!!old.out && e.out !== undefined && old.out !== e.out);
+  }
+  function whyAsk() {
+    return modal('Why is this changed?', '<p class="small" style="margin:0 0 6px">A patient of an earlier shift, or already signed off. Tick the reason (kept in the Activity log).</p><div class="whyl">' +
+      WHY_L.map(function (w, i) { return '<label class="dxck"><input type="checkbox" id="why' + i + '"><span>' + h(w) + '</span></label>'; }).join('') + '</div><label class="lb" for="whyO">Other</label><input class="in" id="whyO" autocomplete="off">',
+      [{ label: 'Back', value: null }, { label: 'Save', cls: 'pri', value: 'form' }]).then(function (v) {
+      if (!v) return null;
+      var w = WHY_L.filter(function (x, i) { return v['why' + i]; }), o = String(v.whyO || '').trim(); if (o) w.push(o);
+      if (!w.length) { toast('Tick or write the reason.'); return whyAsk(); }
+      return up(w.join(', '));
+    });
+  }
   function admList() {
     var R = S.rem || {}, A = S.att || {}, W = S.wifi || {}, nc = Array.isArray(S.noteChips) && S.noteChips.length, cu = S.customInfo || {}, cuN = 0;
     try { cuN = (cu.items || cu.list || []).length || 0; } catch (e) { }
@@ -6169,6 +6446,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       ['THE CENSUS', 'letter', 'Letter details', 'Who signs the letters'],
       ['THE CENSUS', 'theme', 'Colours of the census', 'For everyone'],
       ['THE CENSUS', 'custom', 'Options added by users', cuN + ' new'],
+      ['RECORDS AND SAFETY', 'staff', 'Staff activity', S.alertN ? S.alertN + ' new alert' + (S.alertN === 1 ? '' : 's') : 'Each ID: what it did; Undo', !(window.__cecOldSa && !window.__cecNewSa), S.alertN || 0],   // V4.3 (item 11)
       ['RECORDS AND SAFETY', 'log', 'Activity log', 'Who did what, when'],
       ['RECORDS AND SAFETY', 'sec', 'Data protection', 'Backups, recycle bin'],
       ['RECORDS AND SAFETY', 'space', 'Photos: Drive space', S.space && S.space.mb != null ? S.space.mb + ' MB used by photos' : 'How much space the photos use'],
@@ -6205,6 +6483,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (k === 'att') return attOnlyHtml();
     if (k === 'reset') return resetCardHtml();
     if (k === 'sec') return securityHtml();
+    if (k === 'staff') return staffHtml();                 // V4.3 (item 11)
     if (k === 'demo') return demoCardHtml();
     if (k === 'custom') return customCardHtml();
     if (k === 'theme') return themeCardHtml();
@@ -7474,7 +7753,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* The patients of the last 24 hours (from now, not by shift): the running and previous shift as on the dashboard, and older shifts from the server (S.recent). */
   var ER_WINDOW = 24 * 3600000;
   function erShift(src) {
-    if (src === 'dco') return S.dcOpen || null;                    // 24-11-2026 (V3.3): the patients In Day Care (any shift)
+    if (src === 'dco') return S.dcOpen || null;
+    if (/^u:/.test(src || '')) { var us = src.slice(2), ul = ((S.unsg && S.unsg.list) || []).filter(function (x) { return x.shiftId === us; }); return ul.length ? { id: us, censusDate: ul[0].censusDate, shift: ul[0].shift, entries: ul } : null; }   // V4.3: awaiting the doctor (earlier shifts)                    // 24-11-2026 (V3.3): the patients In Day Care (any shift)
     if (src === 'work') return S.work;
     if (src === 'prev') return S.prevShift;
     return ((S.recent && S.recent.shifts) || []).filter(function (s) { return s.id === src; })[0] || null;
@@ -7510,15 +7790,32 @@ if (typeof module !== 'undefined') module.exports = CEC;
       '<div class="pr-m"><div class="pr-name">' + h(e.name || '(no name)') + ' <span class="muted">&middot; ' + (e.opd ? 'OPD No. ' : 'MR ') + h(e.mr || '-') + '</span></div><div class="pr-sub"><span class="dcopen">In Day Care ' + h(dco.mr) + '</span></div>' +
       '<div class="pr-proc">' + erGivenHtml(dco) + '</div></div><span class="chev">&rsaquo;</span></button>';
     return '<button class="prow" data-act="er-open" data-v="erx" data-mode="' + (page === 'opd' ? 'opd' : '') + '" data-src="' + x.src + '" data-id="' + h(e.id) + '"' + (busy ? ' disabled' : '') + '><div class="pr-l"><div class="pr-t">' + CEC.hm(e.t) + '</div></div>' +
-      '<div class="pr-m"><div class="pr-name">' + h(e.name || '(no name)') + ' <span class="muted">&middot; ' + (e.opd ? 'OPD No. ' : 'MR ') + h(e.mr || '-') + '</span></div><div class="pr-sub">' + h(catLabel(e)) +
+      '<div class="pr-m"><div class="pr-name">' + h(e.name || '(no name)') + ' <span class="muted">&middot; ' + (e.opd ? 'OPD No. ' : 'MR ') + h(e.mr || '-') + '</span>' + rnRowHtml(x.sh, e) + '</div><div class="pr-sub">' + h(catLabel(e)) +
       (x.src !== 'work' ? ' &middot; ' + h(CEC.shiftName(x.sh.shift)) + ' shift' + (x.sh.censusDate !== (S.work && S.work.censusDate) ? ', ' + h(CEC.dmy(x.sh.censusDate)) : '') : '') + (e.signed ? ' &middot; <span style="color:var(--g7)">&#10003; signed off</span>' : '') + '</div>' +
       '<div class="pr-proc">' + (busy ? '<span class="spin"></span>Saving&hellip;' : erGivenHtml(e)) + '</div></div><span class="chev">&rsaquo;</span></button>';
   }
   function erListHtml() {
     var q = (S.erQ || '').trim().toLowerCase(), opdPage = S.view === 'opdp';
-    var all = erAll(opdPage ? function (e) { return (e.opd || e.cat === 'OPD') && !e.petty && !e.ecgOf; } : function (e) { return e.cat === 'EMR'; }).reverse();    // 24-11-2026 (V3.3): newest first
-    var hits = q ? all.filter(function (x) { return (x.e.name + ' ' + x.e.mr + ' ' + (x.e.tok || '')).toLowerCase().indexOf(q) >= 0; }) : all;
-    return '<div class="plist">' + (hits.length ? hits.slice(0, 250).map(erRow).join('') : '<div class="empty">' + (q ? 'No patient of the last 24 hours matches.' : opdPage ? 'No OPD patients in the last 24 hours.' : 'No Emergency / Resus patients in the last 24 hours.') + '</div>') + '</div>';
+    var test = opdPage ? function (e) { return (e.opd || e.cat === 'OPD') && !e.petty && !e.ecgOf; } : function (e) { return e.cat === 'EMR'; };
+    var all = erAll(test).reverse();    // 24-11-2026 (V3.3): newest first
+    var match = function (x) { return !q || (x.e.name + ' ' + x.e.mr + ' ' + (x.e.tok || '')).toLowerCase().indexOf(q) >= 0; };
+    var hits = all.filter(match), wait = '';
+    /* V4.3 (item 3, his answer 2): for the doctors, "Awaiting the doctor" first: every patient not signed off stays until a doctor signs him off,
+       also after his shift (up to 7 days, from apiUnsigned); a signed-off patient stays in the list below for the last 24 hours */
+    if (canEdit() && !(window.__cecOldEr && !window.__cecNewEr)) {
+      var seen = {}, wl = all.filter(function (x) { return !x.e.signed && !x.e.out && !x.e.only; });
+      wl.forEach(function (x) { seen[x.e.id] = 1; });
+      ((S.unsg && S.unsg.list) || []).forEach(function (e) { if (!seen[e.id] && test(e) && !e.signed && !e.out) { seen[e.id] = 1; wl.push({ e: e, sh: erShift('u:' + e.shiftId), src: 'u:' + e.shiftId }); } });
+      wl = wl.filter(match).sort(function (a, b) { return (a.e.t || '') < (b.e.t || '') ? 1 : -1; });
+      if (wl.length) wait = '<div class="fsec erwait">Awaiting the doctor (' + wl.length + ')</div><div class="plist">' + wl.slice(0, 150).map(erRow).join('') + '</div><div class="fsec">All ' + (opdPage ? 'OPD' : 'Emergency / Resus') + ' patients, last 24 hours</div>';
+      hits = hits.filter(function (x) { return !seen[x.e.id]; });
+    }
+    return wait + '<div class="plist">' + (hits.length ? hits.slice(0, 250).map(erRow).join('') : '<div class="empty">' + (q ? 'No patient of the last 24 hours matches.' : wait ? 'No other patients.' : opdPage ? 'No OPD patients in the last 24 hours.' : 'No Emergency / Resus patients in the last 24 hours.') + '</div>') + '</div>';
+  }
+  function unsgLoad() {                                   // V4.3 (item 3): doctors: the patients not signed off of the last 7 days
+    if (isOff() || S.unsgBusy || !canEdit()) return;
+    S.unsgBusy = true;
+    api('apiUnsigned').then(function (r) { S.unsgBusy = false; S.unsg = { at: Date.now(), list: (r && r.list) || [] }; if (ER_KINDS[S.view] && !anyOverlay() && !typing()) erPaint(); }, function () { S.unsgBusy = false; S.unsg = S.unsg || { at: Date.now(), list: [] }; });
   }
   /* the medications of the last 24 hours (drug account): ER Patients, OPD Patients and Day Care (24-11-2026, V3.3) */
   function erMedSum() {
@@ -7534,6 +7831,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var opdPage = S.view === 'opdp';
     if (!S.work) return '<section class="card center muted"><span class="spin"></span>Loading the shift&hellip;</section>';
     if ((!S.dcOpen || Date.now() - (S.dcOpen.at || 0) > 60000) && !S.dcOpenBusy && Date.now() - (S.dcOpenTry || 0) > 15000) { S.dcOpenTry = Date.now(); setTimeout(dcOpenLoad, 0); }
+    if (canEdit() && (!S.unsg || Date.now() - (S.unsg.at || 0) > 60000) && !S.unsgBusy && !(window.__cecOldEr && !window.__cecNewEr)) setTimeout(unsgLoad, 0);   // V4.3 (item 3)
     var html = '<div class="narrow"><div class="listhead"><h3>' + (opdPage ? 'OPD Patients' : 'ER Patients') + ' &middot; last 24 hours</h3><button class="btn sm" data-act="q-refresh" aria-label="Refresh list">&#8635; ' +
       (S.synced ? CEC.hm(S.synced.toISOString()) : 'Refresh') + '</button></div><p class="muted small" style="margin:0 0 10px">' +
       (opdPage ? 'The OPD patients of the last 24 hours, newest first' + (S.recent ? '' : ' <span class="spin"></span>') + '. The icon admits a patient to Day Care. Tap a patient for procedures and medicines: when they are saved he gets a <b>Day Care No.</b> and they go on his Day Care entry.'
@@ -7552,6 +7850,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
     /* 24-11-2026 (V3.3): "opd": an OPD / ER patient from OPD Patients: the items go on a new Day Care entry (none of his record's items shown);
        "dc": a Day Care entry: the items and (doctors) the disposal. */
     S.er = { kind: 'erx', id: id, src: src, mode: opdM ? 'opd' : isDc ? 'dc' : '', procs: opdM ? [] : erProcs(e), meds: opdM ? [] : erMeds(e), origP: opdM ? [] : erProcs(e), origM: opdM ? [] : erMeds(e), out: e.out || '', origOut: e.out || '' };
+    /* V4.3 (item 3): the doctor's working diagnosis and disposal here, on the patient's own record (a Day Care entry: the diagnosis only) */
+    var docP = canEdit() && e.cat !== 'BD' && e.out !== 'BD' && !(window.__cecOldEr && !window.__cecNewEr);
+    S.er.docP = docP; S.er.dx = CEC.dxOf(e).slice(); S.er.origDx = S.er.dx.slice(); S.er.out2 = isDc ? '' : e.out || ''; S.er.origOut2 = S.er.out2; S.er.isDc = isDc; S.er.signed = !!e.signed;
     var btns = { procs: CEC.PROCS.filter(function (p) { return p.g === 'er'; }).map(function (p) { return [p.c, p.l]; }), meds: CEC.MEDS.map(function (m) { return [m, m]; }) };
     var el = $('sheet');
     el.innerHTML = '<div class="sh-head"><button data-act="er-close">Cancel</button><h3>' + h(isDc ? 'Day Care ' + e.mr : opdM ? 'Day Care: procedures & medicines' : K.title) + '</h3><span>' + (e.tok ? h(e.tok) : '') + '</span></div><div class="sh-body"><form id="erf" novalidate autocomplete="off">' +
@@ -7567,6 +7868,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
           '<button type="button" class="btn" data-act="er-add" data-k="' + P.k + '">Add</button></div><div class="sugg hidden" id="' + P.x + 'S"></div>';
       }).join('') +
       '<p class="muted small" style="margin:4px 0 0">Not in the list? Start typing: what was written before is suggested. Or type a new one and press Enter (or Add).</p>' +
+      (docP ? erDocHtml(isDc) : !isDc && canClin() && (CEC.dxOf(e).length || e.out) ? '<div class="fsec">Doctor</div><p class="small" style="margin:0">' + (CEC.dxOf(e).length ? 'Diagnosis: ' + h(CEC.dxOf(e).join(', ')) : 'No diagnosis yet') + (e.out ? ' &middot; ' + h(CEC.label(CEC.OUTS, e.out)) : '') + ' <span class="muted">(recorded by a doctor)</span></p>' : '') +
       (isDc ? '<div class="fsec">Disposal' + (canEdit() ? '' : ' <span class="muted small">(recorded by a doctor)</span>') + '</div>' + (canEdit()
         ? '<div class="seg procs" id="erOut">' + DC_OUT_LIST.map(function (o) { return '<button type="button" data-act="er-out" data-v="' + o[0] + '">' + o[1] + '</button>'; }).join('') + '</div><p class="muted small" style="margin:4px 0 0">Tap again to take it back. With no disposal he stays In Day Care.</p>'
         : '<p class="small" style="margin:0">' + (e.out ? h(CEC.label(CEC.OUTS, e.out)) : 'Still in Day Care.') + '</p>') : '') +
@@ -7574,9 +7876,27 @@ if (typeof module !== 'undefined') module.exports = CEC;
     el.classList.remove('hidden'); document.body.style.overflow = 'hidden'; overlayOpened();
     erSync();
   }
+  function erDocHtml(isDc) {                              // V4.3 (item 3): doctors only
+    var outs = CEC.OUTS.filter(function (o) { return !o.old && o.c !== 'BD'; });
+    return '<div class="fsec erdoc">Doctor: working diagnosis</div><div class="seg procs" id="erDx">' + freqDx().map(function (d) { return '<button type="button" data-act="er-dx" data-v="' + h(d) + '">' + h(d) + '</button>'; }).join('') + '</div>' +
+      '<div class="chips" id="erDxChips" style="margin-top:8px"></div><div class="addrow"><input class="in" id="erXD" enterkeyhint="done" autocomplete="off" autocapitalize="none" placeholder="Other diagnosis: type to search the full list">' +
+      '<button type="button" class="btn" data-act="er-dxadd">Add</button></div><div class="sugg hidden" id="erXDS"></div>' +
+      (isDc ? '' : '<div class="fsec erdoc">Doctor: disposal / outcome</div><div class="seg procs" id="erOut2">' + outs.map(function (o) { return '<button type="button" data-act="er-out2" data-v="' + o.c + '">' + h(o.l) + '</button>'; }).join('') + '</div>' +
+        '<p class="muted small" style="margin:4px 0 0">With a diagnosis and a disposal the patient is signed off by you. Tap again to take it back.</p>');
+  }
+  function erDxAdd() {
+    var E = S.er, inp = $('erXD'), raw = inp ? inp.value.trim() : '';
+    if (!E) return; if (!raw) return toast('Type the diagnosis first');
+    checkNew('dx', raw).then(function (x) { if (!x || S.er !== E) return; if (E.dx.indexOf(x) < 0) E.dx.push(x); if ($('erXD')) { $('erXD').value = ''; $('erXD').focus(); } erSync(); suggPaint('erXD'); });
+  }
   function erSync() {
     var E = S.er; if (!E) return;
     if ($('erOut')) setOn('erOut', E.out ? [E.out] : []);
+    if (E.docP) {
+      setOn('erDx', E.dx); if ($('erOut2')) setOn('erOut2', E.out2 ? [E.out2] : []);
+      var fq = freqDx(), bx = $('erDxChips');
+      if (bx) bx.innerHTML = E.dx.filter(function (d) { return fq.indexOf(d) < 0; }).map(function (d) { return '<span class="chip">' + h(d) + '<button type="button" data-act="er-dxrm" data-v="' + h(d) + '" aria-label="Remove ' + h(d) + '">&times;</button></span>'; }).join('');
+    }
     ER_PARTS.forEach(function (P) {
       setOn('erSel_' + P.k, E[P.k]);
       var shown = Array.prototype.map.call(document.querySelectorAll('#erSel_' + P.k + ' button'), function (b) { return b.getAttribute('data-v'); });
@@ -7598,6 +7918,21 @@ if (typeof module !== 'undefined') module.exports = CEC;
       erSync(); suggPaint(P.x);
     });
   }
+  /* V4.3 (item 3): the doctor's diagnosis / disposal, saved on the patient's own record (background, like the items) */
+  function docOutSave(E, sh, e) {
+    var newDx = E.dx.filter(function (x) { return CEC.DX_LIST.indexOf(x) < 0 && (S.custom.dx || []).indexOf(x) < 0; });
+    var shown = Object.assign({}, e, { dxs: E.dx.slice() }); if (!E.isDc) { shown.out = E.out2; if (!e.signed && E.dx.length && E.out2) { shown.signed = true; shown.signedBy = S.me.name; } }
+    putEntry(sh, shown); S.pending++; erPaint();
+    apiRetry('apiDocOut', JSON.stringify({ id: e.id, dxs: E.dx, out: E.isDc ? '' : E.out2, newDx: newDx })).then(function (saved) {
+      S.pending--; putEntry(sh, saved); newDx.forEach(function (x) { S.custom.dx = S.custom.dx || []; if (S.custom.dx.indexOf(x) < 0) S.custom.dx.push(x); });
+      if (S.unsg) S.unsg.list = (S.unsg.list || []).filter(function (x) { return !(x.id === saved.id && (saved.signed || saved.out)); });
+      if (e.cat === 'DC') dcLocal(Object.assign({ shiftId: e.shiftId || sh.id }, saved));
+      toast(saved.signed && !e.signed ? 'Signed off: ' + saved.name + ' (' + (CEC.dxOf(saved).join(', ')) + '; ' + CEC.label(CEC.OUTS, saved.out) + ')' : 'Diagnosis saved: ' + saved.name); erPaint(); if (S.view === 'dcadm') render();
+    }, function (x) {
+      S.pending--; putEntry(sh, e); erPaint();
+      modal('Not saved', '<p>The diagnosis / disposal of <b>' + h(e.name) + '</b> was <b>not saved</b>: ' + h(errText(x)) + '</p><p class="small">Open the patient and save again.</p>', [{ label: 'OK', cls: 'pri', value: true }]);
+    });
+  }
   function closeEr() { S.er = null; $('sheet').classList.add('hidden'); $('sheet').innerHTML = ''; document.body.style.overflow = ''; overlayClosed(); }
   /* Saved in the background: the sheet closes at once. Only the added and removed items are sent, so nothing else of the patient can be overwritten. */
   function saveEr() {
@@ -7611,7 +7946,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
     });
     if (E.mode === 'dc' && E.out !== E.origOut) { d.out = E.out; any = true; }   // 24-11-2026 (V3.3): the Day Care disposal
     if (E.mode === 'opd' && any && !d.add.procs.length && !d.add.meds.length) any = false;
+    var docCh = E.docP && (E.dx.join('|') !== E.origDx.join('|') || E.out2 !== E.origOut2);
     closeEr();
+    if (docCh) docOutSave(E, sh, e);                       // V4.3 (item 3)
     if (!any) return;
     d.newOpts = { proc: d.add.procs.filter(function (p) { return !isStdProc(p) && S.custom.proc.indexOf(p) < 0; }), med: d.add.meds.filter(function (m) { return CEC.MEDS.indexOf(m) < 0 && S.custom.med.indexOf(m) < 0; }) };
     if (E.mode === 'opd') return dcFromItems(e, d);
@@ -7913,12 +8250,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   /* "Other" procedure / medication: while typing, the ones written before (and the list's own) are suggested to tap, so the same one is not added twice.
      What users add is kept as history for these suggestions; it does not become a button of the fixed lists. */
-  function suggKind(id) { return id === 'erXM' || id === 'fMedX' ? 'med' : 'proc'; }
-  function suggSel(id) { var P = erPart(id); return P ? (S.er ? S.er[P.k] : []) : S.form ? (suggKind(id) === 'med' ? S.form.meds : S.form.procs) : []; }
+  function suggKind(id) { return id === 'erXM' || id === 'fMedX' ? 'med' : id === 'erXD' ? 'dx' : 'proc'; }
+  function suggSel(id) { if (id === 'erXD') return S.er ? S.er.dx || [] : []; var P = erPart(id); return P ? (S.er ? S.er[P.k] : []) : S.form ? (suggKind(id) === 'med' ? S.form.meds : S.form.procs) : []; }
   function suggList(id, q) {
     var kind = suggKind(id), nq = normOpt(q || '');
     if (nq.length < 2) return [];
-    var items = kind === 'med' ? CEC.MEDS.concat(S.custom.med).map(function (m) { return [m, m]; })
+    var items = kind === 'dx' ? CEC.DX_LIST.concat(S.custom.dx || []).map(function (d) { return [d, d]; }) : kind === 'med' ? CEC.MEDS.concat(S.custom.med).map(function (m) { return [m, m]; })
       : CEC.PROCS.filter(function (p) { return p.g === 'er'; }).map(function (p) { return [p.c, p.l]; }).concat(S.custom.proc.map(function (x) { return [x, x]; }));
     var sel = suggSel(id), seen = {};
     return items.filter(function (it) {
@@ -7937,7 +8274,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function suggPick(id, v) {
     var P = erPart(id);
-    if (P) { if (S.er && S.er[P.k].indexOf(v) < 0) S.er[P.k].push(v); erSync(); }
+    if (id === 'erXD') { if (S.er && S.er.dx.indexOf(v) < 0) S.er.dx.push(v); erSync(); }
+    else if (P) { if (S.er && S.er[P.k].indexOf(v) < 0) S.er[P.k].push(v); erSync(); }
     else if (S.form) { var arr = suggKind(id) === 'med' ? S.form.meds : S.form.procs; if (arr.indexOf(v) < 0) arr.push(v); syncForm(); }
     var inp = $(id); if (inp) { inp.value = ''; inp.focus(); }
     suggPaint(id);
@@ -8083,6 +8421,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
       box.scrollIntoView({ block: 'nearest' }); return;
     }
     var e = r.entry, isNew = !e.id, target = f.target, temp = null, orig = f.orig;
+    if (!isNew && !f.why) { var old0 = sh.entries.filter(function (x) { return x.id === e.id; })[0]; if (whyNeed(sh, old0, e)) { whyAsk().then(function (w) { if (w && S.form === f) { f.why = w; savePatient(mode); } }); return; } }   // V4.3 (item 11)
+    if (f.why) e.why = f.why;
     if (f.extra) Object.assign(e, f.extra);              // one-staff desk: vitals and "print now" go with the registration in one save
     if (dup && f.dupOk) e.dupOk = true;                  // saved anyway after the warning
     if (isNew && !e.clientId) e.clientId = 'q-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);   // a repeated send is not added twice
@@ -8636,9 +8976,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
   ('cert-print cert-printx cert-saveprint doc-print dl-print ec-print ec-printnow ec-saveprint ett-print ett-printcur lb-print lst-print pv-print q-print q-printall q-printsel ' +
     'slip-reprint tmp-print tpv-print cert-dl cert-pv cert-pvf dl-all dl-one dl-pdf dl-pv ec-dl ec-pv ec-pvnow ett-dl ett-dlcur ett-pv lb-pdf lb-pv lst-pdf mine-pdf pv-dl ' +
     'q-pv tmp-pv dtf-get day-letter letter-now month-letter shift-letter year-letter doc-get cert-save ett-save ec-save pp-save dt-save sec-backup doc-upload roster-upload ' +
-    'img-upload do-login').split(' ').forEach(function (a) { BUSY_ACTS[a] = 1; });
+    'img-upload do-login rgb-pv rgb-dl rgb-pr dbin-undo dbin-undo-sel').split(' ').forEach(function (a) { BUSY_ACTS[a] = 1; });
   var BUSY_MODAL = /^(Preview|Download|Print|Print on paper|One side|Both sides|Test first \(2 sheets\)|One file|Two files|Save referral|Register and save)$/;   // popup buttons that start the work (Registers, Death register, both sides, the referral)
-  var BUSY_BG = /^api(State|Beat|Ping|Nums|JobTake|DeskPaper|Notices|WifiLog|Wifi|EcgShifts|BdList|PettyQueue|Recent|Info|ReloadAt|Attend|PushSub|PushKey|ProcWait|DcOpen|Accounts|Renew)$/;   // background calls never hold it
+  var BUSY_BG = /^api(Unsigned|State|Beat|Ping|Nums|JobTake|DeskPaper|Notices|WifiLog|Wifi|EcgShifts|BdList|PettyQueue|Recent|Info|ReloadAt|Attend|PushSub|PushKey|ProcWait|DcOpen|Accounts|Renew)$/;   // background calls never hold it
   var BUSY_ECG = 'M0 24 L28 24 L34 20 L40 24 L50 24 L54 28 L60 4 L66 40 L71 24 L84 24 L92 18 L100 24 L110 24 L138 24 L144 20 L150 24 L160 24 L164 28 L170 4 L176 40 L181 24 L194 24 L202 18 L210 24 L220 24';
   function busyAllowed() { return !(window.__cecNoBusy && !window.__cecBusyTest); }
   function busyCfg() { var c = S.busyCfg || {}; return { on: c.on !== false, ms: [300, 400, 600, 1000].indexOf(+c.ms) >= 0 ? +c.ms : 400 }; }
@@ -10284,10 +10624,29 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function todayCardHtml(compact) {
     var btns = '<button class="btn' + (compact ? ' sm' : '') + '" data-act="rg-go" data-v="pv">' + ICON.eye + ' Preview</button><button class="btn' + (compact ? ' sm' : '') + ' pri" data-act="rg-go" data-v="dl">' + ICON.dl + ' Download</button>' +
       '<button class="btn' + (compact ? ' sm' : '') + '" data-act="rg-go" data-v="print">' + ICON.print + ' Print</button>';
-    if (compact) return '<section class="card tlist"><div class="ct">Registers</div><p class="muted small" style="margin:0 0 8px">Choose the period (this shift, today, a date or dates) and what to put in, then the file is made.</p><div class="sbtns">' + btns + '</div></section>' +
+    if (compact) return '<section class="card tlist"><div class="ct">Registers</div><p class="muted small" style="margin:0 0 8px">Choose the period (this shift, today, a date or dates) and what to put in, then the file is made.</p><div class="sbtns">' + btns + '</div>' + rgOutHtml() + '</section>' +
       (canEnter() || isEchoId() ? '<div class="tlbar"><span><b>Down-time forms</b><small class="muted">Blank forms for when the census is down; enter them back here</small></span><button class="btn sm" data-act="go" data-v="dt">Open</button></div>' : '');
     return '<section class="card tlist"><div class="ct">Registration Record Room</div><p class="muted small" style="margin:0 0 8px">The registers of this shift, today, a date or dates: MR Nos. or OPD Nos. in serial order, MR Nos. by kind (in boxes), or everyone by time. ' +
-      'S.No., MR No., name, age/sex, ticks for BP, ECG and Blood Sugar, and the outcome. Day Care Nos. in their own register.</p><div class="sbtns">' + btns + '</div></section>';
+      'S.No., MR No., name, age/sex, ticks for BP, ECG and Blood Sugar, and the outcome. Day Care Nos. in their own register.</p><div class="sbtns">' + btns + '</div>' + rgOutHtml() + '</section>';
+  }
+  /* V4.3 (item 12): the registers just made, one badge each (kept on the page for 30 minutes) */
+  function rgOutHtml() {
+    var R = S.rgOut; if (!R || Date.now() - R.at > 1800000) return '';
+    return '<div class="rgout" id="rgOut"><div class="rgoh"><b>Ready: ' + h(R.title) + '</b><button type="button" class="lnk" data-act="rgb-x">Clear</button></div>' + R.all.map(function (sp, i) {
+      var nm = (RG_LIST.filter(function (x) { return x[0] === sp.reg; })[0] || [0, 'Register'])[1], ns = (sp.shifts || []).length;
+      return '<div class="rgb"><div class="rgbt"><b>' + h(nm) + '</b><span>' + sp.n + ' patient' + (sp.n === 1 ? '' : 's') + ' &middot; ' + ns + ' shift' + (ns === 1 ? '' : 's') + '</span></div>' +
+        '<div class="rgbb"><button type="button" class="btn sm" data-act="rgb-pv" data-v="' + i + '">' + ICON.eye + ' Preview</button><button type="button" class="btn sm pri" data-act="rgb-dl" data-v="' + i + '">' + ICON.dl + ' Download</button>' +
+        '<button type="button" class="btn sm" data-act="rgb-pr" data-v="' + i + '">' + ICON.print + ' Print</button></div></div>';
+    }).join('') + '</div>';
+  }
+  function rgOne(i, mode) {
+    var R = S.rgOut, sp = R && R.all[i]; if (!sp) return;
+    var nm = (RG_LIST.filter(function (x) { return x[0] === sp.reg; })[0] || [0, 'Register'])[1], name = 'CEC_' + (RG_FILE[sp.reg] || 'register') + '_' + R.per + '.pdf';
+    var pr = function () { printDoc('regsPdf', [[CEC.regLite(sp)], false], nm); };
+    var dl = function () { dlSides('regsPdf', [[sp], true], name, function () { offerFile(name, CEC.regsPdf([sp], false), 'application/pdf', false); }); };
+    if (mode === 'dl') return dl();
+    if (mode === 'print') return pr();
+    previewDoc('regsPdf', [[sp], false], nm + ': ' + R.title, pr, dl);
   }
   /* 24-11-2026 (V3.6): this shift is an Evening or Night shift: only the MR register (emergencies and brought dead) */
   function dlWhatSync() {
@@ -10298,7 +10657,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
   }
   function regSpec(sp) { return { title: sp.title, sub: sp.sub, cols: sp.cols, groups: sp.groups, portrait: true, empty: 'No patients.', note: sp.note || '' }; }
   /* ---------- V4.0 (item 15): Registers: quick periods, the shifts ticked, several registers at once; each register starts on a new page ---------- */
-  var RG_LIST = [['mr', 'MR register'], ['opd', 'OPD register'], ['echo', 'Echo register'], ['dc', 'Day Care register'], ['bd', 'Brought dead / deaths']];
+  var RG_LIST = [['mr', 'MR register'], ['opd', 'OPD register'], ['echo', 'Echo register'], ['ett', 'ETT register'], ['dc', 'Day Care register'], ['bd', 'Brought dead / deaths']];   // V4.3: + ETT
+  var RG_FILE = { mr: 'MR_register', opd: 'OPD_register', echo: 'Echo_register', ett: 'ETT_register', dc: 'Day_Care_register', bd: 'Brought_dead_and_deaths' };
   function rgDay(d, n) { return new Date(Date.parse(d + 'T12:00:00Z') + n * 86400000).toISOString().slice(0, 10); }
   function rgSpan(q, from, to) {
     var D = currentCensus(), dow = new Date(D + 'T12:00:00Z').getUTCDay();
@@ -10356,6 +10716,9 @@ if (typeof module !== 'undefined') module.exports = CEC;
         var what = specs.length === 1 ? DT_LBL[specs[0].reg] || 'register' : specs.length + ' registers';
         var all = [], one = function (i) { if (i >= specs.length) return Promise.resolve(); return regPhotosInto(specs[i]).then(function (x) { all.push(x); return one(i + 1); }); };
         one(0).then(function () {
+          /* V4.3 (item 12, his words 17:20: "They should always generate as three separate pdfs same for echo or ett. And then a badge should
+             have in a way preview download or print"): two registers or more → one file each, a badge with Preview / Download / Print */
+          if (all.length > 1 && !window.__cecOneRegFile) { S.rgOut = { all: all, per: per, title: rgSpanTxt(qq) + (shs.length < 3 ? ' (' + shs.map(CEC.shiftName).join(', ') + ')' : ''), at: Date.now() }; render(); setTimeout(function () { var x = $('rgOut'); if (x) x.scrollIntoView({ block: 'center' }); }, 60); toast(all.length + ' registers ready: one file each.'); return; }
           var pr = function () { printDoc('regsPdf', [all.map(CEC.regLite), false], what); };
           var dl = function () { dlSides('regsPdf', [all, true], name, function () { offerFile(name, CEC.regsPdf(all, false), 'application/pdf', false); }); };
           if (mode === 'dl') return dl();
@@ -12033,7 +12396,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
     return Object.keys(d).map(function (k) { return Object.assign({ key: k }, d[k]); }).filter(function (x) { return x.uid === me && x.r; }).sort(function (a, b) { return a.at < b.at ? 1 : -1; });
   }
   function echoDraftDel(key) { var d = echoDrafts(); if (d[key]) { delete d[key]; store_('cec_echodrafts', d); } }
-  function echoDirty() { if (!S.ef) return; clearTimeout(S.efDT); S.efDT = setTimeout(echoDraftSave, 250); }
+  function echoDirty() {
+    if (!S.ef) return; clearTimeout(S.efDT); S.efDT = setTimeout(echoDraftSave, 250);
+    /* V4.3 (item 15, his words 19:47: "every thing the user is writing at that time should be auto saving in the serve not user phone only. User
+       phone is something which is important only when the server has not received the data"): to the census 3 seconds after the last change */
+    if (ewNew()) { clearTimeout(S.efAT); S.efAT = setTimeout(function () { echoAutoTick(true); }, ECHO_AUTO_MS); }
+  }
+  var ECHO_AUTO_MS = 3000;
+  function echoSavedLine() { var E = S.ef; return '<p class="muted small" id="efAutoLine" style="margin:8px 0 0">' + (E && E.autoMsg ? h(E.autoMsg) : E && E.r && (E.r.entryId || E.r.id) ? 'Every change is saved to the census by itself (provisional).' : 'Saved on this phone until the patient is chosen; then to the census by itself.') + '</p>'; }
   function echoDraftSave() {
     var E = S.ef; if (!E || !S.me) return;
     var js = JSON.stringify(E.r);
@@ -12047,14 +12417,14 @@ if (typeof module !== 'undefined') module.exports = CEC;
     ks.slice(6).forEach(function (k) { delete d[k]; });
     store_('cec_echodrafts', d);
   }
-  function echoAutoMark(t) { var el = $('efAuto'); if (el) el.textContent = t; }
+  function echoAutoMark(t) { var el = $('efAuto'); if (el) el.textContent = t; if (S.ef) S.ef.autoMsg = t; var el2 = $('efAutoLine'); if (el2 && t) el2.textContent = t; }
   function echoAutoTick(now) {
     var E = S.ef; if (!E || E.busy || E.autoBusy || !S.me || isOff()) return;
     var r = E.r; if (!r.entryId && !r.id) return;      // only once the patient is chosen
     if (r.id && r.rs === 'F') return;                  // a Final report is never changed by itself (Save only)
     if (!String(r.name || '').trim() || !r.date) return;
     var js = JSON.stringify(r); if (js === (E.sentJs || E.openJs)) return;
-    if (!now && Date.now() - (E.autoAt || E.openAt || 0) < 60000) return;
+    if (!now && Date.now() - (E.autoAt || E.openAt || 0) < (ewNew() ? ECHO_AUTO_MS : 60000)) return;
     var rr = echoRead(); rr.rs = 'P'; rr.auto = 1;
     E.autoBusy = true; echoAutoMark('Saving…');
     api('apiEchoSave', JSON.stringify(rr)).then(function (saved) {
@@ -12064,7 +12434,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
       if (!E.r.id && saved.id) { E.r.id = saved.id; delete E.r.nid; }
       E.r.rs = 'P'; if (same) E.sentJs = JSON.stringify(E.r);
       echoListPut(saved);
-      if (S.ef === E) { echoAutoMark('Saved as provisional ' + CEC.hm(new Date().toISOString())); E.draftJs = null; echoDraftSave(); }
+      if (S.ef === E) { echoAutoMark('Saved as provisional ' + CEC.hm(new Date().toISOString())); E.draftJs = null; echoDraftSave(); if (ewNew() && !same) { clearTimeout(S.efAT); S.efAT = setTimeout(function () { echoAutoTick(true); }, 500); } }   // V4.3: changed meanwhile: saved again
     }, function () { E.autoBusy = false; E.autoAt = Date.now(); echoAutoMark('Kept on this phone'); });
   }
   function echoListPut(saved) {
@@ -12243,6 +12613,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
     { k: 'fin', t: 'Final echo report' },
     { k: 'nt', t: 'Note', g: ['Note'], s: 'nt', none: 'No note' }
   ];
+  /* V4.3 (item 15, his words 27-11-2026 19:47: "On step 20. Just make it final reporting comments … Add step 21 where user can arrange and see
+     there comments on main body of the report with option to move the comments. Step 22 the rearrangement we built for final reports comments.
+     Then step 23 auto preview of the report which is zoomable as always but printable at this phase. Then last step provisional save final and
+     print"; Note stays right after the final comments, his choice 19:5x): three steps of their own after Note */
+  function ewNew() { return !(window.__cecOldEw && !window.__cecNewEw); }
+  if (ewNew()) { EW[EW.length - 2].t = 'Final reporting comments'; EW.push({ k: 'arr', t: 'Arrange the report body', tool: 1 }, { k: 'farr', t: 'Arrange the final comments', tool: 1 }, { k: 'prev', t: 'Preview the report', tool: 1 }); }
   var EW_DP = [['Mitral regurgitation', 'MR'], ['Aortic regurgitation', 'AR'], ['Tricuspid regurgitation', 'TR'], ['Pulmonary regurgitation', 'PR']];
   var EW_GRADE = { t: 'Trace', m: 'Mild', mo: 'Moderate', s: 'Severe' };
   function ewIdx(k) { for (var i = 0; i < EW.length; i++) if (EW[i].k === k) return i; return -1; }
@@ -12261,6 +12637,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   function ewFill(t, vals) { var i = 0; return String(t).replace(/__/g, function () { var v = (vals || [])[i++]; return v != null && String(v).trim() !== '' ? String(v).trim() : '__'; }); }
   function ewHas(i) {
     var x = EW[i], r = S.ef.r, L = CEC.echoLines(r);
+    if (x.tool) return true;                              // V4.3: arrange / preview: nothing to fill
     if (ewNone(x.k)) return true;
     if (x.k === 'pt') return !!(String(r.name || '').trim() && r.date);
     if (x.k === 'mm') return CEC.ECHO_MEAS.some(function (m) { return String((r.m || {})[m[0]] || '').trim(); });
@@ -12274,6 +12651,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
   /* what a step says, for "Check and save" */
   function ewSays(i) {
     var x = EW[i], r = S.ef.r, L = CEC.echoLines(r), out = [];
+    if (x.tool) return out;
     if (x.k === 'pt') {
       out.push((r.name ? up(r.name) : '(no name)') + (r.mr ? ', MR ' + up(r.mr) : '') + (r.age ? ', ' + r.age + ' y' : '') + (r.sex ? ', ' + (r.sex === 'M' ? 'male' : 'female') : ''));
       out.push((r.date ? CEC.dmy(r.date) : '(no date)') + (r.ref ? ', ref. ' + r.ref : '') + (r.tech ? ', echo cardiographer ' + r.tech : ''));
@@ -12387,9 +12765,13 @@ if (typeof module !== 'undefined') module.exports = CEC;
         (auto.length ? '' : '<p class="muted small">Nothing from the findings yet.</p>') +
         auto.filter(function (t) { return off.indexOf(t) >= 0; }).map(function (t) {
           return '<div class="ewo own"><button type="button" class="ewb" data-act="ew-finback" data-t="' + h(t) + '"><span class="ewc" aria-hidden="true">+</span><span class="ewt">' + h(t) + ' <i class="ewu">put back</i></span></button></div>'; }).join('') +
-        '<div class="eg">Add</div>' + CEC.ECHO_LIB.filter(function (l) { return l.s === 'fin'; }).map(function (l) { return ewOpt(l.k); }).join('') + ewOwn('fin', 'Final report') + ewOrderHtml('fin', ['Final report'], 1) + ewAllOrderHtml() +
+        '<div class="eg">Add</div>' + CEC.ECHO_LIB.filter(function (l) { return l.s === 'fin'; }).map(function (l) { return ewOpt(l.k); }).join('') + ewOwn('fin', 'Final report') + (ewNew() ? '' : ewOrderHtml('fin', ['Final report'], 1) + ewAllOrderHtml()) +
         (CEC.echoProv(r) ? '<p class="eprov">A provisional report also prints here: <b>This is the provisional report as per (date of print). Kindly collect final report from Cardiac Emergency Centre, SGHL.</b></p>' : '');
     }
+    if (x.k === 'arr') { var ap = ewAllParts(); return ewHint('The comments of the report body, heading by heading, in the order they print. &uarr; and &darr; move a line within its heading; tap a line to change its words for this report.') + (ap || '<p class="muted small">No lines chosen yet.</p>'); }   // V4.3 (item 15)
+    if (x.k === 'farr') { var fo = ewOrderHtml('fin', ['Final report'], 1); return ewHint('The final report comments in the order they print. &uarr; and &darr; move a line; tap a line to change its words for this report.') + (fo || '<p class="muted small">No final comments yet (step ' + (ewIdx('fin') + 1) + ').</p>'); }
+    if (x.k === 'prev') return ewHint('The report opens by itself as it will print: zoom in as always. Print sends it to the print desk now (provisional until it is saved final). Then Next: save it.') +
+      '<div class="ewprev"><button type="button" class="btn" data-act="ec-pvnow">' + ICON.eye + ' Preview again</button><button type="button" class="btn pri" data-act="ec-printnow">' + ICON.print + ' Print</button></div>' + echoSavedLine();
     /* a heading (or two): its lines, the usual one marked; "Nothing to add" where a heading is often normal */
     var keys = ewKeys(x), s = x.s || 'st';
     return (x.none ? ewNoneBtn(x.k, x.none) : '') +                   // 19-11-2026 (V2.7): "Nothing to add" first, above every option
@@ -12418,9 +12800,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
     return parts ? '<div class="eword"><div class="ewol">On the report, in this order <span class="muted">(&uarr; and &darr; move a line; tap a line to change its words for this report)</span></div>' + parts + '</div>' : '';
   }
   /* V4.0 (item 7): the final page arranges the whole report: every heading's lines, then the final report, each with ↑ and ↓ */
-  function ewAllOrderHtml() {
-    var parts = EW.filter(function (x) { return x.g && x.k !== 'nt'; }).map(function (x) { return ewOrderHtml(x.s || 'st', x.g, 1, x.t); })
+  function ewAllParts() {
+    return EW.filter(function (x) { return x.g && x.k !== 'nt'; }).map(function (x) { return ewOrderHtml(x.s || 'st', x.g, 1, x.t); })
       .concat([ewOrderHtml('rv', ['RVSP'], 1, 'RV / MPA pressure'), ewOrderHtml('dp', CEC.echoGroups('dp'), 1, 'Doppler (colour flow mapping)'), ewOrderHtml('ifl', ['Mitral inflow'], 1, 'Mitral inflow')]).filter(Boolean).join('');
+  }
+  function ewAllOrderHtml() {
+    var parts = ewAllParts();
     return parts ? '<div class="ewall"><div class="eg">Arrange the whole report</div><p class="muted small" style="margin:0 0 6px">Every line of the findings, heading by heading: &uarr; and &darr; move a line within its heading; tap a line to change its words for this report.</p>' + parts + '</div>' : '';
   }
   function ewDown(s, g, id) {
@@ -12484,6 +12869,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
         '<p class="small muted" style="margin:6px 0 0">What is not filled is left out of the report. You can still save.</p></div>'
       : '<div class="ewok">&#10003; Every step is filled.</div>') +
       '<div class="ewsums">' + EW.map(function (x, i) {
+        if (x.tool) return '';                            // V4.3: arrange / preview steps
         var says = ewSays(i);
         return '<div class="ewsum"><div class="ewst"><b>' + (i + 1) + '. ' + h(x.t) + '</b><button type="button" class="lnk" data-act="ew-go" data-v="' + i + '">Change</button></div>' +
           (says.length ? says.map(function (t) { return '<div class="ewl">' + h(t).replace(/__/g, '<span class="ewblank">…</span>') + '</div>'; }).join('') : '<div class="ewl muted">' + (S.ef.skip[x.k] ? 'Skipped' : 'Nothing chosen') + '</div>') + '</div>';
@@ -12509,10 +12895,12 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var keep = top ? 0 : b.scrollTop;
     b.innerHTML = ewHtml(); if (f) f.innerHTML = ewFoot();
     b.scrollTop = keep;
+    if (ewNew()) echoDirty();      // V4.3: every tap (not only typing) goes to the census ~3 s later; nothing is sent when nothing changed
   }
   function ewGo(i) {
     if (!S.ef) return;
     S.ef.addG = null; S.ef.st = Math.max(0, Math.min(EW.length, i)); ewRender(true);
+    if (EW[S.ef.st] && EW[S.ef.st].k === 'prev') setTimeout(function () { if (S.ef && EW[S.ef.st] && EW[S.ef.st].k === 'prev') echoPreview(echoRead(), true); }, 150);   // V4.3 (item 15): the preview opens by itself
     if (S.ef.st === 0) setTimeout(function () { var f = $('efName'); if (f && !f.value) f.focus(); }, 60);
   }
   function ewLive() {                                 // typing: only the values that depend on it are written again (the box keeps the cursor)
@@ -13710,7 +14098,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     var noDash = !isAdmin() && S.me && (S.me.role === 'doctor' || S.me.role === 'nurse' || S.me.role === 'student');
     var doctor = canEdit() || isAdmin(), dash = noDash ? '' : dashCardHtml(), tiles = tilesHtml();
     if (S.tEdit) return '<div class="home1">' + tiles + '</div>';   // 24-11-2026 (V3.4): the tile editor alone
-    return '<div class="home1">' + attLineHtml() + (isAdmin() ? verWarn() : '') + endNoticeHtml() + earlyHtml() + handHtml() + echoDraftHtml() + (doctor ? dash + tiles : tiles + dash) + pendAlertHtml() + '</div>';   // 24-11-2026 (V3.3): attendance line
+    return '<div class="home1">' + attLineHtml() + (isAdmin() ? verWarn() + alertCardHtml() : '') + endNoticeHtml() + earlyHtml() + handHtml() + echoDraftHtml() + (doctor ? dash + tiles : tiles + dash) + pendAlertHtml() + '</div>';   // 24-11-2026 (V3.3): attendance line
   }
   /* ---------- 20-11-2026 (V2.9): Accounting check. Every patient is counted in the census: certificates with no census record, MR Nos. with
      two certificates, deaths without a certificate, numbers missing from the register, echo reports with no census record, patients of
@@ -14806,6 +15194,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
         withPaper(function (p) { manualPrint(pall, p); }); break; }
       case 'er-open': openEr(v, id, el.getAttribute('data-src'), el.getAttribute('data-mode') || ''); break;
       case 'er-out': if (S.er) { S.er.out = S.er.out === v ? '' : v; erSync(); } break;   // 24-11-2026 (V3.3): Day Care disposal (doctors)
+      case 'er-dx': if (S.er) { var dxi = S.er.dx.indexOf(v); if (dxi >= 0) S.er.dx.splice(dxi, 1); else S.er.dx.push(v); erSync(); } break;   // V4.3 (item 3)
+      case 'er-dxrm': if (S.er) { S.er.dx = S.er.dx.filter(function (x) { return x !== v; }); erSync(); } break;
+      case 'er-dxadd': if (S.er && !suggExact('erXD')) erDxAdd(); break;
+      case 'er-out2': if (S.er) { S.er.out2 = S.er.out2 === v ? '' : v; if (S.er.out2 === 'EXP' && !S.er.isDc) toast('Expired in CEC: the red Deceased button asks for his details after saving.'); erSync(); } break;
       case 'er-tog': { var ek = el.getAttribute('data-k'), es = S.er[ek], ei = es.indexOf(v); if (ei >= 0) es.splice(ei, 1); else es.push(v); erSync(); break; }
       case 'er-rm': { var rk = el.getAttribute('data-k'); S.er[rk] = S.er[rk].filter(function (x) { return x !== v; }); erSync(); break; }
       case 'er-add': { var ak = el.getAttribute('data-k'), AP = erPart(ak); if (AP && !suggExact(AP.x)) erAdd(ak); break; }
@@ -14820,6 +15212,10 @@ if (typeof module !== 'undefined') module.exports = CEC;
       case 'bd-open': bdEdit(id); break;
       case 'bd-list': setView('lists'); if (!S.lb) lbInit(); lbUseCfg(CEC.presetCfg('bd'), 'bd'); break;
       case 'rg-go': regGo(v); break;
+      case 'rgb-pv': rgOne(+v, 'pv'); break;                 // V4.3 (item 12): one register
+      case 'rgb-dl': rgOne(+v, 'dl'); break;
+      case 'rgb-pr': rgOne(+v, 'print'); break;
+      case 'rgb-x': S.rgOut = null; render(); break;
       case 'rgq': rgQuick(v); break;                       // V4.0 (item 15)
       case 'rg-old': closeModal(); setTimeout(function () { regGoOld(v); }, 50); break;
       case 'rg-all': Array.prototype.forEach.call(document.querySelectorAll('#modal .rgk'), function (c) { c.checked = el.checked; }); break;
@@ -14978,6 +15374,49 @@ if (typeof module !== 'undefined') module.exports = CEC;
       }
       case 'close-form': closeForm(); break;
       case 'pt-rename': renameAsk(); break;                // V4.0 (item 3)
+      case 'pnav-x': menu(false); break;                   // V4.3 (item 14): the phone drawer's ×
+      case 'sa-open': S.view = 'settings'; S.admSec = 'staff'; S.saW = null; S.saAl = null; setView('settings'); break;   // V4.3 (item 11): Staff activity
+      case 'sa-reload': S.sa = null; saLoad(true); render(); break;
+      case 'sa-check': toast('Checking the seal of the Activity log\u2026'); api('apiLogCheck').then(function (r) { if (S.sa) S.sa.check = r; if (S.saAl) S.saAl.check = r; render(); toast(r.nBad || r.nMissing ? 'The Activity log was changed outside the census.' : 'Sealed: nothing changed or removed.'); }, function (e) { toast(errText(e)); }); break;
+      case 'sa-who': S.saW = { login: v, per: '7', f: 'all', sel: {} }; render(); window.scrollTo(0, 0); saLogLoad(); break;
+      case 'sa-alall': S.saAlAll = true; render(); break;
+      case 'sa-per': if (S.saW) { S.saW.per = v; if (v !== 'dates') { S.saW.r = null; saLogLoad(); } render(); } break;
+      case 'sa-dates': if (S.saW) { S.saW.from = ($('saFrom') || {}).value || ''; S.saW.to = ($('saTo') || {}).value || ''; if (!S.saW.from || !S.saW.to) { toast('Choose both dates.'); break; } S.saW.r = null; saLogLoad(); render(); } break;
+      case 'sa-f': if (S.saW) { S.saW.f = v; render(); } break;
+      case 'sa-relog': if (S.saW) { S.saW.r = null; S.saW.err = ''; saLogLoad(); render(); } break;
+      case 'sa-tog': if (S.saW) { S.saW.sel[id] = !S.saW.sel[id]; render(); } break;
+      case 'sa-all': if (S.saW && S.saW.r) { var sl = S.saW.r.lines.filter(function (x) { return x.can && saF(x, S.saW.f || 'all'); }), allT = sl.every(function (x) { return S.saW.sel[x.ch]; }); S.saW.sel = {}; if (!allT) sl.forEach(function (x) { S.saW.sel[x.ch] = true; }); render(); } break;
+      case 'sa-undo-sel': if (S.saW) { var us = Object.keys(S.saW.sel).filter(function (k) { return S.saW.sel[k]; }); if (us.length) saUndo(us); } break;
+      case 'sa-line': saLine(id); break;
+      case 'sa-pdf': saPdf(v); break;
+      case 'sa-freeze': { var fp = ((S.sa && S.sa.list) || []).filter(function (x) { return S.saW && x.login === S.saW.login; })[0]; if (!fp || !fp.id) break; var on = v === '1';
+        confirmBox(on ? 'Freeze the ID of ' + fp.name + '?' : 'Unfreeze the ID of ' + fp.name + '?', on ? 'Signed out on every phone and computer at once; sign-in refused until you unfreeze it. Logged.' : 'The person can sign in again.', on ? 'Freeze ID' : 'Unfreeze ID', on).then(function (ok) {
+          if (ok) api('apiFreeze', JSON.stringify({ id: fp.id, on: on })).then(function () { fp.frozen = on; toast(on ? 'Frozen: ' + fp.name + ' is signed out everywhere.' : 'Unfrozen: ' + fp.name + ' can sign in again.'); render(); }, function (e) { toast(errText(e)); });
+        }); break; }
+      case 'u-why': { var hv = $('uWhyV'); if (hv) hv.value = v; setOn('uWhy', v); break; }
+      case 'dbin-open': S.dashBin = !S.dashBin; S.dselOn = false; S.dsel = {}; S.binSel = {}; if (S.dashBin) { S.dbin = null; dbinLoad(); } render(); break;   // V4.3 (item 10)
+      case 'dsel-on': S.dselOn = !S.dselOn; S.dsel = {}; render(); break;
+      case 'dsel-tog': S.dsel = S.dsel || {}; S.dsel[id] = !S.dsel[id]; render(); break;
+      case 'dsel-all': { S.dsel = S.dsel || {}; Array.prototype.forEach.call(document.querySelectorAll('#plist [data-act=dsel-tog]'), function (b) { S.dsel[b.getAttribute('data-id')] = true; }); render(); break; }
+      case 'dsel-del': {
+        var dids = Object.keys(S.dsel || {}).filter(function (k) { return S.dsel[k]; }), dws = (S.work && S.work.entries || []).filter(function (x) { return dids.indexOf(x.id) >= 0; });
+        if (!dws.length) break;
+        confirmBox('Delete ' + dws.length + ' patient' + (dws.length === 1 ? '' : 's') + '?', '<p style="margin:0 0 6px">' + dws.slice(0, 12).map(function (x) { return h(x.name) + ' (' + mrTagH(x) + ')'; }).join(', ') + (dws.length > 12 ? ' &hellip;' : '') + '</p>' +
+          '<p class="small" style="margin:0">They go to the bin on this page (Undo there for 7 days) and stay in Data protection for ever. The Activity log keeps who deleted them.</p>', 'Delete ' + dws.length, true).then(function (ok) {
+          if (!ok) return;
+          api('apiDeleteEntries', JSON.stringify({ ids: dws.map(function (x) { return x.id; }), from: 'dash', names: dws.map(function (x) { return x.name + ' ' + mrTag(x); }).join(', ') })).then(function (r) {
+            S.work.entries = S.work.entries.filter(function (x) { return dids.indexOf(x.id) < 0; }); S.dselOn = false; S.dsel = {}; S.dbin = null; dbinLoad(); render(); refresh(true);
+            toast((r.n === 1 ? '1 patient' : r.n + ' patients') + ' deleted. Undo in the Bin.');
+          }, function (e) { toast(errText(e)); });
+        });
+        break;
+      }
+      case 'dbin-tog': S.binSel = S.binSel || {}; S.binSel[id] = !S.binSel[id]; render(); break;
+      case 'dbin-all': { var BL = (S.dbin && S.dbin.items) || [], allOn = BL.every(function (x) { return S.binSel && S.binSel[x.id]; }); S.binSel = {}; if (!allOn) BL.forEach(function (x) { S.binSel[x.id] = true; }); render(); break; }
+      case 'dbin-undo': api('apiBinRestoreMany', JSON.stringify({ ids: [id] })).then(function (r) { dbinDone(r, 1); }, function (e) { toast(errText(e)); }); break;
+      case 'dbin-undo-sel': { var bids = Object.keys(S.binSel || {}).filter(function (k) { return S.binSel[k]; }); if (!bids.length) break;
+        api('apiBinRestoreMany', JSON.stringify({ ids: bids })).then(function (r) { dbinDone(r, r.n); }, function (e) { toast(errText(e)); }); break; }
+      case 'rn-row': { var rsh = [S.work, S.prevShift, S.detail, S.open].filter(function (x) { return x && x.id === el.getAttribute('data-src'); })[0] || erShift(el.getAttribute('data-src')), re2 = rsh && rsh.entries.filter(function (x) { return x.id === id; })[0]; if (re2) renameAsk(rsh, re2); break; }   // V4.3 (item 4)
       case 'adm-sec': S.admSec = v; render(); window.scrollTo(0, 0); if (v === 'space') spaceLoad(); break;   // V4.0 (item 13)
       case 'adm-back': S.admSec = null; render(); window.scrollTo(0, 0); break;
       case 'space-load': S.space = null; spaceLoad(); render(); break;
@@ -15525,7 +15964,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
     }
     if (t.id === 'fDx') { S.form.dxq = t.value; renderDxList(); }
     else if (t.id === 'apQ') { S.ap.q = t.value; $('apRes').innerHTML = apSearchHtml(); }
-    else if (t.id === 'fMedX' || t.id === 'fProcX' || t.id === 'erXP' || t.id === 'erXM') suggPaint(t.id);
+    else if (t.id === 'fMedX' || t.id === 'fProcX' || t.id === 'erXP' || t.id === 'erXM' || t.id === 'erXD') suggPaint(t.id);   // V4.3: erXD the doctor's diagnosis
+    else if (t.id === 'saQ') { S.saQ = t.value; var sg = document.querySelector('.sagrid'); if (sg) { var pos = t.selectionStart; render(); var nq = $('saQ'); if (nq) { nq.focus(); try { nq.setSelectionRange(pos, pos); } catch (x) { } } } }   // V4.3 (item 11)
     else if (t.id === 'ecgQ') { S.ecgQ = t.value; $('ecgRes').innerHTML = ecgSearchHtml(); }
     else if (t.id === 'rbsQ') { S.rbsQ = t.value; $('rbsRes').innerHTML = ecgSearchHtml('rbs'); }
     else if (t.id === 'vitQ') { S.vitQ = t.value; $('vitRes').innerHTML = vitDoneHtml(); }
@@ -15626,7 +16066,7 @@ if (typeof module !== 'undefined') module.exports = CEC;
     if (ev.key !== 'Enter' || ev.target.tagName !== 'INPUT') return;
     if (!S.me) { ev.preventDefault(); if (ev.target.id === 'lId') $('lPw').focus(); else if (ev.target.id === 'lPw') doLogin(); return; }
     if (S.cert || S.af) { ev.preventDefault(); ev.target.blur(); return; }
-    if (S.er) { ev.preventDefault(); var EP = erPart(ev.target.id); if (EP) { if (!suggExact(EP.x)) erAdd(EP.k); } else ev.target.blur(); return; }
+    if (S.er) { ev.preventDefault(); var EP = erPart(ev.target.id); if (ev.target.id === 'erXD') { if (!suggExact('erXD')) erDxAdd(); } else if (EP) { if (!suggExact(EP.x)) erAdd(EP.k); } else ev.target.blur(); return; }
     if (S.qe) { ev.preventDefault(); ev.target.blur(); return; }
     if (ev.target.id === 'ecgQ' || ev.target.id === 'rbsQ' || ev.target.id === 'erQ' || ev.target.id === 'vitQ' || ev.target.id === 'ecQ' || ev.target.id === 'ecQm') { ev.preventDefault(); ev.target.blur(); return; }
     if (S.ef) { ev.preventDefault(); if (ev.target.id === 'efAddIn') echoAdd(); else ev.target.blur(); return; }
@@ -16062,6 +16502,8 @@ if (typeof module !== 'undefined') module.exports = CEC;
         leaveAsk(function () { S.ett.dirty = false; try { history.back(); } catch (e) { } });   // the real Back now
         return;
       }
+      if (S.view === 'settings' && S.admSec === 'staff' && S.saW) { S.saW = null; render(); histMove(1); return; }   // V4.3 (item 11): Back from a person's log to the tiles
+      if (S.view === 'shift' && (S.dashBin || S.dselOn)) { S.dashBin = false; S.dselOn = false; S.dsel = {}; S.binSel = {}; render(); histMove(1); return; }   // V4.3 (item 10): Back closes the bin / Select first
       /* 4. the page before */
       st = st && st.v ? st : { v: 'home', base: 1 };
       if (st.base) {
